@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using AchievementsAPI.API;
 using Il2CppInterop.Runtime.InteropTypes.Fields;
+using Reactor.Utilities;
 using Reactor.Utilities.Attributes;
 using Reactor.Utilities.Extensions;
 using TMPro;
@@ -57,18 +58,32 @@ namespace AchievementsAPI
                 uiElement.nameText.Value.text = achievement.Name;
                 uiElement.descriptionText.Value.text = achievement.Description;
                 uiElement.iconImage.Value.sprite =
-                    SpriteTools.LoadSpriteFromPath(achievement.IconPath, achievement.GetType().Assembly, 100);
+                    SpriteTools.LoadSpriteFromPath(achievement.IconPath, achievement.Assembly, 100);
                 
                 if (achievement is CountAchievement countAchievement && countAchievement.RequiredValue > 0)
                 {
                     uiElement.iconImage.Value.fillAmount = (float) countAchievement.CurrentValue / countAchievement.RequiredValue;
                 }
             }
+
+            if (!transform.GetChild(0).TryGetComponent<Image>(out var image)) return;
+            Coroutines.Start(FadeColor(image, image.color, tab.GetTabColor(), 0.3f));
         }
 
         public void Close()
         {
             gameObject.Destroy();
+        }
+
+        public IEnumerator FadeColor(Image img, Color origin, Color target, float duration)
+        {
+            for (float i = 0; i < duration; i += Time.deltaTime)
+            {
+                img.color = Color.Lerp(origin, target, i/duration);
+                yield return null;
+            }
+            img.color = target;
+            yield break;
         }
     }
 }

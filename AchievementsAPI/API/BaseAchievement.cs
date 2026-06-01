@@ -1,3 +1,4 @@
+using System.Reflection;
 using UnityEngine;
 
 namespace AchievementsAPI.API;
@@ -8,6 +9,7 @@ public class BaseAchievement
     public string Description;
     public string IconPath;
     public bool Unlocked;
+    public Assembly Assembly;
     public void Unlock(bool showOnUI = true)
     {
         
@@ -18,5 +20,7 @@ public class BaseAchievement
         Name = name;
         Description = description;
         IconPath = iconPath;
+        
+        Assembly = Assembly.GetCallingAssembly();
     }
 }
