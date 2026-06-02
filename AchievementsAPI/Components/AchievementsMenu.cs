@@ -24,6 +24,7 @@ namespace AchievementsAPI
         public Il2CppReferenceField<Transform> tabsParent;
         public Il2CppReferenceField<GameObject> tabPrefab;
         public Il2CppReferenceField<TextMeshProUGUI> titleText;
+        public MainMenuManager mainMenuManager;
 
         private void Start()
         {
@@ -39,6 +40,7 @@ namespace AchievementsAPI
                 })));
             }
             SetTab(AchievementsManager.Tabs[0]);
+            mainMenuManager?.DeactivateMainMenuUI();
         }
         private void SetTab(AchievementsTab tab)
         {
@@ -72,6 +74,7 @@ namespace AchievementsAPI
 
         public void Close()
         {
+            mainMenuManager?.ActivateMainMenuUI();
             gameObject.Destroy();
         }
 
