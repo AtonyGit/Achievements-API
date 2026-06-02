@@ -3,6 +3,9 @@ using UnityEngine;
 
 namespace AchievementsAPI.API;
 
+/// <summary>
+/// Base Achievement class, used to define achievements.
+/// </summary>
 public class BaseAchievement
 {
     public string Name;
@@ -10,6 +13,10 @@ public class BaseAchievement
     public string IconPath;
     public bool Unlocked;
     public Assembly Assembly;
+    /// <summary>
+    /// Method to unlock this achievement.
+    /// </summary>
+    /// <param name="showOnUI">Shows an unlock animation on the hud.</param>
     public void Unlock(bool showOnUI = true)
     {
         Unlocked = true; //TODO Maybe remove this and make Unlocked redirect to a check
