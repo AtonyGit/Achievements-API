@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Linq;
 using System.IO;
-using Newtonsoft.Json;
 using UnityEngine;
+using JsonSerializer = System.Text.Json.JsonSerializer;
+
 namespace AchievementsAPI.API;
 
 [Serializable]
@@ -21,91 +21,110 @@ public class AchievementData
 public class AchievementStorage
 {
     public static List<AchievementData> BaseAchievements = new List<AchievementData>();
-    public static string JsonPath => Path.Combine(Application.persistentDataPath, "AchievementsAPIData/achievements.json");
-
-
-    public static void AchievementStorageUpdateBase(BaseAchievement achievement, bool unlocked)
+    public static string JsonPath => OperatingSystem.IsAndroid() ? Environment.GetEnvironmentVariable("SL_DATA_PATH") : Path.Combine(Application.persistentDataPath, "AchievementsAPIData/achievements.json");
+    
+    public static void AchievementStorageUpdate(BaseAchievement achievement, bool unlocked)
     {
-        foreach (var data in BaseAchievements.Where(x => x.Name == achievement.Name && x.TabQualifiedName == achievement.GetType().AssemblyQualifiedName))
-        {
-            data.Unlocked = unlocked;
-            return;
-        }
-        BaseAchievements.Add(new AchievementData { TabQualifiedName = achievement.GetType().AssemblyQualifiedName, Name = achievement.Name, Unlocked = unlocked, Progress = 0 });
+        var data = GetData(achievement);
+        data.Unlocked = unlocked;
+
+        Save();
     }
 
-    public static void AchievementStorageUpdateCount(CountAchievement achievement, int progress, bool unlocked)
+    public static void AchievementStorageUpdate(CountAchievement achievement, int progress, bool unlocked)
     {
-        foreach (var data in BaseAchievements.Where(x => x.Name == achievement.Name && x.TabQualifiedName == achievement.GetType().AssemblyQualifiedName))
-        {
-            data.Unlocked = unlocked;
-            data.Progress = progress;
-            return;
-        }
-        BaseAchievements.Add(new AchievementData { TabQualifiedName = achievement.GetType().AssemblyQualifiedName, Name = achievement.Name, Unlocked = unlocked, Progress = progress });
+        var data = GetData(achievement);
+        data.Unlocked = unlocked;
+        if (achievement.ProgressPersists) data.Progress = progress;
+
+        Save();
     }
 
-
+    public static AchievementData GetData(BaseAchievement achievement)
+    {
+        var data =  BaseAchievements.Find(x =>
+            x.Name == achievement.Name && x.TabQualifiedName == achievement.GetType().AssemblyQualifiedName);
+        if (data == null)
+        {
+            data = new AchievementData { TabQualifiedName = achievement.GetType().AssemblyQualifiedName,  Name = achievement.Name, Unlocked = false };
+            BaseAchievements.Add(data);
+        }
+        return data;
+    }
+    
+    public static AchievementData GetData(CountAchievement achievement)
+    {
+        var data =  BaseAchievements.Find(x =>
+            x.Name == achievement.Name && x.TabQualifiedName == achievement.GetType().AssemblyQualifiedName);
+        if (data == null)
+        {
+            data = new AchievementData { TabQualifiedName = achievement.GetType().AssemblyQualifiedName,  Name = achievement.Name, Unlocked = false, Progress = achievement.CurrentValue };
+            BaseAchievements.Add(data);
+        }
+        return data;
+    }
 
     public static void AchievementStorageGet(AchievementsTab tab)
     {
 
         foreach (var propInfo in tab.GetType().GetProperties().Where(x =>
-                                 x.PropertyType.IsSubclassOf(typeof(BaseAchievement)) ||
                                  x.PropertyType == typeof(BaseAchievement)))
         {
             var achievement = propInfo.GetValue(tab) as BaseAchievement;
-            foreach (var data in BaseAchievements.Where(x => x.Name == achievement.Name))
-            {
-                achievement.Unlocked = data.Unlocked;
-            }
+            if (achievement == null) return;
+            var data =  BaseAchievements.Find(x =>
+                x.Name == achievement.Name && x.TabQualifiedName == achievement.GetType().AssemblyQualifiedName);
+            if (data == null) return;
+            achievement.Unlocked = data.Unlocked;
         }
 
         foreach (var propInfo in tab.GetType().GetProperties().Where(x =>
-                                 x.PropertyType.IsSubclassOf(typeof(CountAchievement)) ||
                                  x.PropertyType == typeof(CountAchievement)))
         {
             var achievement = propInfo.GetValue(tab) as CountAchievement;
-            foreach (var data in BaseAchievements.Where(x => x.Name == achievement.Name))
-            {
-                achievement.CurrentValue = data.Progress;
-                achievement.Unlocked = data.Unlocked;
-            }
+            if (achievement == null) return;
+            var data =  BaseAchievements.Find(x =>
+                x.Name == achievement.Name && x.TabQualifiedName == achievement.GetType().AssemblyQualifiedName);
+            if (data == null) return;
+            achievement.CurrentValue = data.Progress;
+            achievement.Unlocked = data.Unlocked;
         }
     }
 
     public static void Save()
     {
-        var il2cppList = new Il2CppSystem.Collections.Generic.List<AchievementData>();
 
-        foreach (var item in BaseAchievements)
-        {
-            
-            var ilItem = new AchievementData();
-            ilItem.TabQualifiedName = item.TabQualifiedName;
-            ilItem.Name = item.Name;
-            ilItem.Unlocked = item.Unlocked;
-            ilItem.Progress = item.Progress;
-            il2cppList.Add(ilItem);
-        }
+        var directory = Path.GetDirectoryName(JsonPath);
 
-        File.WriteAllText(JsonPath, JsonConvert.SerializeObject(il2cppList, Formatting.Indented));
+        if (!Directory.Exists(directory))
+            Directory.CreateDirectory(directory);
+
+        File.WriteAllText(
+            JsonPath,
+            JsonSerializer.Serialize(
+                BaseAchievements,
+                new JsonSerializerOptions { WriteIndented = true }));
+        File.WriteAllText(JsonPath, JsonSerializer.Serialize(BaseAchievements, new JsonSerializerOptions { WriteIndented = true }));
     }
 
     public static void Load()
     {
-        if (!File.Exists(JsonPath)) return;
-        var json = File.ReadAllText(JsonPath);
-        var data = JsonConvert.DeserializeObject<Il2CppSystem.Collections.Generic.List<AchievementData>>(json);
-        BaseAchievements.Clear();
-        foreach (var thing in data)
+        if (!File.Exists(JsonPath))
         {
-            var otherthing = new AchievementData();
-            otherthing.TabQualifiedName = thing.TabQualifiedName;
-            otherthing.Name = thing.Name;
-            otherthing.Unlocked = thing.Unlocked;
-            otherthing.Progress = thing.Progress;
-            BaseAchievements.Add(otherthing);
+            BaseAchievements = new List<AchievementData>();
+            return;
         }
+
+        var json = File.ReadAllText(JsonPath);
+
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            BaseAchievements = new List<AchievementData>();
+            return;
+        }
+
+        BaseAchievements =
+            JsonSerializer.Deserialize<List<AchievementData>>(json)
+            ?? new List<AchievementData>();
     }
 }

@@ -21,7 +21,7 @@ public class BaseAchievement
     public void Unlock(bool showOnUI = true, bool doStorageUpdate = true)
     {
         Unlocked = true; //TODO Maybe remove this and make Unlocked redirect to a check
-        if (doStorageUpdate) AchievementStorage.AchievementStorageUpdateBase(this, true);
+        if (doStorageUpdate) AchievementStorage.AchievementStorageUpdate(this, true);
     }
 
     public BaseAchievement(string name, string description, string iconPath)

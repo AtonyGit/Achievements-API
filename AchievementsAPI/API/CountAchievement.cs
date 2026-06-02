@@ -45,9 +45,9 @@ public class CountAchievement : BaseAchievement
         if (CurrentValue >= RequiredValue)
         {
             Unlock(showOnUI, false);
-            AchievementStorage.AchievementStorageUpdateCount(this, value, true);
+            AchievementStorage.AchievementStorageUpdate(this, value, true);
             return;
         }
-        AchievementStorage.AchievementStorageUpdateCount(this, value, Unlocked);
+        AchievementStorage.AchievementStorageUpdate(this, value, Unlocked);
     }
 }
