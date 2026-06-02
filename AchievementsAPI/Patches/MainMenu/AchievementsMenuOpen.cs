@@ -10,5 +10,6 @@ public class AchievementsMenuOpen
         var menu = Object.Instantiate(Assets.achievementPrefab).GetComponent<AchievementsMenu>();
         menu.mainMenuManager = mainMenuManager;
         menu.gameObject.SetActive(true);
+        
     }
 }

@@ -38,6 +38,7 @@ namespace AchievementsAPI
                 {
                     SetTab(tab);
                 })));
+                AchievementStorage.AchievementStorageGet(tab);
             }
             SetTab(AchievementsManager.Tabs[0]);
             mainMenuManager?.DeactivateMainMenuUI();
@@ -48,6 +49,8 @@ namespace AchievementsAPI
             {
                 element.gameObject.Destroy();
             }
+
+            AchievementStorage.AchievementStorageGet(tab);
 
             titleText.Value.text = tab.Name;
             foreach (var propInfo in tab.GetType().GetProperties().Where(x => x.PropertyType.IsSubclassOf(typeof(BaseAchievement)) || x.PropertyType == typeof(BaseAchievement)))

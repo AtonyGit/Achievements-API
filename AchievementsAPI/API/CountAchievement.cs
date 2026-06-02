@@ -42,6 +42,12 @@ public class CountAchievement : BaseAchievement
     public void SetValue(int value, bool showOnUI = true)
     {
         CurrentValue = value;
-        if (CurrentValue >= RequiredValue) Unlock(showOnUI);
+        if (CurrentValue >= RequiredValue)
+        {
+            Unlock(showOnUI, false);
+            AchievementStorage.AchievementStorageUpdateCount(this, value, true);
+            return;
+        }
+        AchievementStorage.AchievementStorageUpdateCount(this, value, Unlocked);
     }
 }
