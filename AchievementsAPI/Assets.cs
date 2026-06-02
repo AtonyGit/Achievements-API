@@ -8,7 +8,7 @@ namespace AchievementsAPI;
 public class Assets
 {
     public static AssetBundle assetBundle { get; set; } = AssetBundleManager.Load("achievements");
-    public static GameObject achievementPrefab { get; set; } = assetBundle.LoadAsset<GameObject>("AchievementsMenu");
+    public static GameObject achievementPrefab { get; set; } = assetBundle.LoadAsset<GameObject>("AchievementsMenu").DontDestroy().DontDestroyOnLoad().DontDestroyOnLoad();
     
     public static Sprite StarSprite { get; set; } = assetBundle.LoadAsset<Sprite>("Star");
     
