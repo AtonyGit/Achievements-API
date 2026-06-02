@@ -17,6 +17,6 @@ public class ExampleTab : AchievementsTab
 
     public override Sprite GetIcon()
     {
-        return SpriteTools.LoadSpriteFromPath("AchievementsAPI.Resources.ExampleIcon.png", Assembly.GetCallingAssembly(), 100);;
+        return SpriteTools.LoadSpriteFromPath("AchievementsAPI.Resources.ExampleIcon.png", Assembly.GetCallingAssembly(), 100);
     }
 }
