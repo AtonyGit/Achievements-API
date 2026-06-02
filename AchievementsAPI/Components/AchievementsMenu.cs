@@ -65,6 +65,7 @@ namespace AchievementsAPI
                 if (achievement is CountAchievement countAchievement && countAchievement.RequiredValue > 0)
                 {
                     uiElement.iconImage.Value.fillAmount = (float) countAchievement.CurrentValue / countAchievement.RequiredValue;
+                    uiElement.descriptionText.Value.text += $" ({countAchievement.CurrentValue}/{countAchievement.RequiredValue})";
                 }
             }
 
