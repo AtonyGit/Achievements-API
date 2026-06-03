@@ -37,7 +37,7 @@ namespace AchievementsAPI
                 btn.onClick.AddListener(new Action((() =>
                 {
                     SetTab(tab);
-                    SetTab(tab); //Two calls needed to avoid UI bugs for some reason idk
+                    SetTab(tab); //Two calls needed to avoid UI bugs for some reason idk   lmao what
                 })));
                 AchievementStorage.AchievementStorageGet(tab);
             }

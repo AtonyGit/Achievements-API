@@ -44,10 +44,12 @@ public class CountAchievement : BaseAchievement
         CurrentValue = value;
         if (CurrentValue >= RequiredValue)
         {
-            Unlock(showOnUI, false);
+            Unlock(false, false);
             AchievementStorage.AchievementStorageUpdate(this, value, true);
+            if (showOnUI) AchievementToast.ShowAndDeleteToastCount(this, true);
             return;
         }
         AchievementStorage.AchievementStorageUpdate(this, value, Unlocked);
+        if (showOnUI) AchievementToast.ShowAndDeleteToastCount(this, Unlocked);
     }
 }
