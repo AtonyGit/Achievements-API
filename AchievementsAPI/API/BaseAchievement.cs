@@ -22,7 +22,7 @@ public class BaseAchievement
     {
         Unlocked = true; //TODO Maybe remove this and make Unlocked redirect to a check
         if (doStorageUpdate) AchievementStorage.AchievementStorageUpdate(this, true);
-        if (showOnUI) AchievementToast.ShowAndDeleteToastBase(this);
+        if (showOnUI) AchievementToast.ShowAndDeleteToast(this);
     }
 
     public BaseAchievement(string name, string description, string iconPath)
