@@ -36,7 +36,7 @@ public class AchievementToast
             toast.SetParent(canvas.transform);
             foreach (Transform t in canvas.transform)
             {
-                t.position += new Vector3(0, -5f, 0);
+                t.position += new Vector3(0, -5f, 10f);
             }
             return toast;
         }
@@ -96,8 +96,8 @@ public class AchievementToast
 
         currentToast = GetOrCreateToast();
         PopulateToast(currentToast, achievement.IconPath, achievement.Assembly,
-            title: $"{achievement.Name} ({achievement.CurrentValue}/{achievement.RequiredValue})",
-            subtitle: unlocked ? "Achievement Obtained!" : "Achievement Progressed!");
+            title: unlocked ? "Achievement Obtained!" : "Achievement Progressed!",
+            subtitle: $"{achievement.Name} ({achievement.CurrentValue}/{achievement.RequiredValue})");
 
         yield return Coroutines.Start(CoAnimateAndDestroyToast());
     }
