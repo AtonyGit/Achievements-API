@@ -50,6 +50,6 @@ public class CountAchievement : BaseAchievement
             return;
         }
         AchievementStorage.AchievementStorageUpdate(this, value, Unlocked);
-        if (showOnUI) AchievementToast.ShowAndDeleteToast(this, Unlocked);
+        if (showOnUI && !Unlocked) AchievementToast.ShowAndDeleteToast(this, Unlocked);
     }
 }
