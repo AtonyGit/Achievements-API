@@ -1,7 +1,6 @@
-﻿// This code is mostly from Pix (wanderingpix), so thanks Pix!
-// Pix also made a lot of assets: thanks for that too.
-using HarmonyLib;
+﻿using HarmonyLib;
 using System.Collections;
+using AchievementsAPI.API;
 using AchievementsAPI.MainMenu;
 
 namespace AchievementsAPI.MainMenu;
@@ -14,5 +13,6 @@ public class MainMenuPatches
     public static void OnMainMenuAwakePostfix(MainMenuManager __instance)
     {
         MainMenuButtons.SetUp(__instance);
+        AchievementLoadFix.Load();
     }
 }
