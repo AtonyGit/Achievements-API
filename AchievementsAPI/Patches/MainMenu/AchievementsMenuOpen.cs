@@ -11,7 +11,5 @@ public class AchievementsMenuOpen
         var menu = Object.Instantiate(Assets.achievementPrefab).GetComponent<AchievementsMenu>();
         menu.mainMenuManager = mainMenuManager;
         menu.gameObject.SetActive(true);
-        AchievementsTabSingleton<ExampleTab>.Instance.baseachievement3.Unlock();
-        AchievementsTabSingleton<ExampleTab>.Instance.achievement3.Increment(1);
     }
 }

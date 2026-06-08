@@ -1,4 +1,4 @@
-using System.Reflection;
+/*using System.Reflection;
 using AchievementsAPI.API;
 using UnityEngine;
 
@@ -20,4 +20,4 @@ public class ExampleTab : AchievementsTab
     {
         return SpriteTools.LoadSpriteFromPath("AchievementsAPI.Resources.ExampleIcon.png", Assembly.GetCallingAssembly(), 100);
     }
-}
+}*/

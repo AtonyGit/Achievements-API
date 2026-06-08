@@ -8,7 +8,7 @@ namespace AchievementsAPI.API;
 
 public static class AchievementsManager
 {
-    public static List<AchievementsTab> Tabs = new(new []{ new ExampleTab()});
+    public static List<AchievementsTab> Tabs = new();
     public static void Initialize()
     {
         IL2CPPChainloader.Instance.PluginLoad += (info, assembly, arg3) => InitializeForAssembly(assembly);
