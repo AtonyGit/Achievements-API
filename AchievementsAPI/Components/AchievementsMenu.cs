@@ -24,21 +24,24 @@ namespace AchievementsAPI
         public Il2CppReferenceField<Transform> tabsParent;
         public Il2CppReferenceField<GameObject> tabPrefab;
         public Il2CppReferenceField<TextMeshProUGUI> titleText;
+        public Il2CppReferenceField<TextMeshProUGUI> percentageText;
+        public Il2CppReferenceField<Image> progressBar;
         public MainMenuManager mainMenuManager;
 
         private void Start()
         {
             foreach (var tab in AchievementsManager.Tabs)
             {
-                var go = Object.Instantiate(tabPrefab.Value, tabsParent);
+                var go = Instantiate(tabPrefab.Value, tabsParent);
                 var btn = go.GetComponent<Button>();
                 var sprite = tab.GetIcon();
                 if (sprite) go.GetComponent<Image>().sprite = sprite;
-                btn.onClick.AddListener(new Action((() =>
+                btn.onClick.AddListener(new Action(() =>
                 {
                     SetTab(tab);
-                    SetTab(tab); //Two calls needed to avoid UI bugs for some reason idk   lmao what
-                })));
+                    mainMenuManager?.StartCoroutine(
+                        Effects.ActionAfterDelay(0.01f, new System.Action(() => SetTab(tab))));
+                }));
                 AchievementStorage.AchievementStorageGet(tab);
             }
             SetTab(AchievementsManager.Tabs[0]);
@@ -54,6 +57,8 @@ namespace AchievementsAPI
             AchievementStorage.AchievementStorageGet(tab);
 
             titleText.Value.text = tab.Name;
+            int achievementCount = 0;
+            int completedAchievementCount = 0;
             foreach (var propInfo in tab.GetType().GetProperties().Where(x => x.PropertyType.IsSubclassOf(typeof(BaseAchievement)) || x.PropertyType == typeof(BaseAchievement)))
             {
                 var achievement = (BaseAchievement) propInfo.GetValue(tab);
@@ -65,16 +70,27 @@ namespace AchievementsAPI
                 uiElement.descriptionText.Value.text = achievement.Description;
                 uiElement.iconImage.Value.sprite =
                     SpriteTools.LoadSpriteFromPath(achievement.IconPath, achievement.Assembly, 100);
+                uiElement.grayscaleImage.Value.sprite = uiElement.iconImage.Value.sprite;
                 
                 if (achievement is CountAchievement countAchievement && countAchievement.RequiredValue > 0)
                 {
                     uiElement.iconImage.Value.fillAmount = (float) countAchievement.CurrentValue / countAchievement.RequiredValue;
                     uiElement.descriptionText.Value.text += $" ({countAchievement.CurrentValue}/{countAchievement.RequiredValue})";
                 }
+                achievementCount++;
+                if (achievement.Unlocked) completedAchievementCount++;
             }
-
             if (!transform.GetChild(0).TryGetComponent<Image>(out var image)) return;
             Coroutines.Start(FadeColor(image, image.color, tab.GetTabColor(), 0.3f));
+            progressBar.Value.fillMethod = Image.FillMethod.Horizontal;
+            if (achievementCount != 0 || completedAchievementCount != 0) progressBar.Value.fillAmount = (float) completedAchievementCount / achievementCount;
+            else
+            {
+                progressBar.Value.fillAmount = 0;
+                return;
+            }
+            
+            percentageText.Value.text = $"{ (float) completedAchievementCount / achievementCount * 100}%";
         }
 
         public void Close()

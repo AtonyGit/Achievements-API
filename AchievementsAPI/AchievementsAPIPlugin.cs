@@ -19,7 +19,6 @@ public partial class AchievementsAPIPlugin : BasePlugin
     public override void Load()
     {
         AchievementsManager.Initialize();
-        AchievementStorage.Load();
         Harmony.PatchAll();
     }
 }

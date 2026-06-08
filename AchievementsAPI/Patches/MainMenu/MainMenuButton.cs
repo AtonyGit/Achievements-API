@@ -1,20 +1,11 @@
 ﻿// here too, this wouldn't have existed without Pix!
 
 
-using System;
 using System.Reflection;
-using HarmonyLib;
-using Il2CppInterop.Runtime.InteropTypes.Arrays;
-using Il2CppMono.Unity;
-using Reactor.Utilities.Extensions;
-using TMPro;
+using AchievementsAPI.MainMenu;
 using UnityEngine;
-using UnityEngine.UI;
-using Action = Il2CppSystem.Action;
-using Debug = Il2CppSystem.Diagnostics.Debug;
-using Object = UnityEngine.Object;
 
-namespace AchievementsAPI.MainMenu;
+namespace AchievementsAPI.Patches.MainMenu;
 
 public static class MainMenuButtons
 {
@@ -31,6 +22,6 @@ public static class MainMenuButtons
             button.inactiveSprites.GetComponent<SpriteRenderer>().color = Color.white;
         })));
         button.transform.SetParent(menu.transform.FindChild("MainUI/AspectScaler"));
-        button.transform.localPosition = new Vector3(5.6f, 1.55f, 5);
+        button.transform.localPosition = new Vector3(5.6f, 1.55f, 0.1f);
     }
 }

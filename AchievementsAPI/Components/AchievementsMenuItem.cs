@@ -15,5 +15,6 @@ namespace AchievementsAPI
         public Il2CppReferenceField<TextMeshProUGUI> nameText;
         public Il2CppReferenceField<TextMeshProUGUI> descriptionText;
         public Il2CppReferenceField<Image> iconImage;
+        public Il2CppReferenceField<Image> grayscaleImage;
     }
 }

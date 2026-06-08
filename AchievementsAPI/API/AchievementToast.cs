@@ -55,7 +55,7 @@ public class AchievementToast
         Vector3 onScreenPos = currentToast.localPosition;
         Vector3 offScreenRight = onScreenPos + new Vector3(1500, 0, 0);
         
-        yield return TransitionFade.Instance.StartCoroutine(
+        TransitionFade.Instance.StartCoroutine(
             Effects.Slide2D(currentToast, offScreenRight, onScreenPos, 0.7f));
 
         float time = 0;
@@ -68,6 +68,13 @@ public class AchievementToast
         yield return TransitionFade.Instance.StartCoroutine(
             Effects.Slide2D(currentToast, onScreenPos, offScreenRight, 0.3f));
 
+        time = 0;
+        while (time <= 0.5)
+        {
+            time += Time.deltaTime;
+            yield return null;
+        }
+        
         currentToast.gameObject.Destroy();
         yield break;
     }

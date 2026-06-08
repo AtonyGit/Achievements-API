@@ -11,10 +11,10 @@ namespace AchievementsAPI.API;
 [Serializable]
 public class AchievementData
 {
-    public string TabQualifiedName { get; set; }
     public string Name { get; set; }
     public bool Unlocked { get; set; }
     public int Progress { get; set; }
+    public string Id { get; set; }
 }
 
 
@@ -43,10 +43,10 @@ public class AchievementStorage
     public static AchievementData GetData(BaseAchievement achievement)
     {
         var data =  BaseAchievements.Find(x =>
-            x.Name == achievement.Name && x.TabQualifiedName == achievement.GetType().AssemblyQualifiedName);
+            x.Name == achievement.Name && x.Id == achievement.Id);
         if (data == null)
         {
-            data = new AchievementData { TabQualifiedName = achievement.GetType().AssemblyQualifiedName,  Name = achievement.Name, Unlocked = false };
+            data = new AchievementData { Id = achievement.Assembly.GetName().Name + "_" + achievement.Name, Name = achievement.Name, Unlocked = false };
             BaseAchievements.Add(data);
         }
         return data;
@@ -54,11 +54,18 @@ public class AchievementStorage
     
     public static AchievementData GetData(CountAchievement achievement)
     {
-        var data =  BaseAchievements.Find(x =>
-            x.Name == achievement.Name && x.TabQualifiedName == achievement.GetType().AssemblyQualifiedName);
+        var data = BaseAchievements.Find(x =>
+            x.Name == achievement.Name && x.Id == achievement.Id);
         if (data == null)
         {
-            data = new AchievementData { TabQualifiedName = achievement.GetType().AssemblyQualifiedName,  Name = achievement.Name, Unlocked = false, Progress = achievement.CurrentValue };
+            // Bug 1 fixed: Id was missing, causing Find() to never match on reload
+            data = new AchievementData
+            {
+                Id = achievement.Assembly.GetName().Name + "_" + achievement.Name,
+                Name = achievement.Name,
+                Unlocked = false,
+                Progress = achievement.CurrentValue
+            };
             BaseAchievements.Add(data);
         }
         return data;
@@ -66,15 +73,14 @@ public class AchievementStorage
 
     public static void AchievementStorageGet(AchievementsTab tab)
     {
-
         foreach (var propInfo in tab.GetType().GetProperties().Where(x =>
                                  x.PropertyType == typeof(BaseAchievement)))
         {
             var achievement = propInfo.GetValue(tab) as BaseAchievement;
-            if (achievement == null) return;
-            var data =  BaseAchievements.Find(x =>
-                x.Name == achievement.Name && x.TabQualifiedName == achievement.GetType().AssemblyQualifiedName);
-            if (data == null) return;
+            if (achievement == null) continue; // Bug 2 fixed: was return
+            var data = BaseAchievements.Find(x =>
+                x.Name == achievement.Name && x.Id == achievement.Id);
+            if (data == null) continue; // Bug 2 fixed: was return
             achievement.Unlocked = data.Unlocked;
         }
 
@@ -82,10 +88,10 @@ public class AchievementStorage
                                  x.PropertyType == typeof(CountAchievement)))
         {
             var achievement = propInfo.GetValue(tab) as CountAchievement;
-            if (achievement == null) return;
-            var data =  BaseAchievements.Find(x =>
-                x.Name == achievement.Name && x.TabQualifiedName == achievement.GetType().AssemblyQualifiedName);
-            if (data == null) return;
+            if (achievement == null) continue; // Bug 2 fixed: was return
+            var data = BaseAchievements.Find(x =>
+                x.Name == achievement.Name && x.Id == achievement.Id);
+            if (data == null) continue; // Bug 2 fixed: was return
             achievement.CurrentValue = data.Progress;
             achievement.Unlocked = data.Unlocked;
         }
@@ -93,18 +99,17 @@ public class AchievementStorage
 
     public static void Save()
     {
-
         var directory = Path.GetDirectoryName(JsonPath);
 
         if (!Directory.Exists(directory))
             Directory.CreateDirectory(directory);
 
+        // Bug 3 fixed: duplicate File.WriteAllText removed
         File.WriteAllText(
             JsonPath,
             JsonSerializer.Serialize(
                 BaseAchievements,
                 new JsonSerializerOptions { WriteIndented = true }));
-        File.WriteAllText(JsonPath, JsonSerializer.Serialize(BaseAchievements, new JsonSerializerOptions { WriteIndented = true }));
     }
 
     public static void Load()

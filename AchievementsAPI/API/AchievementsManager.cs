@@ -11,6 +11,7 @@ public static class AchievementsManager
     public static List<AchievementsTab> Tabs = new();
     public static void Initialize()
     {
+        Tabs.Add(new ExampleTab());
         IL2CPPChainloader.Instance.PluginLoad += (info, assembly, arg3) => InitializeForAssembly(assembly);
     }
 
