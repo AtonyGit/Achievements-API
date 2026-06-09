@@ -14,6 +14,11 @@ public abstract class AchievementsTab
     public abstract string Name { get; }
 
     /// <summary>
+    /// Wether the tab should be selectable in the Achievements Menu. Handy for custom UI's or internal achievements.
+    /// </summary>
+    public abstract bool IsSelectable { get; }
+
+    /// <summary>
     /// A method which gets the color of the Achievements Menu background when switching to this tab.
     /// </summary>
     public virtual Color GetTabColor()

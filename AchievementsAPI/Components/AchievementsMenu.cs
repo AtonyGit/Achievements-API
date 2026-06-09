@@ -32,6 +32,7 @@ namespace AchievementsAPI
         {
             foreach (var tab in AchievementsManager.Tabs)
             {
+                if (!tab.IsSelectable) continue;
                 var go = Instantiate(tabPrefab.Value, tabsParent);
                 var btn = go.GetComponent<Button>();
                 var sprite = tab.GetIcon();

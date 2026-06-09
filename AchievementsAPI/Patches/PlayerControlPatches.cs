@@ -4,6 +4,8 @@ using HarmonyLib;
 
 namespace AchievementsAPI.Patches;
 
+// For resetting achievements that don't persist
+
 [HarmonyPatch]
 public class PlayerControlPatches
 {
