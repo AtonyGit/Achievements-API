@@ -77,10 +77,10 @@ public class AchievementStorage
                                  x.PropertyType == typeof(BaseAchievement)))
         {
             var achievement = propInfo.GetValue(tab) as BaseAchievement;
-            if (achievement == null) continue; // Bug 2 fixed: was return
+            if (achievement == null) continue;
             var data = BaseAchievements.Find(x =>
                 x.Name == achievement.Name && x.Id == achievement.Id);
-            if (data == null) continue; // Bug 2 fixed: was return
+            if (data == null) continue;
             achievement.Unlocked = data.Unlocked;
         }
 
@@ -88,10 +88,10 @@ public class AchievementStorage
                                  x.PropertyType == typeof(CountAchievement)))
         {
             var achievement = propInfo.GetValue(tab) as CountAchievement;
-            if (achievement == null) continue; // Bug 2 fixed: was return
+            if (achievement == null) continue;
             var data = BaseAchievements.Find(x =>
                 x.Name == achievement.Name && x.Id == achievement.Id);
-            if (data == null) continue; // Bug 2 fixed: was return
+            if (data == null) continue;
             achievement.CurrentValue = data.Progress;
             achievement.Unlocked = data.Unlocked;
         }
@@ -103,8 +103,6 @@ public class AchievementStorage
 
         if (!Directory.Exists(directory))
             Directory.CreateDirectory(directory);
-
-        // Bug 3 fixed: duplicate File.WriteAllText removed
         File.WriteAllText(
             JsonPath,
             JsonSerializer.Serialize(

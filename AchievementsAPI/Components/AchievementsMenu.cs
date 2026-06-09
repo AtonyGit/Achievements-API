@@ -27,7 +27,7 @@ namespace AchievementsAPI
         public Il2CppReferenceField<TextMeshProUGUI> percentageText;
         public Il2CppReferenceField<Image> progressBar;
         public MainMenuManager mainMenuManager;
-
+        public List<AchievementsMenuItem> items = new();
         private void Start()
         {
             foreach (var tab in AchievementsManager.Tabs)
@@ -50,11 +50,12 @@ namespace AchievementsAPI
         }
         private void SetTab(AchievementsTab tab)
         {
-            foreach (var element in GetComponentsInChildren<AchievementsMenuItem>())
+            foreach (var element in items)
             {
                 element.gameObject.Destroy();
             }
 
+            items = new();
             AchievementStorage.AchievementStorageGet(tab);
 
             titleText.Value.text = tab.Name;
@@ -72,7 +73,6 @@ namespace AchievementsAPI
                 uiElement.iconImage.Value.sprite =
                     SpriteTools.LoadSpriteFromPath(achievement.IconPath, achievement.Assembly, 100);
                 uiElement.grayscaleImage.Value.sprite = uiElement.iconImage.Value.sprite;
-                
                 if (achievement is CountAchievement countAchievement && countAchievement.RequiredValue > 0)
                 {
                     uiElement.iconImage.Value.fillAmount = (float) countAchievement.CurrentValue / countAchievement.RequiredValue;
@@ -80,6 +80,8 @@ namespace AchievementsAPI
                 }
                 achievementCount++;
                 if (achievement.Unlocked) completedAchievementCount++;
+                
+                items.Add(uiElement);
             }
             if (!transform.GetChild(0).TryGetComponent<Image>(out var image)) return;
             Coroutines.Start(FadeColor(image, image.color, tab.GetTabColor(), 0.3f));
@@ -91,7 +93,7 @@ namespace AchievementsAPI
                 return;
             }
             
-            percentageText.Value.text = $"{ (float) completedAchievementCount / achievementCount * 100}%";
+            percentageText.Value.text = $"{(double) completedAchievementCount / achievementCount * 100}%";
         }
 
         public void Close()
@@ -99,7 +101,27 @@ namespace AchievementsAPI
             mainMenuManager?.ActivateMainMenuUI();
             gameObject.Destroy();
         }
+        public void OnSearchbarChanged(string val)
+        {
+            int unlockedCount = 0;
+            int lockedCount = 0;
+            foreach (var element in items)
+            {
+                element.gameObject.SetActive(element.nameText.Value.text.ToLower().Contains(val.ToLower()));
 
+                if (!element.gameObject.activeSelf) continue;
+                
+                if (element.transform.IsChildOf(unlockedContentParent)) unlockedCount++;
+                if (element.transform.IsChildOf(lockedContentParent)) lockedCount++;
+            }
+            unlockedContentParent.Value.gameObject.SetActive(unlockedCount > 0);
+            lockedContentParent.Value.gameObject.SetActive(lockedCount > 0);
+            
+            foreach (var scroll in GetComponentsInChildren<ScrollRect>())
+            {
+                scroll.UpdateBounds();
+            }
+        }
         public IEnumerator FadeColor(Image img, Color origin, Color target, float duration)
         {
             for (float i = 0; i < duration; i += Time.deltaTime)

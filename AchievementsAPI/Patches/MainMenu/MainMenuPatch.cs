@@ -1,24 +1,21 @@
-﻿using HarmonyLib;
-using System.Collections;
-using AchievementsAPI.API;
-using AchievementsAPI.MainMenu;
-using AchievementsAPI.Patches.MainMenu;
+﻿using AchievementsAPI.API;
+using HarmonyLib;
 
-namespace AchievementsAPI.MainMenu;
+namespace AchievementsAPI.Patches.MainMenu;
 [HarmonyPatch]
 public class MainMenuPatches
 {
-    private static bool storageInitialized = false;
+    private static bool _storageInitialized = false;
     [HarmonyPatch(typeof(MainMenuManager), nameof(MainMenuManager.Awake))]
     [HarmonyPatch(Priority.Last)]
     [HarmonyPostfix]
     public static void OnMainMenuAwakePostfix(MainMenuManager __instance)
     {
         MainMenuButtons.SetUp(__instance);
-        if (!storageInitialized)
+        if (!_storageInitialized)
         {
             AchievementStorage.Load();
-            storageInitialized = true;
+            _storageInitialized = true;
         }
         AchievementsTabSingleton<ExampleTab>.Instance.achievement.Unlock();
     }
