@@ -13,6 +13,6 @@
 
 > Will probably hopefully be used in:
 > - Stargazer
-> - NewMod (maybe)
+> - NewMod
 
 > Thanks [pix](https://github.com/wanderingpix) for the help!
