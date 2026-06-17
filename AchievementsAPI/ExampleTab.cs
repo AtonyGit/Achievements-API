@@ -6,7 +6,7 @@ namespace AchievementsAPI;
 
 public class ExampleTab : AchievementsTab
 {
-    public override string Name => "Example Tab OwO";
+    public override string Name => "Example Tab";
     public override bool IsSelectable => true;
     public override Color GetTabColor()
     {

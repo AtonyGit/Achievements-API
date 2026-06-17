@@ -19,11 +19,16 @@ public class CountAchievement : BaseAchievement
     /// Defines if the progress persists between games.
     /// </summary>
     public bool ProgressPersists;
-    public CountAchievement(string name, string description, string iconPath, int currentValue, int requiredValue, bool progressPersists) : base(name, description, iconPath)
+    /// <summary>
+    /// Wether to hide the achievement's progress (if the achievement is hidden)
+    /// </summary>
+    public bool HideProgress;
+    public CountAchievement(string name, string description, string iconPath, int currentValue, int requiredValue, bool progressPersists = true, int rarity = 0, bool hidden = false, bool hideRarity = true, bool hideProgress = false) : base(name, description, iconPath, rarity, hidden, hideRarity)
     {
         CurrentValue = currentValue;
         RequiredValue = requiredValue;
         ProgressPersists = progressPersists;
+        HideProgress = hideProgress;
     }
     /// <summary>
     /// Method to increment the progress of this achievement.

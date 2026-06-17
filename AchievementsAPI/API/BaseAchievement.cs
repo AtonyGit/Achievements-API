@@ -8,10 +8,35 @@
     /// </summary>
     public class BaseAchievement
     {
+        /// <summary>
+        /// The achievement's name
+        /// </summary>
         public string Name;
+        /// <summary>
+        /// The achievement's description
+        /// </summary>
         public string Description;
+        /// <summary>
+        /// The achievement's icon's path
+        /// </summary>
         public string IconPath;
         public bool Unlocked;
+        /// <summary>
+        /// The achievement's rarity:
+        /// 0 = default (common)
+        /// 1 = rare (blue)
+        /// 2 = epic (purple)
+        /// 3 = legendary (yellow)
+        /// </summary>
+        public int Rarity;
+        /// <summary>
+        /// Wether the achievement is hidden or not (hidden achievements get the default icon and have their name and description set to "Hidden Achievement" until unlocked)
+        /// </summary>
+        public bool Hidden;
+        /// <summary>
+        /// Wether to hide the achievement's rarity (if the achievement is hidden)
+        /// </summary>
+        public bool HideRarity;
         public Assembly Assembly;
         public string Id;
         /// <summary>
@@ -27,13 +52,17 @@
             if (doStorageUpdate) AchievementStorage.AchievementStorageUpdate(this, true);
             
         }
-
-        public BaseAchievement(string name, string description, string iconPath)
+        
+        
+        public BaseAchievement(string name, string description, string iconPath, int rarity = 0, bool hidden = false, bool hideRarity = true)
         {
             Name = name;
             Description = description;
             IconPath = iconPath;
             Assembly = Assembly.GetCallingAssembly();
             Id = Assembly.GetName().Name + "_" + Name;
+            Rarity = rarity;
+            Hidden = hidden;
+            HideRarity = hideRarity;
         }
     }

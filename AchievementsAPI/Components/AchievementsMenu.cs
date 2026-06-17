@@ -68,15 +68,32 @@ namespace AchievementsAPI
 
                 var parent = achievement.Unlocked ? unlockedContentParent.Value : lockedContentParent.Value;
                 var uiElement = Object.Instantiate(achievementItemPrefab.Value, parent).GetComponent<AchievementsMenuItem>();
-                uiElement.nameText.Value.text = achievement.Name;
-                uiElement.descriptionText.Value.text = achievement.Description;
-                uiElement.iconImage.Value.sprite =
-                    SpriteTools.LoadSpriteFromPath(achievement.IconPath, achievement.Assembly, 100);
+                uiElement.nameText.Value.text = (!achievement.Hidden || achievement.Unlocked) ? achievement.Name : "Hidden Achievement";
+                uiElement.descriptionText.Value.text = (!achievement.Hidden || achievement.Unlocked) ? achievement.Description : "Hidden Achievement";
+                uiElement.iconImage.Value.sprite = (!achievement.Hidden || achievement.Unlocked) ?
+                    SpriteTools.LoadSpriteFromPath(achievement.IconPath, achievement.Assembly, 100) : SpriteTools.LoadSpriteFromPath("AchievementsAPI.Resources.ExampleIcon.png", Assembly.GetCallingAssembly(), 100);;
                 uiElement.grayscaleImage.Value.sprite = uiElement.iconImage.Value.sprite;
-                if (achievement is CountAchievement countAchievement && countAchievement.RequiredValue > 0)
+                if (achievement is CountAchievement countAchievement && countAchievement.RequiredValue > 0 && !(countAchievement.HideProgress && countAchievement.Hidden))
                 {
                     uiElement.iconImage.Value.fillAmount = (float) countAchievement.CurrentValue / countAchievement.RequiredValue;
                     uiElement.descriptionText.Value.text += $" ({countAchievement.CurrentValue}/{countAchievement.RequiredValue})";
+                }
+
+                if (achievement.HideRarity && !achievement.Unlocked && achievement.Hidden)
+                {
+                    
+                }
+                else if (achievement.Rarity == 1)
+                {
+                    uiElement.GetComponent<Image>().color = new Color32(112, 208, 255, 255);
+                }
+                else if (achievement.Rarity == 2)
+                {
+                    uiElement.GetComponent<Image>().color = new Color32(187, 88, 255, 255);
+                }
+                else if (achievement.Rarity == 3)
+                {
+                    uiElement.GetComponent<Image>().color = new Color32(255, 226, 64, 255);
                 }
                 achievementCount++;
                 if (achievement.Unlocked) completedAchievementCount++;
