@@ -47,6 +47,7 @@ namespace AchievementsAPI
             }
             SetTab(AchievementsManager.Tabs[0]);
             mainMenuManager?.DeactivateMainMenuUI();
+
         }
         private void SetTab(AchievementsTab tab)
         {

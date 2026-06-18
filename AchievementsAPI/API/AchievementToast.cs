@@ -102,9 +102,18 @@ public class AchievementToast
         }
 
         currentToast = GetOrCreateToast();
-        PopulateToast(currentToast, achievement.IconPath, achievement.Assembly,
-            title: unlocked ? "Achievement Obtained!" : "Achievement Progressed!",
-            subtitle: $"{achievement.Name} ({achievement.CurrentValue}/{achievement.RequiredValue})");
+        if (achievement.Hidden && achievement.HideProgress && !unlocked)
+        {
+            PopulateToast(currentToast, achievement.IconPath, achievement.Assembly,
+                title: "Achievement Progressed!",
+                subtitle: $"Hidden Achievement");
+        }
+        else
+        {
+            PopulateToast(currentToast, achievement.IconPath, achievement.Assembly,
+                title: unlocked ? "Achievement Obtained!" : "Achievement Progressed!",
+                subtitle: $"{achievement.Name} ({achievement.CurrentValue}/{achievement.RequiredValue})");
+        }
 
         yield return Coroutines.Start(CoAnimateAndDestroyToast());
     }

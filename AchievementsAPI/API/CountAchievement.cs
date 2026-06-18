@@ -53,7 +53,7 @@ public class CountAchievement : BaseAchievement
         {
             Unlock(false, false);
             AchievementStorage.AchievementStorageUpdate(this, value, true);
-            if (showOnUI) AchievementToast.ShowAndDeleteToast(this, true);
+            if (showOnUI && !Hidden) AchievementToast.ShowAndDeleteToast(this, true);
             return;
         }
         AchievementStorage.AchievementStorageUpdate(this, value, Unlocked);
