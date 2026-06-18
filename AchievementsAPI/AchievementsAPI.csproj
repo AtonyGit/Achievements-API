@@ -4,9 +4,9 @@
         <LangVersion>latest</LangVersion>
         <DebugType>embedded</DebugType>
 
-        <VersionPrefix>1.0.0</VersionPrefix>
-        <VersionSuffix>dev</VersionSuffix>
-        <Description>Mod generated using Reactor Template</Description>
+        <VersionPrefix>1.1.1</VersionPrefix>
+        <VersionSuffix></VersionSuffix>
+        <Description>Achievements API for Among Us</Description>
         <!-- <Authors>your name</Authors> -->
     </PropertyGroup>
 
