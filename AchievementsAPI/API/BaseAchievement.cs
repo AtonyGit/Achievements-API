@@ -54,12 +54,12 @@
         }
         
         
-        public BaseAchievement(string name, string description, string iconPath, int rarity = 0, bool hidden = false, bool hideRarity = true)
+        public BaseAchievement(string name, string description, string iconPath, int rarity = 0, bool hidden = false, bool hideRarity = true, Assembly? assembly = null)
         {
             Name = name;
             Description = description;
             IconPath = iconPath;
-            Assembly = Assembly.GetCallingAssembly();
+            Assembly = assembly ?? Assembly.GetCallingAssembly();
             Id = Assembly.GetName().Name + "_" + Name;
             Rarity = rarity;
             Hidden = hidden;
