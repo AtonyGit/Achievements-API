@@ -53,7 +53,7 @@ namespace AchievementsAPI
         {
             foreach (var element in items)
             {
-                element.gameObject.Destroy();
+                element.gameObject.DeepDestroy();
             }
 
             items = new();
@@ -117,7 +117,7 @@ namespace AchievementsAPI
         public void Close()
         {
             mainMenuManager?.ActivateMainMenuUI();
-            gameObject.Destroy();
+            gameObject.DeepDestroy();
         }
         public void OnSearchbarChanged(string val)
         {

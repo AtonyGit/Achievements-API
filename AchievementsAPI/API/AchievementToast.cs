@@ -75,7 +75,7 @@ public class AchievementToast
             yield return null;
         }
         
-        currentToast.gameObject.Destroy();
+        currentToast.gameObject.DeepDestroy();
         yield break;
     }
 
