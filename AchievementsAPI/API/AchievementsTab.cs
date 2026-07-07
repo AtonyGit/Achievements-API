@@ -1,3 +1,4 @@
+using System.Reflection;
 using JetBrains.Annotations;
 using UnityEngine;
 
@@ -26,11 +27,17 @@ public abstract class AchievementsTab
         return new Color32(255, 255, 150, 255);
     }
     /// <summary>
+    /// The path to the tabs icon, for if you don't have it as a Sprite
+    /// </summary>
+    public virtual string IconPath => "AchievementsAPI.Resources.ExampleIcon.png";
+    
+    
+    /// <summary>
     /// A Method which gets the icon of the tab, used for its icon in the Achievements Menu. 
     /// </summary>
     /// <returns></returns>
     public virtual Sprite GetIcon()
     {
-        return null;
+        return SpriteTools.LoadSpriteFromPath(IconPath, Assembly.GetCallingAssembly(), 100);
     }
 }

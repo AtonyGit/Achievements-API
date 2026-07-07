@@ -4,8 +4,8 @@
         <LangVersion>latest</LangVersion>
         <DebugType>embedded</DebugType>
 
-        <VersionPrefix>1.1.1</VersionPrefix>
-        <VersionSuffix></VersionSuffix>
+        <VersionPrefix>1.1.3</VersionPrefix>
+        <VersionSuffix>dev</VersionSuffix>
         <Description>Achievements API for Among Us</Description>
         <!-- <Authors>your name</Authors> -->
     </PropertyGroup>

@@ -72,7 +72,7 @@ namespace AchievementsAPI
                 uiElement.nameText.Value.text = (!achievement.Hidden || achievement.Unlocked) ? achievement.Name : "Hidden Achievement";
                 uiElement.descriptionText.Value.text = (!achievement.Hidden || achievement.Unlocked) ? achievement.Description : "Hidden Achievement";
                 uiElement.iconImage.Value.sprite = (!achievement.Hidden || achievement.Unlocked) ?
-                    SpriteTools.LoadSpriteFromPath(achievement.IconPath, achievement.Assembly, 100) : SpriteTools.LoadSpriteFromPath("AchievementsAPI.Resources.ExampleIcon.png", Assembly.GetCallingAssembly(), 100);;
+                    achievement.Icon : SpriteTools.LoadSpriteFromPath("AchievementsAPI.Resources.ExampleIcon.png", Assembly.GetCallingAssembly(), 100);
                 uiElement.grayscaleImage.Value.sprite = uiElement.iconImage.Value.sprite;
                 if (achievement is CountAchievement countAchievement && countAchievement.RequiredValue > 0 && !(countAchievement.HideProgress && countAchievement.Hidden))
                 {

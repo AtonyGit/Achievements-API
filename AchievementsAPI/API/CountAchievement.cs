@@ -1,3 +1,4 @@
+using UnityEngine;
 using UnityEngine.SocialPlatforms.Impl;
 
 namespace AchievementsAPI.API;
@@ -24,6 +25,13 @@ public class CountAchievement : BaseAchievement
     /// </summary>
     public bool HideProgress;
     public CountAchievement(string name, string description, string iconPath, int currentValue, int requiredValue, bool progressPersists = true, int rarity = 0, bool hidden = false, bool hideRarity = true, bool hideProgress = false) : base(name, description, iconPath, rarity, hidden, hideRarity, System.Reflection.Assembly.GetCallingAssembly())
+    {
+        CurrentValue = currentValue;
+        RequiredValue = requiredValue;
+        ProgressPersists = progressPersists;
+        HideProgress = hideProgress;
+    }
+    public CountAchievement(string name, string description, Sprite icon, int currentValue, int requiredValue, bool progressPersists = true, int rarity = 0, bool hidden = false, bool hideRarity = true, bool hideProgress = false) : base(name, description, icon, rarity, hidden, hideRarity, System.Reflection.Assembly.GetCallingAssembly())
     {
         CurrentValue = currentValue;
         RequiredValue = requiredValue;

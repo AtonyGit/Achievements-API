@@ -42,10 +42,9 @@ public class AchievementToast
         }
     }
 
-    private static void PopulateToast(Transform toast, string iconPath, System.Reflection.Assembly assembly, string title, string subtitle)
+    private static void PopulateToast(Transform toast, Sprite icon, System.Reflection.Assembly assembly, string title, string subtitle)
     {
-        toast.FindChild("AchievementIcon").gameObject.GetComponent<Image>().sprite =
-            SpriteTools.LoadSpriteFromPath(iconPath, assembly, 100);
+        toast.FindChild("AchievementIcon").gameObject.GetComponent<Image>().sprite = icon;
         toast.FindChild("AchievementName").gameObject.GetComponent<TMPro.TextMeshProUGUI>().text = title;
         toast.FindChild("AchievementObtainedText").gameObject.GetComponent<TMPro.TextMeshProUGUI>().text = subtitle;
     }
@@ -87,7 +86,7 @@ public class AchievementToast
         }
 
         currentToast = GetOrCreateToast();
-        PopulateToast(currentToast, achievement.IconPath, achievement.Assembly,
+        PopulateToast(currentToast, achievement.Icon, achievement.Assembly,
             title: "Achievement Obtained!",
             subtitle: achievement.Name);
 
@@ -104,13 +103,13 @@ public class AchievementToast
         currentToast = GetOrCreateToast();
         if (achievement.Hidden && achievement.HideProgress && !unlocked)
         {
-            PopulateToast(currentToast, achievement.IconPath, achievement.Assembly,
+            PopulateToast(currentToast, achievement.Icon, achievement.Assembly,
                 title: "Achievement Progressed!",
                 subtitle: $"Hidden Achievement");
         }
         else
         {
-            PopulateToast(currentToast, achievement.IconPath, achievement.Assembly,
+            PopulateToast(currentToast, achievement.Icon, achievement.Assembly,
                 title: unlocked ? "Achievement Obtained!" : "Achievement Progressed!",
                 subtitle: $"{achievement.Name} ({achievement.CurrentValue}/{achievement.RequiredValue})");
         }

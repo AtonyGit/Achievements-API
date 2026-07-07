@@ -20,6 +20,10 @@
         /// The achievement's icon's path
         /// </summary>
         public string IconPath;
+        /// <summary>
+        /// The achievement's icon
+        /// </summary>
+        public Sprite Icon;
         public bool Unlocked;
         /// <summary>
         /// The achievement's rarity:
@@ -60,6 +64,18 @@
             Description = description;
             IconPath = iconPath;
             Assembly = assembly ?? Assembly.GetCallingAssembly();
+            Icon = SpriteTools.LoadSpriteFromPath(IconPath, Assembly, 100);
+            Id = Assembly.GetName().Name + "_" + Name;
+            Rarity = rarity;
+            Hidden = hidden;
+            HideRarity = hideRarity;
+        }
+        public BaseAchievement(string name, string description, Sprite icon, int rarity = 0, bool hidden = false, bool hideRarity = true, Assembly? assembly = null)
+        {
+            Name = name;
+            Description = description;
+            Assembly = assembly ?? Assembly.GetCallingAssembly();
+            Icon = icon;
             Id = Assembly.GetName().Name + "_" + Name;
             Rarity = rarity;
             Hidden = hidden;
