@@ -8,6 +8,8 @@
         <VersionSuffix>dev</VersionSuffix>
         <Description>Achievements API for Among Us</Description>
         <!-- <Authors>your name</Authors> -->
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
+        <IncludeContentInPack>true</IncludeContentInPack>
     </PropertyGroup>
 
     <ItemGroup>
