@@ -81,6 +81,11 @@ namespace AchievementsAPI
                     uiElement.descriptionText.Value.text += $" ({countAchievement.CurrentValue}/{countAchievement.RequiredValue})";
                 }
 
+                uiElement.nameText.Value.transform.localPosition += achievement.MenuTitleOffset;
+                uiElement.descriptionText.Value.transform.localPosition += achievement.MenuDescOffset;
+                uiElement.grayscaleImage.Value.transform.localPosition += achievement.MenuIconOffset;
+                uiElement.iconImage.Value.transform.localPosition += achievement.MenuIconOffset;
+
                 var img = uiElement.GetComponent<Image>();
                 if (achievement.MenuBgSprite != null)
                 {

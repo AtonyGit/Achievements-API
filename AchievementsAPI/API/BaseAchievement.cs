@@ -37,6 +37,31 @@
         public virtual Sprite? ToastBgSprite => null;
 
         /// <summary>
+        /// Gets the offset for the achievement's icon in the achievements menu.
+        /// </summary>
+        public virtual Vector3 MenuIconOffset => new(0, 0);
+
+        /// <summary>
+        /// Gets the offset for the achievement's title in the achievements menu.
+        /// </summary>
+        public virtual Vector3 MenuTitleOffset => new(0, 0);
+
+        /// <summary>
+        /// Gets the offset for the achievement's description in the achievements menu.
+        /// </summary>
+        public virtual Vector3 MenuDescOffset => new(0, 0);
+
+        /// <summary>
+        /// Gets the offset for the achievement's "Obtained" text in the toast pop up.
+        /// </summary>
+        public virtual Vector3 ToastObtainedOffset => new(0, 0);
+
+        /// <summary>
+        /// Gets the offset for the achievement's title in the toast pop up.
+        /// </summary>
+        public virtual Vector3 ToastTitleOffset => new(0, 0);
+
+        /// <summary>
         /// Whether the achievement's background becomes colored.
         /// </summary>
         public bool RarityOnBgSprite = true;
