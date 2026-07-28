@@ -52,6 +52,21 @@
         public virtual Vector3 MenuDescOffset => new(0, 0);
 
         /// <summary>
+        /// Gets the offset for the achievement's sub-icon, if any.
+        /// </summary>
+        public virtual Vector3 MenuSubIconOffset => new(0, 0);
+
+        /// <summary>
+        /// Gets the scale for the achievement's sub-icon, if any.
+        /// </summary>
+        public virtual Vector3 MenuSubIconScale => new(0.5f, 0.5f, 1);
+
+        /// <summary>
+        /// Gets the achievement's sub-icon, if any.
+        /// </summary>
+        public virtual Sprite? MenuSubIcon => null;
+
+        /// <summary>
         /// Gets the offset for the achievement's "Obtained" text in the toast pop up.
         /// </summary>
         public virtual Vector3 ToastObtainedOffset => new(0, 0);
