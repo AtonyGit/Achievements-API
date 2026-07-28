@@ -1,8 +1,5 @@
-using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Reflection;
 using AchievementsAPI.API;
 using Il2CppInterop.Runtime.InteropTypes.Fields;
@@ -28,6 +25,7 @@ namespace AchievementsAPI
         public Il2CppReferenceField<TextMeshProUGUI> percentageText;
         public Il2CppReferenceField<Image> progressBar;
         public MainMenuManager mainMenuManager;
+        public OptionsMenuBehaviour OptionsMenuBehaviour;
         public List<AchievementsMenuItem> items = new();
         private void Start()
         {
@@ -41,18 +39,34 @@ namespace AchievementsAPI
                 btn.onClick.AddListener(new Action(() =>
                 {
                     SetTab(tab);
-                    mainMenuManager?.StartCoroutine(
-                        Effects.ActionAfterDelay(0.01f, new System.Action(() => SetTab(tab))));
+                    if (mainMenuManager)
+                    {
+                        mainMenuManager.StartCoroutine(
+                            Effects.ActionAfterDelay(0.01f, new System.Action(() => SetTab(tab))));
+                    }
+                    else if (OptionsMenuBehaviour)
+                    {
+                        OptionsMenuBehaviour.gameObject.SetActive(true);
+                        OptionsMenuBehaviour.StartCoroutine(Effects.ActionAfterDelay(0.01f, new System.Action(() => SetTab(tab, true))));
+                    }
                 }));
                 AchievementStorage.AchievementStorageGet(tab);
             }
 
             var firstTab = AchievementsManager.Tabs.FirstOrDefault(x => x.IsSelectable) ?? AchievementsManager.Tabs[0];
             SetTab(firstTab);
-            mainMenuManager?.DeactivateMainMenuUI();
+            if (mainMenuManager)
+            {
+                mainMenuManager.DeactivateMainMenuUI();
+            }
+            else if (OptionsMenuBehaviour)
+            {
+                OptionsMenuBehaviour.gameObject.SetActive(false);
+                OptionsMenuBehaviour.Background.enabled = false;
+            }
 
         }
-        private void SetTab(AchievementsTab tab)
+        private void SetTab(AchievementsTab tab, bool inOptionsMenu = false)
         {
             foreach (var element in items)
             {
@@ -122,6 +136,11 @@ namespace AchievementsAPI
                 
                 items.Add(uiElement);
             }
+
+            if (inOptionsMenu && OptionsMenuBehaviour)
+            {
+                OptionsMenuBehaviour.gameObject.SetActive(false);
+            }
             if (!transform.GetChild(0).TryGetComponent<Image>(out var image)) return;
             Coroutines.Start(FadeColor(image, image.color, tab.GetTabColor(), 0.3f));
             progressBar.Value.fillMethod = Image.FillMethod.Horizontal;
@@ -138,7 +157,15 @@ namespace AchievementsAPI
 
         public void Close()
         {
-            mainMenuManager?.ActivateMainMenuUI();
+            if (mainMenuManager)
+            {
+                mainMenuManager.ActivateMainMenuUI();
+            }
+            else if (OptionsMenuBehaviour)
+            {
+                OptionsMenuBehaviour.gameObject.SetActive(true);
+                OptionsMenuBehaviour.Background.enabled = true;
+            }
             gameObject.Destroy();
         }
         public void OnSearchbarChanged(string val)
