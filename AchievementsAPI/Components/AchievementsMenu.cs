@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using AchievementsAPI.API;
@@ -110,8 +111,9 @@ namespace AchievementsAPI
                 progressBar.Value.fillAmount = 0;
                 return;
             }
-            
-            percentageText.Value.text = $"{(double) completedAchievementCount / achievementCount * 100}%";
+
+            double percent = (double) completedAchievementCount / achievementCount * 100f;
+            percentageText.Value.text = $"{percent.ToString("0.00", CultureInfo.InvariantCulture)}%";
         }
 
         public void Close()
