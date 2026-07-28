@@ -20,7 +20,11 @@ public class MainMenuPatches
             {
                 AchievementStorage.AchievementStorageGet(tab);
             }
+
+            if (AchievementsManager.Tabs.Count == 1)
+            {
+                AchievementsTabSingleton<ExampleTab>.Instance.achievement.Unlock();
+            }
         }
-        AchievementsTabSingleton<ExampleTab>.Instance.achievement.Unlock();
     }
 }
