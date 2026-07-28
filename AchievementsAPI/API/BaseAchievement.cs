@@ -26,6 +26,21 @@
         /// </summary>
         public virtual Sprite Icon => _sprite;
 
+        /// <summary>
+        /// Gets the background sprite for the achievement in the achievements menu.
+        /// </summary>
+        public virtual Sprite? MenuBgSprite => null;
+
+        /// <summary>
+        /// Gets the background sprite for the achievement in the toast pop up.
+        /// </summary>
+        public virtual Sprite? ToastBgSprite => null;
+
+        /// <summary>
+        /// Whether the achievement's background becomes colored.
+        /// </summary>
+        public bool RarityOnBgSprite = true;
+
         private Sprite _sprite;
         public bool Unlocked;
         /// <summary>

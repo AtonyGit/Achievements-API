@@ -81,22 +81,27 @@ namespace AchievementsAPI
                     uiElement.descriptionText.Value.text += $" ({countAchievement.CurrentValue}/{countAchievement.RequiredValue})";
                 }
 
-                if (achievement.HideRarity && !achievement.Unlocked && achievement.Hidden)
+                var img = uiElement.GetComponent<Image>();
+                if (achievement.MenuBgSprite != null)
                 {
-                    
+                    img.m_Sprite = achievement.MenuBgSprite;
                 }
-                else if (achievement.Rarity == 1)
+                if (achievement.RarityOnBgSprite && !(!achievement.HideRarity && !achievement.Unlocked && achievement.Hidden))
                 {
-                    uiElement.GetComponent<Image>().color = new Color32(112, 208, 255, 255);
+                    if (achievement.Rarity == 1)
+                    {
+                        img.color = new Color32(112, 208, 255, 255);
+                    }
+                    else if (achievement.Rarity == 2)
+                    {
+                        img.color = new Color32(187, 88, 255, 255);
+                    }
+                    else if (achievement.Rarity == 3)
+                    {
+                        img.color = new Color32(255, 226, 64, 255);
+                    }
                 }
-                else if (achievement.Rarity == 2)
-                {
-                    uiElement.GetComponent<Image>().color = new Color32(187, 88, 255, 255);
-                }
-                else if (achievement.Rarity == 3)
-                {
-                    uiElement.GetComponent<Image>().color = new Color32(255, 226, 64, 255);
-                }
+                
                 achievementCount++;
                 if (achievement.Unlocked) completedAchievementCount++;
                 

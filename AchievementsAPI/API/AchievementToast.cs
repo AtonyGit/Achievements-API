@@ -89,6 +89,11 @@ public class AchievementToast
         PopulateToast(currentToast, achievement.Icon, achievement.Assembly,
             title: "Achievement Obtained!",
             subtitle: achievement.Name);
+        var img = currentToast.GetComponent<Image>();
+        if (achievement.ToastBgSprite != null)
+        {
+            img.m_Sprite = achievement.ToastBgSprite;
+        }
 
         yield return Coroutines.Start(CoAnimateAndDestroyToast());
     }
