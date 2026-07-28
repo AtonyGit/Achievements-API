@@ -46,7 +46,9 @@ namespace AchievementsAPI
                 }));
                 AchievementStorage.AchievementStorageGet(tab);
             }
-            SetTab(AchievementsManager.Tabs[0]);
+
+            var firstTab = AchievementsManager.Tabs.FirstOrDefault(x => x.IsSelectable) ?? AchievementsManager.Tabs[0];
+            SetTab(firstTab);
             mainMenuManager?.DeactivateMainMenuUI();
 
         }
