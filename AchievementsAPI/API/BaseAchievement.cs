@@ -62,6 +62,11 @@
         public virtual Vector3 ToastTitleOffset => new(0, 0);
 
         /// <summary>
+        /// Gets the offset for the achievement's icon in the toast pop up.
+        /// </summary>
+        public virtual Vector3 ToastIconOffset => new(0, 0);
+
+        /// <summary>
         /// Whether the achievement's background becomes colored.
         /// </summary>
         public bool RarityOnBgSprite = true;
