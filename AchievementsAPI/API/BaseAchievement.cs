@@ -59,8 +59,6 @@
             if (doStorageUpdate) AchievementStorage.AchievementStorageUpdate(this, true);
             
         }
-        
-        
         public BaseAchievement(string name, string description, string iconPath, int rarity = 0, bool hidden = false, bool hideRarity = true, Assembly? assembly = null)
         {
             Name = name;

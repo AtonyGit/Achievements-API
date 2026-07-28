@@ -74,7 +74,7 @@ public class AchievementStorage
     public static void AchievementStorageGet(AchievementsTab tab)
     {
         foreach (var propInfo in tab.GetType().GetProperties().Where(x =>
-                                 x.PropertyType == typeof(BaseAchievement)))
+                                 x.PropertyType.IsAssignableTo(typeof(BaseAchievement))))
         {
             var achievement = propInfo.GetValue(tab) as BaseAchievement;
             if (achievement == null) continue;
@@ -85,7 +85,7 @@ public class AchievementStorage
         }
 
         foreach (var propInfo in tab.GetType().GetProperties().Where(x =>
-                                 x.PropertyType == typeof(CountAchievement)))
+                                 x.PropertyType.IsAssignableTo(typeof(CountAchievement))))
         {
             var achievement = propInfo.GetValue(tab) as CountAchievement;
             if (achievement == null) continue;

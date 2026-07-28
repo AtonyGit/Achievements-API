@@ -16,6 +16,10 @@ public class MainMenuPatches
         {
             AchievementStorage.Load();
             _storageInitialized = true;
+            foreach (var tab in AchievementsManager.Tabs)
+            {
+                AchievementStorage.AchievementStorageGet(tab);
+            }
         }
         AchievementsTabSingleton<ExampleTab>.Instance.achievement.Unlock();
     }
