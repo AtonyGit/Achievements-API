@@ -97,11 +97,11 @@
         /// </summary>
         public int Rarity;
         /// <summary>
-        /// Wether the achievement is hidden or not (hidden achievements get the default icon and have their name and description set to "Hidden Achievement" until unlocked)
+        /// Whether the achievement is hidden or not (hidden achievements get the default icon and have their name and description set to "Hidden Achievement" until unlocked)
         /// </summary>
         public bool Hidden;
         /// <summary>
-        /// Wether to hide the achievement's rarity (if the achievement is hidden)
+        /// Whether to hide the achievement's rarity (if the achievement is hidden)
         /// </summary>
         public bool HideRarity;
         public Assembly Assembly;
