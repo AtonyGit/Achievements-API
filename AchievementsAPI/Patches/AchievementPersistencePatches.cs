@@ -12,6 +12,8 @@ public static class AchievementPersistencePatches
     [HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.OnGameEnd))]
     [HarmonyPatch(typeof(AchievementManager), nameof(AchievementManager.OnMatchStart))]
     [HarmonyPatch(typeof(AchievementManager), nameof(AchievementManager.OnMatchExited))]
+    [HarmonyPatch(typeof(LobbyBehaviour), nameof(LobbyBehaviour.Start))]
+    [HarmonyPatch(typeof(TutorialManager), nameof(TutorialManager.Awake))]
     [HarmonyPrefix]
     public static void OnGameEndAndStart()
     {

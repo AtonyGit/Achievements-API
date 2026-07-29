@@ -61,7 +61,6 @@ public class CountAchievement : BaseAchievement
     /// <param name="showOnUI">Shows an unlock animation on the hud.</param>
     public void SetValue(int value, bool showOnUI = true)
     {
-        
         CurrentValue = value;
         if (showOnUI && !Unlocked) AchievementToast.ShowAndDeleteToast(this, Unlocked);
         if (CurrentValue >= RequiredValue)

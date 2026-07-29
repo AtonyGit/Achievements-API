@@ -45,6 +45,7 @@ public class AchievementStorage
         var data = GetData(achievement);
         if (unlocked != null)
         {
+            achievement.Unlocked = unlocked.Value;
             data.Unlocked = unlocked.Value;
         }
 
@@ -57,11 +58,13 @@ public class AchievementStorage
         data.Progress = Math.Clamp(progress, 0, achievement.RequiredValue);
         if (unlocked != null)
         {
+            achievement.Unlocked = unlocked.Value;
             data.Unlocked = unlocked.Value;
         }
         else
         {
             data.Unlocked = data.Progress == achievement.RequiredValue;
+            achievement.Unlocked = data.Progress == achievement.RequiredValue;
         }
 
         Save();
