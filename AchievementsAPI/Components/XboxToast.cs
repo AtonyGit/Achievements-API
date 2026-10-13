@@ -174,6 +174,7 @@ public static class XboxToast
         instance.Root.pivot = new Vector2(0.5f, 0.5f);
         instance.Root.anchoredPosition = new Vector2(0, BottomOffset);
         instance.Root.sizeDelta = new Vector2(PillWidth + CircleSize, PillHeight + 8);
+        instance.Root.localScale = Vector3.one;
         instance.Group = root.AddComponent<CanvasGroup>();
 
         var rarity = RarityColor(request.Rarity);
@@ -410,7 +411,7 @@ public static class XboxToast
             yield break;
         }
 
-        // Step 5: collapse, then the circle scales back out
+        // Step 5: collapse, then the whole toast scales out as one
         t = 0f;
         while (t < 0.3f)
         {
@@ -425,7 +426,7 @@ public static class XboxToast
         {
             t += Time.unscaledDeltaTime;
             var s = 1f - Smooth(Mathf.Clamp01(t / 0.2f));
-            instance.Circle.localScale = new Vector3(s, s, 1f);
+            instance.Root.localScale = new Vector3(s, s, 1f);
             yield return null;
         }
     }
