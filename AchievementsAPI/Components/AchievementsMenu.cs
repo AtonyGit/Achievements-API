@@ -30,6 +30,7 @@ namespace AchievementsAPI
         public MainMenuManager mainMenuManager;
         public OptionsMenuBehaviour OptionsMenuBehaviour;
         public List<AchievementsMenuItem> items = new();
+        private GameObject? _settingsPanel;
         private void Start()
         {
             foreach (var tab in AchievementsManager.Tabs)
@@ -68,7 +69,7 @@ namespace AchievementsAPI
                 OptionsMenuBehaviour.Background.enabled = false;
             }
 
-            AchievementsSettingsPanel.Create(transform);
+            _settingsPanel = AchievementsSettingsPanel.Create(transform);
         }
         private void SetTab(AchievementsTab tab, bool inOptionsMenu = false)
         {
@@ -156,6 +157,16 @@ namespace AchievementsAPI
             percentageText.Value.text = $"{percent.ToString("0.00", CultureInfo.InvariantCulture)}%";
         }
 
+        private void Update()
+        {
+            if (!Input.GetKeyDown(KeyCode.Escape)) return;
+            if (_settingsPanel != null && _settingsPanel.activeSelf)
+            {
+                _settingsPanel.SetActive(false);
+                return;
+            }
+            Close();
+        }
         public void Close()
         {
             if (mainMenuManager)
