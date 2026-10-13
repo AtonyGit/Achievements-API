@@ -71,7 +71,8 @@ public static class AchievementsSettingsPanel
 
     private static Button CreateGearButton(Transform parent)
     {
-        var img = CreateImage(parent, "SettingsGear", ToastSprites.Circle, new Color32(26, 26, 26, 242));
+        var img = CreateImage(parent, "SettingsGear", ToastSprites.RoundedRectSmall, new Color32(26, 26, 26, 242));
+        img.type = Image.Type.Sliced;
         var rect = img.rectTransform;
         rect.anchorMin = rect.anchorMax = new Vector2(1f, 1f);
         rect.pivot = new Vector2(1f, 1f);
@@ -93,14 +94,14 @@ public static class AchievementsSettingsPanel
 
     private static GameObject CreatePanel(Transform parent)
     {
-        var bg = CreateImage(parent, "ToastSettingsPanel", ToastSprites.RoundedRect, PanelColor);
+        var bg = CreateImage(parent, "ToastSettingsPanel", ToastSprites.RoundedRectSmall, PanelColor);
         bg.type = Image.Type.Sliced;
         var panel = bg.gameObject;
         var rect = bg.rectTransform;
         rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
         rect.pivot = new Vector2(0.5f, 0.5f);
         rect.anchoredPosition = Vector2.zero;
-        rect.sizeDelta = new Vector2(700f, 560f);
+        rect.sizeDelta = new Vector2(720f, 560f);
 
         var title = CreateText(rect, "Title", "Toast Settings", 32f, Color.white, FontStyles.Bold, TextAlignmentOptions.Center);
         var titleRect = title.rectTransform;
@@ -109,7 +110,7 @@ public static class AchievementsSettingsPanel
         titleRect.anchoredPosition = new Vector2(0f, -24f);
         titleRect.sizeDelta = new Vector2(560f, 40f);
 
-        var divider = CreateImage(rect, "Divider", ToastSprites.RoundedRect, AccentColor);
+        var divider = CreateImage(rect, "Divider", ToastSprites.RoundedRectTiny, AccentColor);
         divider.type = Image.Type.Sliced;
         var dividerRect = divider.rectTransform;
         dividerRect.anchorMin = dividerRect.anchorMax = new Vector2(0.5f, 1f);
@@ -137,13 +138,13 @@ public static class AchievementsSettingsPanel
 
     private static RectTransform CreateRowStrip(Transform panel, float topY)
     {
-        var strip = CreateImage(panel, "Row", ToastSprites.RoundedRect, StripColor);
+        var strip = CreateImage(panel, "Row", ToastSprites.RoundedRectSmall, StripColor);
         strip.type = Image.Type.Sliced;
         var rect = strip.rectTransform;
         rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 1f);
         rect.pivot = new Vector2(0.5f, 1f);
         rect.anchoredPosition = new Vector2(0f, topY);
-        rect.sizeDelta = new Vector2(620f, 64f);
+        rect.sizeDelta = new Vector2(660f, 64f);
         return rect;
     }
 
@@ -169,7 +170,7 @@ public static class AchievementsSettingsPanel
     {
         CreateRowLabel(strip, label);
 
-        var track = CreateImage(strip, $"{label}Track", ToastSprites.RoundedRect, TrackOffColor);
+        var track = CreateImage(strip, $"{label}Track", ToastSprites.RoundedRectTiny, TrackOffColor);
         track.type = Image.Type.Sliced;
         var trackRect = track.rectTransform;
         trackRect.anchorMin = trackRect.anchorMax = new Vector2(1f, 0.5f);
@@ -177,10 +178,11 @@ public static class AchievementsSettingsPanel
         trackRect.anchoredPosition = new Vector2(-24f, 0f);
         trackRect.sizeDelta = new Vector2(64f, 32f);
 
-        var knob = CreateImage(trackRect, "Knob", ToastSprites.Circle, Color.white);
+        var knob = CreateImage(trackRect, "Knob", ToastSprites.RoundedRectTiny, Color.white);
+        knob.type = Image.Type.Sliced;
         knob.raycastTarget = false;
         var knobRect = knob.rectTransform;
-        knobRect.sizeDelta = new Vector2(26f, 26f);
+        knobRect.sizeDelta = new Vector2(34f, 24f);
 
         var toggle = track.gameObject.AddComponent<Toggle>();
         toggle.graphic = null;
@@ -216,7 +218,7 @@ public static class AchievementsSettingsPanel
         valueRect.anchoredPosition = new Vector2(-24f, 0f);
         valueRect.sizeDelta = new Vector2(72f, 28f);
 
-        var bg = CreateImage(strip, $"{label}Slider", ToastSprites.RoundedRect, TrackOffColor);
+        var bg = CreateImage(strip, $"{label}Slider", ToastSprites.RoundedRectTiny, TrackOffColor);
         bg.type = Image.Type.Sliced;
         var bgRect = bg.rectTransform;
         bgRect.anchorMin = bgRect.anchorMax = new Vector2(1f, 0.5f);
@@ -224,7 +226,7 @@ public static class AchievementsSettingsPanel
         bgRect.anchoredPosition = new Vector2(-112f, 0f);
         bgRect.sizeDelta = new Vector2(220f, 10f);
 
-        var fill = CreateImage(bgRect, "Fill", ToastSprites.RoundedRect, AccentColor);
+        var fill = CreateImage(bgRect, "Fill", ToastSprites.RoundedRectTiny, AccentColor);
         fill.type = Image.Type.Sliced;
         var fillRect = fill.rectTransform;
         fillRect.anchorMin = new Vector2(0f, 0f);
@@ -233,12 +235,13 @@ public static class AchievementsSettingsPanel
         fillRect.anchoredPosition = Vector2.zero;
         fillRect.sizeDelta = new Vector2(0f, 0f);
 
-        var handle = CreateImage(bgRect, "Handle", ToastSprites.Circle, Color.white);
+        var handle = CreateImage(bgRect, "Handle", ToastSprites.RoundedRectTiny, Color.white);
+        handle.type = Image.Type.Sliced;
         var handleRect = handle.rectTransform;
         handleRect.anchorMin = handleRect.anchorMax = new Vector2(0f, 0.5f);
         handleRect.pivot = new Vector2(0.5f, 0.5f);
         handleRect.anchoredPosition = Vector2.zero;
-        handleRect.sizeDelta = new Vector2(22f, 22f);
+        handleRect.sizeDelta = new Vector2(26f, 26f);
 
         var slider = bg.gameObject.AddComponent<Slider>();
         slider.fillRect = fillRect;
@@ -258,7 +261,7 @@ public static class AchievementsSettingsPanel
 
     private static Button CreateButton(Transform panel, string label, Vector2 position)
     {
-        var bg = CreateImage(panel, $"{label}Button", ToastSprites.RoundedRect, Color.white);
+        var bg = CreateImage(panel, $"{label}Button", ToastSprites.RoundedRectSmall, Color.white);
         bg.type = Image.Type.Sliced;
         var rect = bg.rectTransform;
         rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0f);

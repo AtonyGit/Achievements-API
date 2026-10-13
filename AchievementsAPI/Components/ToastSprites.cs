@@ -11,9 +11,13 @@ public static class ToastSprites
 {
     private const int Size = 128;
     private const float CornerRadius = 48f;
+    private const float CornerRadiusSmall = 14f;
+    private const float CornerRadiusTiny = 6f;
 
     private static Sprite? _circle;
     private static Sprite? _roundedRect;
+    private static Sprite? _roundedRectSmall;
+    private static Sprite? _roundedRectTiny;
 
     /// <summary>
     /// A 128x128 anti-aliased filled circle.
@@ -24,7 +28,19 @@ public static class ToastSprites
     /// A 128x128 anti-aliased rounded rectangle (corner radius 48) with a 9-slice
     /// border, suitable for <see cref="UnityEngine.UI.Image.Type.Sliced"/>.
     /// </summary>
-    public static Sprite RoundedRect => _roundedRect ??= CreateRoundedRect();
+    public static Sprite RoundedRect => _roundedRect ??= CreateRoundedRect(CornerRadius, "AchToastRoundedRect");
+
+    /// <summary>
+    /// A 128x128 anti-aliased rounded rectangle (corner radius 14) with a 9-slice
+    /// border, suitable for <see cref="UnityEngine.UI.Image.Type.Sliced"/>.
+    /// </summary>
+    public static Sprite RoundedRectSmall => _roundedRectSmall ??= CreateRoundedRect(CornerRadiusSmall, "AchToastRoundedRectSmall");
+
+    /// <summary>
+    /// A 128x128 anti-aliased rounded rectangle (corner radius 6) with a 9-slice
+    /// border, suitable for <see cref="UnityEngine.UI.Image.Type.Sliced"/>.
+    /// </summary>
+    public static Sprite RoundedRectTiny => _roundedRectTiny ??= CreateRoundedRect(CornerRadiusTiny, "AchToastRoundedRectTiny");
 
     private static Sprite CreateCircle()
     {
@@ -40,20 +56,20 @@ public static class ToastSprites
         return sprite;
     }
 
-    private static Sprite CreateRoundedRect()
+    private static Sprite CreateRoundedRect(float radius, string name)
     {
         var tex = CreateTexture((x, y) =>
         {
             // Signed distance to the inner rect inset by the corner radius
-            var px = Mathf.Clamp(x, CornerRadius, Size - CornerRadius);
-            var py = Mathf.Clamp(y, CornerRadius, Size - CornerRadius);
+            var px = Mathf.Clamp(x, radius, Size - radius);
+            var py = Mathf.Clamp(y, radius, Size - radius);
             var d = Mathf.Sqrt((x - px) * (x - px) + (y - py) * (y - py));
-            return Mathf.Clamp01(CornerRadius - d);
-        }, "AchToastRoundedRect");
+            return Mathf.Clamp01(radius - d);
+        }, name);
 
         tex.DontUnload();
         var sprite = Sprite.Create(tex, new Rect(0, 0, Size, Size), new Vector2(0.5f, 0.5f), 100f,
-            0, SpriteMeshType.FullRect, new Vector4(CornerRadius, CornerRadius, CornerRadius, CornerRadius));
+            0, SpriteMeshType.FullRect, new Vector4(radius, radius, radius, radius));
         sprite.DontUnload();
         return sprite;
     }
