@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Reflection;
 using System.Text;
+using Reactor.Utilities.Extensions;
 using UnityEngine;
 
 namespace AchievementsAPI;
@@ -101,6 +102,7 @@ public static class WavLoader
             // Create the AudioClip
             var audioClip = AudioClip.Create(resourcePath, samples.Length / channels, channels, sampleRate, false);
             audioClip.SetData(samples, 0);
+            audioClip.DontUnload();
 
             return audioClip;
         }

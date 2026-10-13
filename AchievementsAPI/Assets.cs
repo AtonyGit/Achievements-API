@@ -17,11 +17,15 @@ public class Assets
     /// <summary>
     /// The chime played when an achievement unlock toast appears.
     /// </summary>
-    public static AudioClip? LockChime => _lockChime ??= WavLoader.LoadFromResource(typeof(Assets).Assembly, "AchievementsAPI.Resources.LockChime.wav");
+    public static AudioClip? LockChime => Clip(ref _lockChime, "AchievementsAPI.Resources.LockChime.wav");
 
     private static AudioClip? _rareChime;
     /// <summary>
     /// The chime played when a rare (rarity above 0) achievement unlock toast appears.
     /// </summary>
-    public static AudioClip? RareChime => _rareChime ??= WavLoader.LoadFromResource(typeof(Assets).Assembly, "AchievementsAPI.Resources.RareChime.wav");
+    public static AudioClip? RareChime => Clip(ref _rareChime, "AchievementsAPI.Resources.RareChime.wav");
+
+    // `cache == null` is a Unity null check, so a destroyed clip is reloaded.
+    private static AudioClip? Clip(ref AudioClip? cache, string resource)
+        => cache == null ? cache = WavLoader.LoadFromResource(typeof(Assets).Assembly, resource) : cache;
 }

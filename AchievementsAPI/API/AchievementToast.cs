@@ -101,7 +101,8 @@ public class AchievementToast
         if (!AchievementsConfig.ToastSoundEnabled.Value) return;
         var clip = rarity > 0 ? Assets.RareChime ?? Assets.LockChime : Assets.LockChime;
         if (clip == null) return;
-        _chimeSource ??= CreateChimeSource();
+        // Unity null check: a destroyed source is recreated
+        if (_chimeSource == null) _chimeSource = CreateChimeSource();
         _chimeSource.PlayOneShot(clip, AchievementsConfig.ToastVolume.Value);
     }
 

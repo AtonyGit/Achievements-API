@@ -16,6 +16,7 @@ public static class ToastSprites
     private const float CornerRadiusTiny = 6f;
     private const float SquircleRadius = 28f;
     private const float CardRadius = 26f;
+    private const int CardScale = 4;
 
     private static Sprite? _circle;
     private static Sprite? _roundedRect;
@@ -143,30 +144,35 @@ public static class ToastSprites
 
     private static Sprite CreateCard(bool rimOnly, string name)
     {
+        // Rendered at 4x so the bevels stay crisp on screen; pixelsPerUnit and
+        // the 9-slice border scale with it, so the visual size is unchanged.
+        var size = Size * CardScale;
+        var s = (float) CardScale;
+        var radius = CardRadius * s;
         var tex = CreateTexture((x, y) =>
         {
             // Signed inset inside the rounded rect (negative = outside)
-            var px = Mathf.Clamp(x, CardRadius, Size - CardRadius);
-            var py = Mathf.Clamp(y, CardRadius, Size - CardRadius);
+            var px = Mathf.Clamp(x, radius, size - radius);
+            var py = Mathf.Clamp(y, radius, size - radius);
             var d = Mathf.Sqrt((x - px) * (x - px) + (y - py) * (y - py));
-            var inset = CardRadius - d;
-            var alpha = Mathf.Clamp01(inset);
+            var inset = radius - d;
+            var alpha = Mathf.Clamp01(inset / s);
             Color color;
-            if (inset < 2f) color = rimOnly ? new Color(0f, 0f, 0f, 0f) : new Color32(0, 0, 0, 255);
-            else if (inset < 3f) color = rimOnly ? Color.white : new Color32(146, 157, 165, 255);
-            else if (inset < 12f) color = rimOnly
-                ? Color.Lerp(new Color(0.55f, 0.55f, 0.55f), Color.white, y / 127f)
-                : Color.Lerp(new Color32(69, 74, 79, 255), new Color32(112, 114, 118, 255), y / 127f);
-            else if (inset < 13f) color = rimOnly ? Color.white : new Color32(160, 172, 181, 255);
-            else if (inset < 16f) color = rimOnly ? new Color(0f, 0f, 0f, 0f) : new Color32(0, 0, 0, 255);
+            if (inset < 2f * s) color = rimOnly ? new Color(0f, 0f, 0f, 0f) : new Color32(0, 0, 0, 255);
+            else if (inset < 3f * s) color = rimOnly ? Color.white : new Color32(146, 157, 165, 255);
+            else if (inset < 12f * s) color = rimOnly
+                ? Color.Lerp(new Color(0.55f, 0.55f, 0.55f), Color.white, y / (size - 1f))
+                : Color.Lerp(new Color32(69, 74, 79, 255), new Color32(112, 114, 118, 255), y / (size - 1f));
+            else if (inset < 13f * s) color = rimOnly ? Color.white : new Color32(160, 172, 181, 255);
+            else if (inset < 16f * s) color = rimOnly ? new Color(0f, 0f, 0f, 0f) : new Color32(0, 0, 0, 255);
             else color = rimOnly ? new Color(0f, 0f, 0f, 0f) : new Color32(41, 40, 41, 255);
             color.a *= alpha;
             return color;
-        }, name);
+        }, name, size);
 
         tex.DontUnload();
-        var sprite = Sprite.Create(tex, new Rect(0, 0, Size, Size), new Vector2(0.5f, 0.5f), 100f,
-            0, SpriteMeshType.FullRect, new Vector4(28, 28, 28, 28));
+        var sprite = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f * s,
+            0, SpriteMeshType.FullRect, Vector4.one * 28f * s);
         sprite.DontUnload();
         return sprite;
     }
@@ -212,21 +218,21 @@ public static class ToastSprites
     private static Texture2D CreateTexture(System.Func<int, int, float> alphaAt, string name)
         => CreateTexture((x, y) => new Color(1f, 1f, 1f, alphaAt(x, y)), name);
 
-    private static Texture2D CreateTexture(System.Func<int, int, Color> colorAt, string name)
+    private static Texture2D CreateTexture(System.Func<int, int, Color> colorAt, string name, int size = Size)
     {
-        var tex = new Texture2D(Size, Size, TextureFormat.ARGB32, false)
+        var tex = new Texture2D(size, size, TextureFormat.ARGB32, false)
         {
             wrapMode = TextureWrapMode.Clamp,
             filterMode = FilterMode.Bilinear,
             name = name
         };
 
-        var pixels = new Color[Size * Size];
-        for (var y = 0; y < Size; y++)
+        var pixels = new Color[size * size];
+        for (var y = 0; y < size; y++)
         {
-            for (var x = 0; x < Size; x++)
+            for (var x = 0; x < size; x++)
             {
-                pixels[y * Size + x] = colorAt(x, y);
+                pixels[y * size + x] = colorAt(x, y);
             }
         }
 
