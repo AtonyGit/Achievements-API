@@ -136,7 +136,7 @@
             Unlocked = false;
             AchievementStorage.AchievementDataReset(this, false, save);
         }
-        public BaseAchievement(string name, string description, string iconPath, int rarity = 0, bool hidden = false, bool hideRarity = true, Assembly? assembly = null, AchResetTrigger resetTrigger = AchResetTrigger.Never, AchToastTiming toastTiming = AchToastTiming.Immediate)
+        public BaseAchievement(string name, string description, string iconPath, int rarity = 0, bool hidden = false, bool hideRarity = true, Assembly? assembly = null)
         {
             Name = name;
             Description = description;
@@ -147,10 +147,8 @@
             Rarity = rarity;
             Hidden = hidden;
             HideRarity = hideRarity;
-            ResetTrigger = resetTrigger;
-            ToastTiming = toastTiming;
         }
-        public BaseAchievement(string name, string description, Sprite icon, int rarity = 0, bool hidden = false, bool hideRarity = true, Assembly? assembly = null, AchResetTrigger resetTrigger = AchResetTrigger.Never, AchToastTiming toastTiming = AchToastTiming.Immediate)
+        public BaseAchievement(string name, string description, Sprite icon, int rarity = 0, bool hidden = false, bool hideRarity = true, Assembly? assembly = null)
         {
             Name = name;
             Description = description;
@@ -160,10 +158,8 @@
             Rarity = rarity;
             Hidden = hidden;
             HideRarity = hideRarity;
-            ResetTrigger = resetTrigger;
-            ToastTiming = toastTiming;
         }
-        public BaseAchievement(string name, string description, int rarity = 0, bool hidden = false, bool hideRarity = true, Assembly? assembly = null, AchResetTrigger resetTrigger = AchResetTrigger.Never, AchToastTiming toastTiming = AchToastTiming.Immediate)
+        public BaseAchievement(string name, string description, int rarity = 0, bool hidden = false, bool hideRarity = true, Assembly? assembly = null)
         {
             Name = name;
             Description = description;
@@ -172,7 +168,5 @@
             Rarity = rarity;
             Hidden = hidden;
             HideRarity = hideRarity;
-            ResetTrigger = resetTrigger;
-            ToastTiming = toastTiming;
         }
     }

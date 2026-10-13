@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System.Collections;
 using System.Linq;
 using TMPro;
 
@@ -39,6 +40,18 @@ public class AchievementToast
 
         Show(new ToastRequest(title, subtitle, achievement.Icon,
             achievement.Rarity, unlocked, achievement.ToastBgSprite, achievement.Id));
+    }
+
+    public static IEnumerator CoShowAndDeleteToast(BaseAchievement achievement)
+    {
+        ShowAndDeleteToast(achievement);
+        yield break;
+    }
+
+    public static IEnumerator CoShowAndDeleteToast(CountAchievement achievement, bool unlocked = false)
+    {
+        ShowAndDeleteToast(achievement, unlocked);
+        yield break;
     }
 
     /// <summary>

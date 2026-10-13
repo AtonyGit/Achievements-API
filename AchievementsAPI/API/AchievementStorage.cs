@@ -40,7 +40,12 @@ public class AchievementStorage
 
         Save();
     }
-    public static void AchievementDataReset(BaseAchievement achievement, bool? unlocked = false, bool save = true)
+    public static void AchievementDataReset(BaseAchievement achievement, bool? unlocked = false)
+    {
+        AchievementDataReset(achievement, unlocked, true);
+    }
+
+    public static void AchievementDataReset(BaseAchievement achievement, bool? unlocked, bool save)
     {
         var data = GetData(achievement);
         if (unlocked != null)
@@ -52,7 +57,12 @@ public class AchievementStorage
         if (save) Save();
     }
 
-    public static void AchievementDataReset(CountAchievement achievement, int progress = 0, bool? unlocked = null, bool save = true)
+    public static void AchievementDataReset(CountAchievement achievement, int progress = 0, bool? unlocked = null)
+    {
+        AchievementDataReset(achievement, progress, unlocked, true);
+    }
+
+    public static void AchievementDataReset(CountAchievement achievement, int progress, bool? unlocked, bool save)
     {
         var data = GetData(achievement);
         data.Progress = Math.Clamp(progress, 0, achievement.RequiredValue);
