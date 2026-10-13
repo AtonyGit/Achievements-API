@@ -1,58 +1,70 @@
 ﻿using UnityEngine;
-using System.Collections;
-using Il2CppInterop.Runtime.InteropTypes.Fields;
-using Reactor.Utilities;
-using Reactor.Utilities.Extensions;
-using Rewired.Utils;
-using UnityEngine.UI;
+using System.Linq;
+using TMPro;
 
 namespace AchievementsAPI.API;
+
+/// <summary>
+/// Entry point for showing achievement toasts. Callers build an immutable
+/// <see cref="ToastRequest"/> snapshot which is rendered by <see cref="XboxToast"/>.
+/// </summary>
 public class AchievementToast
 {
-    private static Transform currentToast;
+    /// <summary>
+    /// An immutable snapshot of a toast's contents, captured at enqueue time so
+    /// deferred toasts display the values they were earned with.
+    /// </summary>
+    public sealed record ToastRequest(string Title, string Subtitle, Sprite? Icon, int Rarity, bool IsUnlock, Sprite? BgSprite, string AchievementId);
 
     public static void ShowAndDeleteToast(BaseAchievement achievement)
     {
-        Coroutines.Start(CoShowAndDeleteToast(achievement));
+        Show(new ToastRequest("Achievement Unlocked!", achievement.Name, achievement.Icon,
+            achievement.Rarity, true, achievement.ToastBgSprite, achievement.Id));
     }
 
     public static void ShowAndDeleteToast(CountAchievement achievement, bool unlocked = false)
     {
-        Coroutines.Start(CoShowAndDeleteToast(achievement, unlocked));
-    }
-
-    private static Transform GetOrCreateToast()
-    {
-        GameObject canvas = GameObject.Find("ToastCanvas");
-        if (canvas == null)
+        string title;
+        string subtitle;
+        if (achievement.Hidden && achievement.HideProgress && !unlocked)
         {
-            var toastCanvas = UnityEngine.Object.Instantiate(Assets.achievementToastCanvasPrefab);
-            return toastCanvas.transform.FindChild("Toast");
+            title = "Achievement Progressed!";
+            subtitle = "Hidden Achievement";
         }
         else
         {
-            var toastGO = UnityEngine.Object.Instantiate(Assets.achievementToastPrefab);
-            var toast = toastGO.transform;
-            toast.SetParent(canvas.transform);
-            foreach (Transform t in canvas.transform)
-            {
-                t.position += new Vector3(0, -5f, 10f);
-            }
-            return toast;
+            title = unlocked ? "Achievement Unlocked!" : "Achievement Progressed!";
+            subtitle = $"{achievement.Name} ({achievement.CurrentValue}/{achievement.RequiredValue})";
         }
+
+        Show(new ToastRequest(title, subtitle, achievement.Icon,
+            achievement.Rarity, unlocked, achievement.ToastBgSprite, achievement.Id));
     }
 
-    private static void PopulateToast(Transform toast, Sprite icon, System.Reflection.Assembly assembly, string title, string subtitle, Vector3 titleOffset, Vector3 subtitleOffset, Vector3 iconOffset)
+    /// <summary>
+    /// Enqueues a toast request for display.
+    /// </summary>
+    public static void Show(ToastRequest request)
     {
-        var icoObj = toast.FindChild("AchievementIcon").gameObject.GetComponent<Image>();
-        icoObj.sprite = icon;
-        icoObj.transform.localPosition += iconOffset;
-        var titleObj = toast.FindChild("AchievementName").gameObject.GetComponent<TMPro.TextMeshProUGUI>();
-        titleObj.text = title;
-        titleObj.transform.localPosition += titleOffset;
-        var subtitleObj = toast.FindChild("AchievementObtainedText").gameObject.GetComponent<TMPro.TextMeshProUGUI>();
-        subtitleObj.text = subtitle;
-        subtitleObj.transform.localPosition += subtitleOffset;
+        XboxToast.Enqueue(request);
+    }
+
+    /// <summary>
+    /// Shows a preview toast, used by the settings panel. Uses the ExampleTab's
+    /// first achievement when available, otherwise a hardcoded preview.
+    /// </summary>
+    public static void ShowPreview()
+    {
+        var achievement = AchievementsManager.GetTab("Example Tab")?.GetAchievements().FirstOrDefault();
+        if (achievement != null)
+        {
+            ShowAndDeleteToast(achievement);
+            return;
+        }
+
+        Show(new ToastRequest("Achievement Unlocked!", "Preview Achievement",
+            SpriteTools.LoadSpriteFromPath("AchievementsAPI.Resources.ExampleIcon.png", typeof(AchievementToast).Assembly, 100),
+            0, true, null, "preview"));
     }
 
     /// <summary>
@@ -66,92 +78,19 @@ public class AchievementToast
         SoundManager.Instance.PlaySound(clip, false, AchievementsConfig.ToastVolume.Value);
     }
 
-    private static IEnumerator CoAnimateAndDestroyToast()
+    private static TMP_FontAsset? _font;
+
+    /// <summary>
+    /// Resolves the TMP font used by toasts: the font from the bundle toast prefab,
+    /// falling back to <see cref="TMP_Settings.defaultFontAsset"/>.
+    /// </summary>
+    public static TMP_FontAsset? ResolveFont()
     {
-        Vector3 onScreenPos = currentToast.localPosition;
-        Vector3 offScreenRight = onScreenPos + new Vector3(1500, 0, 0);
-        
-        TransitionFade.Instance.StartCoroutine(
-            Effects.Slide2D(currentToast, offScreenRight, onScreenPos, 0.7f));
-
-        float time = 0;
-        while (time <= AchievementsConfig.ToastDuration.Value)
-        {
-            time += Time.deltaTime;
-            yield return null;
-        }
-        
-        yield return TransitionFade.Instance.StartCoroutine(
-            Effects.Slide2D(currentToast, onScreenPos, offScreenRight, 0.3f));
-
-        time = 0;
-        while (time <= 0.5)
-        {
-            time += Time.deltaTime;
-            yield return null;
-        }
-        
-        currentToast.gameObject.Destroy();
-        yield break;
-    }
-
-    public static IEnumerator CoShowAndDeleteToast(BaseAchievement achievement)
-    {
-        while (!currentToast.IsNullOrDestroyed())
-        {
-            yield return null;
-        }
-
-        currentToast = GetOrCreateToast();
-        PopulateToast(currentToast, achievement.Icon, achievement.Assembly,
-            "Achievement Obtained!",
-            achievement.Name,
-            achievement.ToastTitleOffset,
-            achievement.ToastObtainedOffset,
-            achievement.ToastIconOffset);
-        var img = currentToast.GetComponent<Image>();
-        if (achievement.ToastBgSprite != null)
-        {
-            img.m_Sprite = achievement.ToastBgSprite;
-        }
-
-        PlayUnlockSound();
-        yield return Coroutines.Start(CoAnimateAndDestroyToast());
-    }
-
-    public static IEnumerator CoShowAndDeleteToast(CountAchievement achievement, bool unlocked = false)
-    {
-        while (!currentToast.IsNullOrDestroyed())
-        {
-            yield return null;
-        }
-
-        currentToast = GetOrCreateToast();
-        if (achievement.Hidden && achievement.HideProgress && !unlocked)
-        {
-            PopulateToast(currentToast, achievement.Icon, achievement.Assembly,
-                "Achievement Progressed!",
-                "Hidden Achievement",
-                achievement.ToastTitleOffset,
-                achievement.ToastObtainedOffset,
-                achievement.ToastIconOffset);
-        }
-        else
-        {
-            PopulateToast(currentToast, achievement.Icon, achievement.Assembly,
-                unlocked ? "Achievement Obtained!" : "Achievement Progressed!",
-                $"{achievement.Name} ({achievement.CurrentValue}/{achievement.RequiredValue})",
-                achievement.ToastTitleOffset,
-                achievement.ToastObtainedOffset,
-                achievement.ToastIconOffset);
-        }
-        var img = currentToast.GetComponent<Image>();
-        if (achievement.ToastBgSprite != null)
-        {
-            img.m_Sprite = achievement.ToastBgSprite;
-        }
-
-        if (unlocked) PlayUnlockSound();
-        yield return Coroutines.Start(CoAnimateAndDestroyToast());
+        if (_font != null) return _font;
+        var tmp = Assets.achievementToastPrefab != null
+            ? Assets.achievementToastPrefab.transform.Find("AchievementName")?.GetComponent<TextMeshProUGUI>()
+            : null;
+        _font = tmp != null && tmp.font != null ? tmp.font : TMP_Settings.defaultFontAsset;
+        return _font;
     }
 }
