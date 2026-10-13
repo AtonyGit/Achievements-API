@@ -24,26 +24,36 @@ public class CountAchievement : BaseAchievement
     /// Whether to hide the achievement's progress (if the achievement is hidden)
     /// </summary>
     public bool HideProgress;
-    public CountAchievement(string name, string description, string iconPath, int currentValue, int requiredValue, AchPersistence progressPersists = AchPersistence.ThroughoutSessions, int rarity = 0, bool hidden = false, bool hideRarity = true, bool hideProgress = false) : base(name, description, iconPath, rarity, hidden, hideRarity, System.Reflection.Assembly.GetCallingAssembly())
+    public CountAchievement(string name, string description, string iconPath, int currentValue, int requiredValue, AchPersistence progressPersists = AchPersistence.ThroughoutSessions, int rarity = 0, bool hidden = false, bool hideRarity = true, bool hideProgress = false, AchResetTrigger resetTrigger = AchResetTrigger.Never, AchToastTiming toastTiming = AchToastTiming.Immediate) : base(name, description, iconPath, rarity, hidden, hideRarity, System.Reflection.Assembly.GetCallingAssembly(), resetTrigger, toastTiming)
     {
         CurrentValue = currentValue;
         RequiredValue = requiredValue;
         ProgressPersists = progressPersists;
         HideProgress = hideProgress;
     }
-    public CountAchievement(string name, string description, Sprite icon, int currentValue, int requiredValue, AchPersistence progressPersists = AchPersistence.ThroughoutSessions, int rarity = 0, bool hidden = false, bool hideRarity = true, bool hideProgress = false) : base(name, description, icon, rarity, hidden, hideRarity, System.Reflection.Assembly.GetCallingAssembly())
+    public CountAchievement(string name, string description, Sprite icon, int currentValue, int requiredValue, AchPersistence progressPersists = AchPersistence.ThroughoutSessions, int rarity = 0, bool hidden = false, bool hideRarity = true, bool hideProgress = false, AchResetTrigger resetTrigger = AchResetTrigger.Never, AchToastTiming toastTiming = AchToastTiming.Immediate) : base(name, description, icon, rarity, hidden, hideRarity, System.Reflection.Assembly.GetCallingAssembly(), resetTrigger, toastTiming)
     {
         CurrentValue = currentValue;
         RequiredValue = requiredValue;
         ProgressPersists = progressPersists;
         HideProgress = hideProgress;
     }
-    public CountAchievement(string name, string description, int currentValue, int requiredValue, AchPersistence progressPersists = AchPersistence.ThroughoutSessions, int rarity = 0, bool hidden = false, bool hideRarity = true, bool hideProgress = false) : base(name, description, rarity, hidden, hideRarity, System.Reflection.Assembly.GetCallingAssembly())
+    public CountAchievement(string name, string description, int currentValue, int requiredValue, AchPersistence progressPersists = AchPersistence.ThroughoutSessions, int rarity = 0, bool hidden = false, bool hideRarity = true, bool hideProgress = false, AchResetTrigger resetTrigger = AchResetTrigger.Never, AchToastTiming toastTiming = AchToastTiming.Immediate) : base(name, description, rarity, hidden, hideRarity, System.Reflection.Assembly.GetCallingAssembly(), resetTrigger, toastTiming)
     {
         CurrentValue = currentValue;
         RequiredValue = requiredValue;
         ProgressPersists = progressPersists;
         HideProgress = hideProgress;
+    }
+    /// <summary>
+    /// Resets this achievement back to its locked state and zeroes its progress, writing through to storage.
+    /// </summary>
+    /// <param name="save">Whether to save to storage immediately. Pass false when batching resets.</param>
+    public override void Reset(bool save = true)
+    {
+        Unlocked = false;
+        CurrentValue = 0;
+        AchievementStorage.AchievementDataReset(this, 0, false, save);
     }
     /// <summary>
     /// Method to increment the progress of this achievement.
@@ -62,12 +72,12 @@ public class CountAchievement : BaseAchievement
     public void SetValue(int value, bool showOnUI = true)
     {
         CurrentValue = value;
-        if (showOnUI && !Unlocked) AchievementToast.ShowAndDeleteToast(this, Unlocked);
+        if (showOnUI && !Unlocked) AchievementToastQueue.Enqueue(this, false);
         if (CurrentValue >= RequiredValue)
         {
             Unlock(false, false);
             AchievementStorage.AchievementStorageUpdate(this, value, true);
-            if (showOnUI && !Hidden) AchievementToast.ShowAndDeleteToast(this, true);
+            if (showOnUI && !Hidden) AchievementToastQueue.Enqueue(this, true);
             return;
         }
         AchievementStorage.AchievementStorageUpdate(this, value, Unlocked);

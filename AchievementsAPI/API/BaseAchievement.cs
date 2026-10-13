@@ -89,6 +89,14 @@
         private Sprite _sprite;
         public bool Unlocked;
         /// <summary>
+        /// When the achievement is automatically reset back to its locked/unprogressed state.
+        /// </summary>
+        public AchResetTrigger ResetTrigger = AchResetTrigger.Never;
+        /// <summary>
+        /// When the achievement's toast popup is shown relative to game events.
+        /// </summary>
+        public AchToastTiming ToastTiming = AchToastTiming.Immediate;
+        /// <summary>
         /// The achievement's rarity:
         /// 0 = default (common)
         /// 1 = rare (blue)
@@ -113,13 +121,22 @@
         /// <param name="doStorageUpdate">Indicates whether to update the storage again. Used to make CountAchievements properly update.</param>
         public void Unlock(bool showOnUI = true, bool doStorageUpdate = true)
         {
-            if (showOnUI && !Unlocked) AchievementToast.ShowAndDeleteToast(this);
+            if (showOnUI && !Unlocked) AchievementToastQueue.Enqueue(this, true);
             if (Unlocked) return; //Won't unlock an already unlocked achievement
             Unlocked = true;
             if (doStorageUpdate) AchievementStorage.AchievementStorageUpdate(this, true);
-            
+
         }
-        public BaseAchievement(string name, string description, string iconPath, int rarity = 0, bool hidden = false, bool hideRarity = true, Assembly? assembly = null)
+        /// <summary>
+        /// Resets this achievement back to its locked state and writes through to storage.
+        /// </summary>
+        /// <param name="save">Whether to save to storage immediately. Pass false when batching resets.</param>
+        public virtual void Reset(bool save = true)
+        {
+            Unlocked = false;
+            AchievementStorage.AchievementDataReset(this, false, save);
+        }
+        public BaseAchievement(string name, string description, string iconPath, int rarity = 0, bool hidden = false, bool hideRarity = true, Assembly? assembly = null, AchResetTrigger resetTrigger = AchResetTrigger.Never, AchToastTiming toastTiming = AchToastTiming.Immediate)
         {
             Name = name;
             Description = description;
@@ -130,8 +147,10 @@
             Rarity = rarity;
             Hidden = hidden;
             HideRarity = hideRarity;
+            ResetTrigger = resetTrigger;
+            ToastTiming = toastTiming;
         }
-        public BaseAchievement(string name, string description, Sprite icon, int rarity = 0, bool hidden = false, bool hideRarity = true, Assembly? assembly = null)
+        public BaseAchievement(string name, string description, Sprite icon, int rarity = 0, bool hidden = false, bool hideRarity = true, Assembly? assembly = null, AchResetTrigger resetTrigger = AchResetTrigger.Never, AchToastTiming toastTiming = AchToastTiming.Immediate)
         {
             Name = name;
             Description = description;
@@ -141,8 +160,10 @@
             Rarity = rarity;
             Hidden = hidden;
             HideRarity = hideRarity;
+            ResetTrigger = resetTrigger;
+            ToastTiming = toastTiming;
         }
-        public BaseAchievement(string name, string description, int rarity = 0, bool hidden = false, bool hideRarity = true, Assembly? assembly = null)
+        public BaseAchievement(string name, string description, int rarity = 0, bool hidden = false, bool hideRarity = true, Assembly? assembly = null, AchResetTrigger resetTrigger = AchResetTrigger.Never, AchToastTiming toastTiming = AchToastTiming.Immediate)
         {
             Name = name;
             Description = description;
@@ -151,5 +172,7 @@
             Rarity = rarity;
             Hidden = hidden;
             HideRarity = hideRarity;
+            ResetTrigger = resetTrigger;
+            ToastTiming = toastTiming;
         }
     }
