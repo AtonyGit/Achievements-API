@@ -21,6 +21,7 @@ public static class XboxToast
     private const float PillHeight = 96f;
     private const float PillWidth = 560f;
     private const float CircleSize = PillHeight + 4f;
+    private const float PillCollapsedWidth = 36f;
     private const float BottomOffset = 140f;
     private const float DismissThreshold = 140f;
     private const float DismissVelocity = 1500f;
@@ -193,13 +194,13 @@ public static class XboxToast
         instance.Pill.anchorMin = instance.Pill.anchorMax = new Vector2(0.5f, 0.5f);
         instance.Pill.pivot = new Vector2(0f, 0.5f);
         instance.Pill.anchoredPosition = new Vector2(-PillWidth / 2f, 0f);
-        instance.Pill.sizeDelta = new Vector2(CircleSize / 2f, PillHeight);
+        instance.Pill.sizeDelta = new Vector2(PillCollapsedWidth, PillHeight);
         // Hidden behind the disc until the spin completes
         pillGo.SetActive(false);
 
         // Rarity outline frame, 3px proud of the pill on every side. Created
         // first so it renders under the pill background; stretches with it.
-        var frame = CreateImage(instance.Pill, "Frame", ToastSprites.RoundedRect, rarity);
+        var frame = CreateImage(instance.Pill, "Frame", ToastSprites.Squircle, rarity);
         frame.type = Image.Type.Sliced;
         var frameRect = frame.rectTransform;
         frameRect.anchorMin = Vector2.zero;
@@ -214,7 +215,7 @@ public static class XboxToast
         pillBgRect.anchorMax = Vector2.one;
         pillBgRect.offsetMin = Vector2.zero;
         pillBgRect.offsetMax = Vector2.zero;
-        pillImg.sprite = ToastSprites.RoundedRect;
+        pillImg.sprite = ToastSprites.Squircle;
         pillImg.type = Image.Type.Sliced;
         pillImg.color = new Color32(30, 30, 30, 242);
 
@@ -410,7 +411,7 @@ public static class XboxToast
         {
             var elapsed = k * 0.4f;
             var e = EaseOutCubic(Mathf.Clamp01(elapsed / 0.35f));
-            var w = Mathf.Lerp(CircleSize / 2f, PillWidth, e);
+            var w = Mathf.Lerp(PillCollapsedWidth, PillWidth, e);
             instance.Pill.sizeDelta = new Vector2(w, PillHeight);
             instance.SlideX = Mathf.Lerp(PillWidth / 2f, 0f, e);
             ApplyPosition(instance);
@@ -460,7 +461,7 @@ public static class XboxToast
         {
             var elapsed = k * 0.35f;
             var e = EaseInCubic(k);
-            var w = Mathf.Lerp(PillWidth, CircleSize / 2f, e);
+            var w = Mathf.Lerp(PillWidth, PillCollapsedWidth, e);
             instance.Pill.sizeDelta = new Vector2(w, PillHeight);
             instance.SlideX = Mathf.Lerp(0f, PillWidth / 2f, e);
             ApplyPosition(instance);

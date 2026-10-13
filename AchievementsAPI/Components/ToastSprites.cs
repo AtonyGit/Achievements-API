@@ -13,11 +13,13 @@ public static class ToastSprites
     private const float CornerRadius = 48f;
     private const float CornerRadiusSmall = 14f;
     private const float CornerRadiusTiny = 6f;
+    private const float SquircleRadius = 28f;
 
     private static Sprite? _circle;
     private static Sprite? _roundedRect;
     private static Sprite? _roundedRectSmall;
     private static Sprite? _roundedRectTiny;
+    private static Sprite? _squircle;
 
     /// <summary>
     /// A 128x128 anti-aliased filled circle.
@@ -42,6 +44,12 @@ public static class ToastSprites
     /// </summary>
     public static Sprite RoundedRectTiny => _roundedRectTiny ??= CreateRoundedRect(CornerRadiusTiny, "AchToastRoundedRectTiny");
 
+    /// <summary>
+    /// A 128x128 anti-aliased squircle (superellipse corners, radius 28) with a
+    /// 9-slice border, suitable for <see cref="UnityEngine.UI.Image.Type.Sliced"/>.
+    /// </summary>
+    public static Sprite Squircle => _squircle ??= CreateRoundedRect(SquircleRadius, "AchToastSquircle", 4f);
+
     private static Sprite CreateCircle()
     {
         var tex = CreateTexture((x, y) =>
@@ -56,14 +64,15 @@ public static class ToastSprites
         return sprite;
     }
 
-    private static Sprite CreateRoundedRect(float radius, string name)
+    private static Sprite CreateRoundedRect(float radius, string name, float exponent = 2f)
     {
         var tex = CreateTexture((x, y) =>
         {
-            // Signed distance to the inner rect inset by the corner radius
+            // Distance to the inner rect inset by the corner radius, measured
+            // with a superellipse norm (exponent 2 = circle, higher = squarer)
             var px = Mathf.Clamp(x, radius, Size - radius);
             var py = Mathf.Clamp(y, radius, Size - radius);
-            var d = Mathf.Sqrt((x - px) * (x - px) + (y - py) * (y - py));
+            var d = Mathf.Pow(Mathf.Pow(Mathf.Abs(x - px), exponent) + Mathf.Pow(Mathf.Abs(y - py), exponent), 1f / exponent);
             return Mathf.Clamp01(radius - d);
         }, name);
 
