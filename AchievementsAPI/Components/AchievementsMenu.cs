@@ -68,6 +68,7 @@ namespace AchievementsAPI
                 OptionsMenuBehaviour.Background.enabled = false;
             }
 
+            AchievementsSettingsPanel.Create(transform);
         }
         private void SetTab(AchievementsTab tab, bool inOptionsMenu = false)
         {
