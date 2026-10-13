@@ -153,6 +153,8 @@ public static class XboxToast
         public Image Disc = null!;
         public GameObject? IconObj;
         public CanvasGroup Group = null!;
+        public RectTransform TextRect = null!;
+        public CanvasGroup TextGroup = null!;
         public float OffsetX;
         public bool Dragging;
         public bool Dismissed;
@@ -186,7 +188,9 @@ public static class XboxToast
         instance.Pill.anchorMin = instance.Pill.anchorMax = new Vector2(0.5f, 0.5f);
         instance.Pill.pivot = new Vector2(0f, 0.5f);
         instance.Pill.anchoredPosition = new Vector2(-PillWidth / 2f, 0f);
-        instance.Pill.sizeDelta = new Vector2(CircleSize, PillHeight);
+        instance.Pill.sizeDelta = new Vector2(CircleSize / 2f, PillHeight);
+        // Hidden behind the disc until the spin completes
+        pillGo.SetActive(false);
 
         // Rarity outline frame, 3px proud of the pill on every side. Created
         // first so it renders under the pill background; stretches with it.
@@ -205,35 +209,40 @@ public static class XboxToast
         pillBgRect.anchorMax = Vector2.one;
         pillBgRect.offsetMin = Vector2.zero;
         pillBgRect.offsetMax = Vector2.zero;
-        if (request.BgSprite != null)
-        {
-            pillImg.sprite = request.BgSprite;
-        }
-        else
-        {
-            pillImg.sprite = ToastSprites.RoundedRect;
-            pillImg.type = Image.Type.Sliced;
-            pillImg.color = new Color32(30, 30, 30, 242);
-        }
+        pillImg.sprite = ToastSprites.RoundedRect;
+        pillImg.type = Image.Type.Sliced;
+        pillImg.color = new Color32(30, 30, 30, 242);
 
-        // Clip rect so text is only visible once uncovered by the expanding pill
+        // Clip rect so text never overlaps the disc while the pill expands
         var clip = new GameObject("Clip");
         var clipRect = clip.AddComponent<RectTransform>();
         clip.AddComponent<RectMask2D>();
         clip.transform.SetParent(instance.Pill, false);
         clipRect.anchorMin = Vector2.zero;
         clipRect.anchorMax = Vector2.one;
-        clipRect.offsetMin = new Vector2(50f, 0f);
+        clipRect.offsetMin = new Vector2(CircleSize / 2f + 6f, 0f);
         clipRect.offsetMax = new Vector2(-16f, 0f);
 
-        var title = CreateText(clipRect, "Title", request.Title, 22f, new Color32(176, 176, 176, 255));
+        // Text container, faded/slid in once the pill has expanded
+        var textGo = new GameObject("Text");
+        instance.TextRect = textGo.AddComponent<RectTransform>();
+        textGo.transform.SetParent(clipRect, false);
+        instance.TextRect.anchorMin = Vector2.zero;
+        instance.TextRect.anchorMax = Vector2.one;
+        instance.TextRect.pivot = new Vector2(0f, 0.5f);
+        instance.TextRect.offsetMin = Vector2.zero;
+        instance.TextRect.offsetMax = Vector2.zero;
+        instance.TextGroup = textGo.AddComponent<CanvasGroup>();
+        instance.TextGroup.alpha = 0f;
+
+        var title = CreateText(instance.TextRect, "Title", request.Title, 22f, new Color32(176, 176, 176, 255));
         var titleRect = title.rectTransform;
         titleRect.anchorMin = titleRect.anchorMax = new Vector2(0f, 0.5f);
         titleRect.pivot = new Vector2(0f, 0.5f);
         titleRect.anchoredPosition = new Vector2(6f, 15f);
         titleRect.sizeDelta = new Vector2(PillWidth, 26f);
 
-        var subtitle = CreateText(clipRect, "Subtitle", request.Subtitle, 30f, Color.white, FontStyles.Bold);
+        var subtitle = CreateText(instance.TextRect, "Subtitle", request.Subtitle, 30f, Color.white, FontStyles.Bold);
         var subtitleRect = subtitle.rectTransform;
         subtitleRect.anchorMin = subtitleRect.anchorMax = new Vector2(0f, 0.5f);
         subtitleRect.pivot = new Vector2(0f, 0.5f);
@@ -328,55 +337,65 @@ public static class XboxToast
         return 1f + (c + 1f) * Mathf.Pow(t - 1f, 3f) + c * Mathf.Pow(t - 1f, 2f);
     }
 
+    // Runs apply(k) with k in [0,1] eased by unscaled time; stops early when
+    // instance is dismissed (if given).
+    private static IEnumerator CoTween(float duration, System.Action<float> apply, ToastInstance? abortOn = null)
+    {
+        var t = 0f;
+        while (t < duration && !(abortOn?.Dismissed ?? false))
+        {
+            t += Time.unscaledDeltaTime;
+            apply(Mathf.Clamp01(t / duration));
+            yield return null;
+        }
+        if (!(abortOn?.Dismissed ?? false)) apply(1f);
+    }
+
     private static IEnumerator CoPlay(ToastInstance instance, AchievementToast.ToastRequest request)
     {
         // Step 1: pop (circle scales in with overshoot); chime fires here
-        if (request.IsUnlock) AchievementToast.PlayUnlockSound();
-        var t = 0f;
-        while (t < 0.25f && !instance.Dismissed)
+        if (request.IsUnlock) AchievementToast.PlayUnlockSound(request.Rarity);
+        yield return Coroutines.Start(CoTween(0.25f, k =>
         {
-            t += Time.unscaledDeltaTime;
-            var s = EaseOutBack(Mathf.Clamp01(t / 0.25f));
+            var s = EaseOutBack(k);
             instance.Circle.localScale = new Vector3(s, s, 1f);
-            yield return null;
-        }
-        instance.Circle.localScale = Vector3.one;
+        }, instance));
 
-        // Step 2: coin flip; the icon flips in at the halfway point
-        t = 0f;
+        // Step 2: coin flip; the icon flips in at the halfway point. Pill stays
+        // hidden behind the disc.
         var iconShown = false;
-        while (t < 0.45f && !instance.Dismissed)
+        yield return Coroutines.Start(CoTween(0.45f, k =>
         {
-            t += Time.unscaledDeltaTime;
-            var angle = Mathf.Clamp01(t / 0.45f) * 360f;
+            var angle = k * 360f;
             instance.Circle.localEulerAngles = new Vector3(0f, angle, 0f);
             if (!iconShown && angle >= 180f && instance.IconObj != null)
             {
                 iconShown = true;
                 instance.IconObj.SetActive(true);
             }
-            yield return null;
-        }
+        }, instance));
         instance.Circle.localEulerAngles = Vector3.zero;
         if (!iconShown && instance.IconObj != null)
         {
             instance.IconObj.SetActive(true);
         }
 
-        // Step 3: pill expands from the circle outward
-        t = 0f;
-        while (t < 0.35f && !instance.Dismissed)
+        // Step 3: pill expands from the circle outward; text fades/slides in
+        // once the pill has mostly opened
+        instance.Pill.gameObject.SetActive(true);
+        yield return Coroutines.Start(CoTween(0.4f, k =>
         {
-            t += Time.unscaledDeltaTime;
-            var w = Mathf.Lerp(CircleSize, PillWidth, EaseOutCubic(Mathf.Clamp01(t / 0.35f)));
+            var elapsed = k * 0.4f;
+            var w = Mathf.Lerp(CircleSize / 2f, PillWidth, EaseOutCubic(Mathf.Clamp01(elapsed / 0.35f)));
             instance.Pill.sizeDelta = new Vector2(w, PillHeight);
-            yield return null;
-        }
-        instance.Pill.sizeDelta = new Vector2(PillWidth, PillHeight);
+            var tt = Mathf.Clamp01((elapsed - 0.12f) / 0.25f);
+            instance.TextGroup.alpha = tt;
+            instance.TextRect.anchoredPosition = new Vector2(Mathf.Lerp(-28f, 0f, EaseOutCubic(tt)), 0f);
+        }, instance));
 
         // Step 4: hold (paused while dragging; spring-back applied after release)
-        t = 0f;
-        var duration = AchievementsConfig.ToastDuration.Value;
+        var t = 0f;
+        var duration = request.Rarity > 0 ? AchievementsConfig.RareToastDuration.Value : AchievementsConfig.ToastDuration.Value;
         while (t < duration && !instance.Dismissed)
         {
             var dt = Time.unscaledDeltaTime;
@@ -399,35 +418,29 @@ public static class XboxToast
             // Swiped away: fly off in that direction and finish early
             var startX = instance.OffsetX;
             var startAlpha = instance.Group.alpha;
-            t = 0f;
-            while (t < 0.2f)
+            yield return Coroutines.Start(CoTween(0.2f, k =>
             {
-                t += Time.unscaledDeltaTime;
-                var k = Mathf.Clamp01(t / 0.2f);
                 instance.Root.anchoredPosition = new Vector2(Mathf.Lerp(startX, instance.DismissDir * 1600f, k), BottomOffset);
                 instance.Group.alpha = Mathf.Lerp(startAlpha, 0f, k);
-                yield return null;
-            }
+            }));
             yield break;
         }
 
-        // Step 5: collapse, then the whole toast scales out as one
-        t = 0f;
-        while (t < 0.3f)
+        // Step 5: pill collapses back into the disc while the text snaps out,
+        // then the whole toast scales out as one
+        yield return Coroutines.Start(CoTween(0.3f, k =>
         {
-            t += Time.unscaledDeltaTime;
-            var w = Mathf.Lerp(PillWidth, CircleSize, EaseOutCubic(Mathf.Clamp01(t / 0.3f)));
+            var elapsed = k * 0.3f;
+            var w = Mathf.Lerp(PillWidth, CircleSize / 2f, EaseOutCubic(k));
             instance.Pill.sizeDelta = new Vector2(w, PillHeight);
-            yield return null;
-        }
+            instance.TextGroup.alpha = 1f - Mathf.Clamp01(elapsed / 0.12f);
+        }));
+        instance.Pill.gameObject.SetActive(false);
 
-        t = 0f;
-        while (t < 0.2f)
+        yield return Coroutines.Start(CoTween(0.2f, k =>
         {
-            t += Time.unscaledDeltaTime;
-            var s = 1f - Smooth(Mathf.Clamp01(t / 0.2f));
+            var s = 1f - Smooth(k);
             instance.Root.localScale = new Vector3(s, s, 1f);
-            yield return null;
-        }
+        }));
     }
 }

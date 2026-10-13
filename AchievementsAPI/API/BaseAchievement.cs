@@ -33,6 +33,7 @@
 
         /// <summary>
         /// Gets the background sprite for the achievement in the toast pop up.
+        /// No longer used by the current toast; kept for compatibility.
         /// </summary>
         public virtual Sprite? ToastBgSprite => null;
 
