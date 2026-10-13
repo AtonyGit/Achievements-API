@@ -9,10 +9,18 @@ namespace AchievementsAPI;
 
 /// <summary>
 /// Procedurally built toast settings panel shown inside the achievements menu,
-/// bound directly to the <see cref="AchievementsConfig"/> entries.
+/// bound directly to the <see cref="AchievementsConfig"/> entries. Styled to
+/// match the toast: dark surfaces, green accents, white text.
 /// </summary>
 public static class AchievementsSettingsPanel
 {
+    private static readonly Color32 PanelColor = new(26, 26, 26, 250);
+    private static readonly Color32 StripColor = new(42, 42, 42, 255);
+    private static readonly Color32 AccentColor = new(16, 124, 16, 255);
+    private static readonly Color32 PressedColor = new(12, 90, 12, 255);
+    private static readonly Color32 TrackOffColor = new(70, 70, 70, 255);
+    private static readonly Color32 ValueColor = new(176, 176, 176, 255);
+
     /// <summary>
     /// Creates the settings gear button (top-right of the parent) and the settings
     /// panel (hidden until the gear is clicked).
@@ -63,7 +71,7 @@ public static class AchievementsSettingsPanel
 
     private static Button CreateGearButton(Transform parent)
     {
-        var img = CreateImage(parent, "SettingsGear", ToastSprites.Circle, new Color32(30, 30, 30, 242));
+        var img = CreateImage(parent, "SettingsGear", ToastSprites.Circle, new Color32(26, 26, 26, 242));
         var rect = img.rectTransform;
         rect.anchorMin = rect.anchorMax = new Vector2(1f, 1f);
         rect.pivot = new Vector2(1f, 1f);
@@ -85,101 +93,138 @@ public static class AchievementsSettingsPanel
 
     private static GameObject CreatePanel(Transform parent)
     {
-        var bg = CreateImage(parent, "ToastSettingsPanel", ToastSprites.RoundedRect, new Color32(30, 30, 30, 242));
+        var bg = CreateImage(parent, "ToastSettingsPanel", ToastSprites.RoundedRect, PanelColor);
         bg.type = Image.Type.Sliced;
         var panel = bg.gameObject;
         var rect = bg.rectTransform;
         rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
         rect.pivot = new Vector2(0.5f, 0.5f);
         rect.anchoredPosition = Vector2.zero;
-        rect.sizeDelta = new Vector2(640f, 480f);
+        rect.sizeDelta = new Vector2(700f, 560f);
 
         var title = CreateText(rect, "Title", "Toast Settings", 32f, Color.white, FontStyles.Bold, TextAlignmentOptions.Center);
         var titleRect = title.rectTransform;
         titleRect.anchorMin = titleRect.anchorMax = new Vector2(0.5f, 1f);
         titleRect.pivot = new Vector2(0.5f, 1f);
-        titleRect.anchoredPosition = new Vector2(0f, -20f);
-        titleRect.sizeDelta = new Vector2(560f, 42f);
+        titleRect.anchoredPosition = new Vector2(0f, -24f);
+        titleRect.sizeDelta = new Vector2(560f, 40f);
 
-        var y = -90f;
-        y = CreateToggleRow(rect, y, "Show toasts", AchievementsConfig.ToastsEnabled);
-        y = CreateToggleRow(rect, y, "Play sound", AchievementsConfig.ToastSoundEnabled);
-        y = CreateSliderRow(rect, y, "Volume", AchievementsConfig.ToastVolume, 0f, 1f,
+        var divider = CreateImage(rect, "Divider", ToastSprites.RoundedRect, AccentColor);
+        divider.type = Image.Type.Sliced;
+        var dividerRect = divider.rectTransform;
+        dividerRect.anchorMin = dividerRect.anchorMax = new Vector2(0.5f, 1f);
+        dividerRect.pivot = new Vector2(0.5f, 0.5f);
+        dividerRect.anchoredPosition = new Vector2(0f, -72f);
+        dividerRect.sizeDelta = new Vector2(300f, 3f);
+
+        // Full-width row strips, 76px pitch, first strip 40px below the divider
+        const float rowsTop = -114f;
+        CreateToggleRow(CreateRowStrip(rect, rowsTop), "Show toasts", AchievementsConfig.ToastsEnabled);
+        CreateToggleRow(CreateRowStrip(rect, rowsTop - 76f), "Play sound", AchievementsConfig.ToastSoundEnabled);
+        CreateSliderRow(CreateRowStrip(rect, rowsTop - 152f), "Volume", AchievementsConfig.ToastVolume, 0f, 1f,
             v => $"{Mathf.RoundToInt(v * 100f)}%");
-        y = CreateSliderRow(rect, y, "Toast duration", AchievementsConfig.ToastDuration, 1f, 10f,
+        CreateSliderRow(CreateRowStrip(rect, rowsTop - 228f), "Toast duration", AchievementsConfig.ToastDuration, 1f, 10f,
             v => $"{v:0.0}s");
 
-        var preview = CreateButton(rect, "Preview", new Vector2(-120f, y - 10f));
+        var preview = CreateButton(rect, "Preview", new Vector2(-110f, 64f));
         preview.onClick.AddListener((UnityAction)(() => AchievementToast.ShowPreview()));
 
-        var close = CreateButton(rect, "Close", new Vector2(120f, y - 10f));
+        var close = CreateButton(rect, "Close", new Vector2(110f, 64f));
         close.onClick.AddListener((UnityAction)(() => panel.SetActive(false)));
 
         return panel;
     }
 
-    private static TextMeshProUGUI CreateRowLabel(Transform panel, float y, string text)
+    private static RectTransform CreateRowStrip(Transform panel, float topY)
     {
-        var label = CreateText(panel, "Label", text, 24f, Color.white);
+        var strip = CreateImage(panel, "Row", ToastSprites.RoundedRect, StripColor);
+        strip.type = Image.Type.Sliced;
+        var rect = strip.rectTransform;
+        rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 1f);
+        rect.pivot = new Vector2(0.5f, 1f);
+        rect.anchoredPosition = new Vector2(0f, topY);
+        rect.sizeDelta = new Vector2(620f, 64f);
+        return rect;
+    }
+
+    private static void CreateRowLabel(Transform strip, string text)
+    {
+        var label = CreateText(strip, "Label", text, 24f, Color.white);
         var rect = label.rectTransform;
-        rect.anchorMin = rect.anchorMax = new Vector2(0f, 1f);
+        rect.anchorMin = rect.anchorMax = new Vector2(0f, 0.5f);
         rect.pivot = new Vector2(0f, 0.5f);
-        rect.anchoredPosition = new Vector2(50f, y - 24f);
-        rect.sizeDelta = new Vector2(240f, 48f);
-        return label;
+        rect.anchoredPosition = new Vector2(24f, 0f);
+        rect.sizeDelta = new Vector2(320f, 32f);
     }
 
-    private static float CreateToggleRow(Transform panel, float y, string label, ConfigEntry<bool> entry)
+    private static void ApplySwitchState(RectTransform knob, Image track, bool on)
     {
-        CreateRowLabel(panel, y, label);
-
-        var bg = CreateImage(panel, $"{label}Toggle", ToastSprites.RoundedRect, new Color32(60, 60, 60, 255));
-        bg.type = Image.Type.Sliced;
-        var bgRect = bg.rectTransform;
-        bgRect.anchorMin = bgRect.anchorMax = new Vector2(1f, 1f);
-        bgRect.pivot = new Vector2(1f, 0.5f);
-        bgRect.anchoredPosition = new Vector2(-50f, y - 24f);
-        bgRect.sizeDelta = new Vector2(64f, 32f);
-
-        var check = CreateImage(bgRect, "Checkmark", ToastSprites.Circle, new Color32(16, 124, 16, 255));
-        var checkRect = check.rectTransform;
-        checkRect.anchorMin = checkRect.anchorMax = new Vector2(0.5f, 0.5f);
-        checkRect.pivot = new Vector2(0.5f, 0.5f);
-        checkRect.anchoredPosition = Vector2.zero;
-        checkRect.sizeDelta = new Vector2(20f, 20f);
-
-        var toggle = bg.gameObject.AddComponent<Toggle>();
-        toggle.graphic = check;
-        toggle.targetGraphic = bg;
-        toggle.isOn = entry.Value;
-        toggle.onValueChanged.AddListener((UnityAction<bool>)(v => entry.Value = v));
-
-        y -= 56f;
-        return y;
+        knob.anchorMin = knob.anchorMax = new Vector2(on ? 1f : 0f, 0.5f);
+        knob.pivot = new Vector2(on ? 1f : 0f, 0.5f);
+        knob.anchoredPosition = new Vector2(on ? -3f : 3f, 0f);
+        track.color = on ? AccentColor : TrackOffColor;
     }
 
-    private static float CreateSliderRow(Transform panel, float y, string label, ConfigEntry<float> entry,
+    private static void CreateToggleRow(Transform strip, string label, ConfigEntry<bool> entry)
+    {
+        CreateRowLabel(strip, label);
+
+        var track = CreateImage(strip, $"{label}Track", ToastSprites.RoundedRect, TrackOffColor);
+        track.type = Image.Type.Sliced;
+        var trackRect = track.rectTransform;
+        trackRect.anchorMin = trackRect.anchorMax = new Vector2(1f, 0.5f);
+        trackRect.pivot = new Vector2(1f, 0.5f);
+        trackRect.anchoredPosition = new Vector2(-24f, 0f);
+        trackRect.sizeDelta = new Vector2(64f, 32f);
+
+        var knob = CreateImage(trackRect, "Knob", ToastSprites.Circle, Color.white);
+        knob.raycastTarget = false;
+        var knobRect = knob.rectTransform;
+        knobRect.sizeDelta = new Vector2(26f, 26f);
+
+        var toggle = track.gameObject.AddComponent<Toggle>();
+        toggle.graphic = null;
+        toggle.targetGraphic = track;
+        toggle.transition = Selectable.Transition.ColorTint;
+        var colors = toggle.colors;
+        colors.normalColor = new Color(0.85f, 0.85f, 0.85f, 1f);
+        colors.highlightedColor = Color.white;
+        colors.pressedColor = Color.white;
+        colors.selectedColor = Color.white;
+        colors.colorMultiplier = 1f;
+        colors.fadeDuration = 0.1f;
+        toggle.colors = colors;
+        toggle.isOn = entry.Value;
+        ApplySwitchState(knobRect, track, entry.Value);
+        toggle.onValueChanged.AddListener((UnityAction<bool>)(v =>
+        {
+            entry.Value = v;
+            ApplySwitchState(knobRect, track, v);
+        }));
+    }
+
+    private static void CreateSliderRow(Transform strip, string label, ConfigEntry<float> entry,
         float min, float max, System.Func<float, string> format)
     {
-        CreateRowLabel(panel, y, label);
+        CreateRowLabel(strip, label);
 
-        var valueLabel = CreateText(panel, $"{label}Value", format(entry.Value), 22f,
-            new Color32(176, 176, 176, 255), FontStyles.Normal, TextAlignmentOptions.MidlineRight);
+        var valueLabel = CreateText(strip, $"{label}Value", format(entry.Value), 22f,
+            ValueColor, FontStyles.Normal, TextAlignmentOptions.MidlineRight);
         var valueRect = valueLabel.rectTransform;
-        valueRect.anchorMin = valueRect.anchorMax = new Vector2(1f, 1f);
+        valueRect.anchorMin = valueRect.anchorMax = new Vector2(1f, 0.5f);
         valueRect.pivot = new Vector2(1f, 0.5f);
-        valueRect.anchoredPosition = new Vector2(-50f, y - 24f);
-        valueRect.sizeDelta = new Vector2(80f, 48f);
+        valueRect.anchoredPosition = new Vector2(-24f, 0f);
+        valueRect.sizeDelta = new Vector2(72f, 28f);
 
-        var bg = CreateImage(panel, $"{label}Slider", ToastSprites.RoundedRect, new Color32(60, 60, 60, 255));
+        var bg = CreateImage(strip, $"{label}Slider", ToastSprites.RoundedRect, TrackOffColor);
         bg.type = Image.Type.Sliced;
         var bgRect = bg.rectTransform;
-        bgRect.anchorMin = bgRect.anchorMax = new Vector2(1f, 1f);
+        bgRect.anchorMin = bgRect.anchorMax = new Vector2(1f, 0.5f);
         bgRect.pivot = new Vector2(1f, 0.5f);
-        bgRect.anchoredPosition = new Vector2(-140f, y - 24f);
-        bgRect.sizeDelta = new Vector2(200f, 16f);
+        bgRect.anchoredPosition = new Vector2(-112f, 0f);
+        bgRect.sizeDelta = new Vector2(220f, 10f);
 
-        var fill = CreateImage(bgRect, "Fill", ToastSprites.RoundedRect, new Color32(16, 124, 16, 255));
+        var fill = CreateImage(bgRect, "Fill", ToastSprites.RoundedRect, AccentColor);
         fill.type = Image.Type.Sliced;
         var fillRect = fill.rectTransform;
         fillRect.anchorMin = new Vector2(0f, 0f);
@@ -193,7 +238,7 @@ public static class AchievementsSettingsPanel
         handleRect.anchorMin = handleRect.anchorMax = new Vector2(0f, 0.5f);
         handleRect.pivot = new Vector2(0.5f, 0.5f);
         handleRect.anchoredPosition = Vector2.zero;
-        handleRect.sizeDelta = new Vector2(24f, 24f);
+        handleRect.sizeDelta = new Vector2(22f, 22f);
 
         var slider = bg.gameObject.AddComponent<Slider>();
         slider.fillRect = fillRect;
@@ -209,20 +254,17 @@ public static class AchievementsSettingsPanel
             entry.Value = v;
             valueLabel.text = format(v);
         }));
-
-        y -= 56f;
-        return y;
     }
 
     private static Button CreateButton(Transform panel, string label, Vector2 position)
     {
-        var bg = CreateImage(panel, $"{label}Button", ToastSprites.RoundedRect, new Color32(16, 124, 16, 255));
+        var bg = CreateImage(panel, $"{label}Button", ToastSprites.RoundedRect, Color.white);
         bg.type = Image.Type.Sliced;
         var rect = bg.rectTransform;
-        rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 1f);
+        rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0f);
         rect.pivot = new Vector2(0.5f, 0.5f);
         rect.anchoredPosition = position;
-        rect.sizeDelta = new Vector2(160f, 48f);
+        rect.sizeDelta = new Vector2(180f, 48f);
 
         var text = CreateText(rect, "Label", label, 22f, Color.white, FontStyles.Bold, TextAlignmentOptions.Center);
         var textRect = text.rectTransform;
@@ -231,6 +273,16 @@ public static class AchievementsSettingsPanel
         textRect.offsetMin = Vector2.zero;
         textRect.offsetMax = Vector2.zero;
 
-        return bg.gameObject.AddComponent<Button>();
+        var button = bg.gameObject.AddComponent<Button>();
+        button.transition = Selectable.Transition.ColorTint;
+        var colors = button.colors;
+        colors.normalColor = StripColor;
+        colors.highlightedColor = AccentColor;
+        colors.pressedColor = PressedColor;
+        colors.selectedColor = AccentColor;
+        colors.colorMultiplier = 1f;
+        colors.fadeDuration = 0.1f;
+        button.colors = colors;
+        return button;
     }
 }
