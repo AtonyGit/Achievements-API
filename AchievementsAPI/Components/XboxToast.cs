@@ -201,7 +201,7 @@ public static class XboxToast
 
         // Rarity accent strip along the pill's bottom edge
         var accent = CreateImage(instance.Pill, "Accent", null, rarity);
-        var accentRect = (RectTransform)accent.transform;
+        var accentRect = accent.rectTransform;
         accentRect.anchorMin = new Vector2(0f, 0f);
         accentRect.anchorMax = new Vector2(1f, 0f);
         accentRect.pivot = new Vector2(0.5f, 0.5f);
@@ -219,14 +219,14 @@ public static class XboxToast
         clipRect.offsetMax = new Vector2(-16f, 0f);
 
         var title = CreateText(clipRect, "Title", request.Title, 22f, new Color32(176, 176, 176, 255));
-        var titleRect = (RectTransform)title.transform;
+        var titleRect = title.rectTransform;
         titleRect.anchorMin = titleRect.anchorMax = new Vector2(0f, 0.5f);
         titleRect.pivot = new Vector2(0f, 0.5f);
         titleRect.anchoredPosition = new Vector2(6f, 15f);
         titleRect.sizeDelta = new Vector2(PillWidth, 26f);
 
         var subtitle = CreateText(clipRect, "Subtitle", request.Subtitle, 30f, Color.white, FontStyles.Bold);
-        var subtitleRect = (RectTransform)subtitle.transform;
+        var subtitleRect = subtitle.rectTransform;
         subtitleRect.anchorMin = subtitleRect.anchorMax = new Vector2(0f, 0.5f);
         subtitleRect.pivot = new Vector2(0f, 0.5f);
         subtitleRect.anchoredPosition = new Vector2(6f, -16f);
@@ -252,7 +252,7 @@ public static class XboxToast
         {
             var icon = CreateImage(instance.Circle, "Icon", request.Icon, Color.white);
             icon.preserveAspect = true;
-            var iconRect = (RectTransform)icon.transform;
+            var iconRect = icon.rectTransform;
             iconRect.anchorMin = iconRect.anchorMax = new Vector2(0.5f, 0.5f);
             iconRect.pivot = new Vector2(0.5f, 0.5f);
             iconRect.anchoredPosition = Vector2.zero;

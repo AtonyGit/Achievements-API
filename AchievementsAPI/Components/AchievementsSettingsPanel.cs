@@ -64,7 +64,7 @@ public static class AchievementsSettingsPanel
     private static Button CreateGearButton(Transform parent)
     {
         var img = CreateImage(parent, "SettingsGear", ToastSprites.Circle, new Color32(30, 30, 30, 242));
-        var rect = (RectTransform)img.transform;
+        var rect = img.rectTransform;
         rect.anchorMin = rect.anchorMax = new Vector2(1f, 1f);
         rect.pivot = new Vector2(1f, 1f);
         rect.anchoredPosition = new Vector2(-40f, -40f);
@@ -74,7 +74,7 @@ public static class AchievementsSettingsPanel
         var label = font != null && font.HasCharacter('⚙') ? "⚙" : "Settings";
         var text = CreateText(rect, "Label", label, label.Length > 1 ? 13f : 30f, Color.white,
             FontStyles.Bold, TextAlignmentOptions.Center);
-        var textRect = (RectTransform)text.transform;
+        var textRect = text.rectTransform;
         textRect.anchorMin = Vector2.zero;
         textRect.anchorMax = Vector2.one;
         textRect.offsetMin = Vector2.zero;
@@ -88,14 +88,14 @@ public static class AchievementsSettingsPanel
         var bg = CreateImage(parent, "ToastSettingsPanel", ToastSprites.RoundedRect, new Color32(30, 30, 30, 242));
         bg.type = Image.Type.Sliced;
         var panel = bg.gameObject;
-        var rect = (RectTransform)panel.transform;
+        var rect = bg.rectTransform;
         rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
         rect.pivot = new Vector2(0.5f, 0.5f);
         rect.anchoredPosition = Vector2.zero;
         rect.sizeDelta = new Vector2(640f, 480f);
 
         var title = CreateText(rect, "Title", "Toast Settings", 32f, Color.white, FontStyles.Bold, TextAlignmentOptions.Center);
-        var titleRect = (RectTransform)title.transform;
+        var titleRect = title.rectTransform;
         titleRect.anchorMin = titleRect.anchorMax = new Vector2(0.5f, 1f);
         titleRect.pivot = new Vector2(0.5f, 1f);
         titleRect.anchoredPosition = new Vector2(0f, -20f);
@@ -121,7 +121,7 @@ public static class AchievementsSettingsPanel
     private static TextMeshProUGUI CreateRowLabel(Transform panel, float y, string text)
     {
         var label = CreateText(panel, "Label", text, 24f, Color.white);
-        var rect = (RectTransform)label.transform;
+        var rect = label.rectTransform;
         rect.anchorMin = rect.anchorMax = new Vector2(0f, 1f);
         rect.pivot = new Vector2(0f, 0.5f);
         rect.anchoredPosition = new Vector2(50f, y - 24f);
@@ -135,14 +135,14 @@ public static class AchievementsSettingsPanel
 
         var bg = CreateImage(panel, $"{label}Toggle", ToastSprites.RoundedRect, new Color32(60, 60, 60, 255));
         bg.type = Image.Type.Sliced;
-        var bgRect = (RectTransform)bg.transform;
+        var bgRect = bg.rectTransform;
         bgRect.anchorMin = bgRect.anchorMax = new Vector2(1f, 1f);
         bgRect.pivot = new Vector2(1f, 0.5f);
         bgRect.anchoredPosition = new Vector2(-50f, y - 24f);
         bgRect.sizeDelta = new Vector2(64f, 32f);
 
         var check = CreateImage(bgRect, "Checkmark", ToastSprites.Circle, new Color32(16, 124, 16, 255));
-        var checkRect = (RectTransform)check.transform;
+        var checkRect = check.rectTransform;
         checkRect.anchorMin = checkRect.anchorMax = new Vector2(0.5f, 0.5f);
         checkRect.pivot = new Vector2(0.5f, 0.5f);
         checkRect.anchoredPosition = Vector2.zero;
@@ -165,7 +165,7 @@ public static class AchievementsSettingsPanel
 
         var valueLabel = CreateText(panel, $"{label}Value", format(entry.Value), 22f,
             new Color32(176, 176, 176, 255), FontStyles.Normal, TextAlignmentOptions.MidlineRight);
-        var valueRect = (RectTransform)valueLabel.transform;
+        var valueRect = valueLabel.rectTransform;
         valueRect.anchorMin = valueRect.anchorMax = new Vector2(1f, 1f);
         valueRect.pivot = new Vector2(1f, 0.5f);
         valueRect.anchoredPosition = new Vector2(-50f, y - 24f);
@@ -173,7 +173,7 @@ public static class AchievementsSettingsPanel
 
         var bg = CreateImage(panel, $"{label}Slider", ToastSprites.RoundedRect, new Color32(60, 60, 60, 255));
         bg.type = Image.Type.Sliced;
-        var bgRect = (RectTransform)bg.transform;
+        var bgRect = bg.rectTransform;
         bgRect.anchorMin = bgRect.anchorMax = new Vector2(1f, 1f);
         bgRect.pivot = new Vector2(1f, 0.5f);
         bgRect.anchoredPosition = new Vector2(-140f, y - 24f);
@@ -181,7 +181,7 @@ public static class AchievementsSettingsPanel
 
         var fill = CreateImage(bgRect, "Fill", ToastSprites.RoundedRect, new Color32(16, 124, 16, 255));
         fill.type = Image.Type.Sliced;
-        var fillRect = (RectTransform)fill.transform;
+        var fillRect = fill.rectTransform;
         fillRect.anchorMin = new Vector2(0f, 0f);
         fillRect.anchorMax = new Vector2(0f, 1f);
         fillRect.pivot = new Vector2(0f, 0.5f);
@@ -189,7 +189,7 @@ public static class AchievementsSettingsPanel
         fillRect.sizeDelta = new Vector2(0f, 0f);
 
         var handle = CreateImage(bgRect, "Handle", ToastSprites.Circle, Color.white);
-        var handleRect = (RectTransform)handle.transform;
+        var handleRect = handle.rectTransform;
         handleRect.anchorMin = handleRect.anchorMax = new Vector2(0f, 0.5f);
         handleRect.pivot = new Vector2(0.5f, 0.5f);
         handleRect.anchoredPosition = Vector2.zero;
@@ -218,14 +218,14 @@ public static class AchievementsSettingsPanel
     {
         var bg = CreateImage(panel, $"{label}Button", ToastSprites.RoundedRect, new Color32(16, 124, 16, 255));
         bg.type = Image.Type.Sliced;
-        var rect = (RectTransform)bg.transform;
+        var rect = bg.rectTransform;
         rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 1f);
         rect.pivot = new Vector2(0.5f, 0.5f);
         rect.anchoredPosition = position;
         rect.sizeDelta = new Vector2(160f, 48f);
 
         var text = CreateText(rect, "Label", label, 22f, Color.white, FontStyles.Bold, TextAlignmentOptions.Center);
-        var textRect = (RectTransform)text.transform;
+        var textRect = text.rectTransform;
         textRect.anchorMin = Vector2.zero;
         textRect.anchorMax = Vector2.one;
         textRect.offsetMin = Vector2.zero;
