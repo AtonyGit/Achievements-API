@@ -313,9 +313,12 @@ namespace AchievementsAPI
         {
             for (float i = 0; i < duration; i += Time.deltaTime)
             {
+                // The menu may be closed/destroyed while the coroutine is running
+                if (img == null) yield break;
                 img.color = Color.Lerp(origin, target, i/duration);
                 yield return null;
             }
+            if (img == null) yield break;
             img.color = target;
             yield break;
         }
