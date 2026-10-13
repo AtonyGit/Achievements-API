@@ -81,7 +81,7 @@ namespace AchievementsAPI
             gearTab.name = "SettingsTab";
             gearTab.transform.SetAsLastSibling();
             gearTab.GetComponent<Image>().sprite = ToastSprites.Gear;
-            gearTab.GetComponent<Button>().onClick.AddListener(new Action(ShowSettingsTab));
+            gearTab.GetComponent<Button>().onClick.AddListener(new Action(ShowSettingsPage));
 
             if (focused != null)
             {
@@ -89,31 +89,49 @@ namespace AchievementsAPI
             }
         }
 
+        private AchievementsTab? _currentTab;
+        private RectTransform? ContentArea => GetComponentInChildren<ScrollRect>(true)?.GetComponent<RectTransform>();
+
+        // Hides the achievement lists and shows `page` in their place (null = lists back).
+        private void ShowPage(GameObject? page)
+        {
+            var listsVisible = page == null;
+            foreach (var scroll in GetComponentsInChildren<ScrollRect>(true))
+            {
+                scroll.gameObject.SetActive(listsVisible);
+            }
+            progressBar.Value.gameObject.SetActive(listsVisible);
+            percentageText.Value.gameObject.SetActive(listsVisible);
+            _settingsPanel?.SetActive(page == _settingsPanel);
+            _detailPanel?.SetActive(page == _detailPanel);
+            if (page != null && ContentArea != null)
+            {
+                MenuUi.MatchRect(page.GetComponent<RectTransform>(), ContentArea);
+            }
+        }
+
+        private void ShowSettingsPage()
+        {
+            titleText.Value.text = "Settings";
+            ShowPage(_settingsPanel);
+        }
+
         private void ShowDetail(BaseAchievement achievement)
         {
             if (_detailPanel != null) _detailPanel.Destroy();
-            _detailPanel = AchievementDetailPanel.Create(transform, achievement);
-        }
-        private void SetContentVisible(bool visible)
-        {
-            foreach (var scroll in GetComponentsInChildren<ScrollRect>(true))
-            {
-                scroll.gameObject.SetActive(visible);
-            }
-            progressBar.Value.gameObject.SetActive(visible);
-            percentageText.Value.gameObject.SetActive(visible);
-            _settingsPanel?.SetActive(!visible);
-        }
-
-        private void ShowSettingsTab()
-        {
-            titleText.Value.text = "Settings";
-            SetContentVisible(false);
+            _detailPanel = AchievementDetailPanel.Create(transform, achievement, () => SetTab(_currentTab!));
+            ShowPage(_detailPanel);
         }
 
         private void SetTab(AchievementsTab tab, bool inOptionsMenu = false)
         {
-            SetContentVisible(true);
+            _currentTab = tab;
+            if (_detailPanel != null)
+            {
+                _detailPanel.Destroy();
+                _detailPanel = null;
+            }
+            ShowPage(null);
             foreach (var element in items)
             {
                 element.gameObject.Destroy();
@@ -221,15 +239,9 @@ namespace AchievementsAPI
         private void Update()
         {
             if (!Input.GetKeyDown(KeyCode.Escape)) return;
-            if (_detailPanel != null && _detailPanel.activeSelf)
+            if ((_detailPanel != null && _detailPanel.activeSelf) || (_settingsPanel != null && _settingsPanel.activeSelf))
             {
-                _detailPanel.Destroy();
-                _detailPanel = null;
-                return;
-            }
-            if (_settingsPanel != null && _settingsPanel.activeSelf)
-            {
-                if (_defaultTab != null) SetTab(_defaultTab);
+                SetTab(_currentTab ?? _defaultTab!);
                 return;
             }
             Close();

@@ -23,7 +23,7 @@ public static class XboxToast
     private const float PillWidth = 560f;
     private const float CircleSize = PillHeight + 4f;
     private const float PillCollapsedWidth = 36f;
-    private const float IconSize = 84f;
+    private const float IconSize = 76f;
     private const float BottomOffset = 140f;
     private const float DismissThreshold = 140f;
     private const float DismissVelocity = 1500f;
@@ -192,26 +192,15 @@ public static class XboxToast
         // Hidden behind the disc until the spin completes
         pillGo.SetActive(false);
 
-        // Rarity outline frame, 3px proud of the pill on every side. Created
-        // first so it renders under the pill background; stretches with it.
-        var frame = CreateImage(instance.Pill, "Frame", ToastSprites.Squircle, rarity);
-        frame.type = Image.Type.Sliced;
-        var frameRect = frame.rectTransform;
-        frameRect.anchorMin = Vector2.zero;
-        frameRect.anchorMax = Vector2.one;
-        frameRect.offsetMin = new Vector2(-3f, -3f);
-        frameRect.offsetMax = new Vector2(3f, 3f);
-
-        // Pill background, drawn over the frame so only the 3px edge shows
-        var pillImg = CreateImage(instance.Pill, "Background", null, Color.white, true);
+        // Pill background: the achievement card frame; the disc carries the
+        // rarity color
+        var pillImg = CreateImage(instance.Pill, "Background", ToastSprites.Card, Color.white, true);
+        pillImg.type = Image.Type.Sliced;
         var pillBgRect = pillImg.rectTransform;
         pillBgRect.anchorMin = Vector2.zero;
         pillBgRect.anchorMax = Vector2.one;
         pillBgRect.offsetMin = Vector2.zero;
         pillBgRect.offsetMax = Vector2.zero;
-        pillImg.sprite = ToastSprites.Squircle;
-        pillImg.type = Image.Type.Sliced;
-        pillImg.color = new Color32(41, 40, 41, 242);
 
         // Clip rect so text never overlaps the disc while the pill expands
         var clip = new GameObject("Clip");
@@ -221,7 +210,7 @@ public static class XboxToast
         clipRect.anchorMin = Vector2.zero;
         clipRect.anchorMax = Vector2.one;
         clipRect.offsetMin = new Vector2(CircleSize / 2f + 6f, 0f);
-        clipRect.offsetMax = new Vector2(-16f, 0f);
+        clipRect.offsetMax = new Vector2(-28f, 0f);
 
         // Text container, faded/slid in once the pill has expanded
         var textGo = new GameObject("Text");

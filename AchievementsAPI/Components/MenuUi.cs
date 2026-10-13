@@ -114,6 +114,19 @@ public static class MenuUi
 
     internal static void SetProgress(RectTransform fill, float t) => fill.anchorMax = new Vector2(Mathf.Clamp01(t), 1f);
 
+    // Re-parents `target` next to `source` and copies its anchors/pivot/offsets so it covers the same area.
+    internal static void MatchRect(RectTransform target, RectTransform source)
+    {
+        target.SetParent(source.parent, false);
+        target.anchorMin = source.anchorMin;
+        target.anchorMax = source.anchorMax;
+        target.pivot = source.pivot;
+        target.offsetMin = source.offsetMin;
+        target.offsetMax = source.offsetMax;
+        // Draw over the lists
+        target.SetAsLastSibling();
+    }
+
     internal static Color RarityColor(int rarity)
     {
         return rarity switch

@@ -31,12 +31,8 @@ public static class AchievementsSettingsPanel
     {
         var bg = CreateCard(parent, "ToastSettingsPanel");
         var panel = bg.gameObject;
+        // The menu positions the card (MenuUi.MatchRect); rows stretch with it
         var rect = bg.rectTransform;
-        rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
-        rect.pivot = new Vector2(0.5f, 0.5f);
-        // Sits in the content area under the menu title
-        rect.anchoredPosition = new Vector2(0f, -40f);
-        rect.sizeDelta = new Vector2(760f, 560f);
 
         // Full-width row strips, 76px pitch, first strip below the frame edge
         const float rowsTop = -40f;
@@ -49,7 +45,11 @@ public static class AchievementsSettingsPanel
         CreateSliderRow(CreateRowStrip(rect, rowsTop - 304f), "Rare duration", AchievementsConfig.RareToastDuration, 1f, 10f,
             v => $"{v:0.0}s");
 
-        var preview = CreateButton(rect, "Preview", new Vector2(0f, 48f));
+        var preview = CreateButton(rect, "Preview", Vector2.zero);
+        var previewRect = preview.GetComponent<RectTransform>();
+        previewRect.anchorMin = previewRect.anchorMax = new Vector2(1f, 0f);
+        previewRect.pivot = new Vector2(1f, 0.5f);
+        previewRect.anchoredPosition = new Vector2(-60f, 60f);
         preview.onClick.AddListener((UnityAction)(() => AchievementToast.ShowPreview()));
 
         return panel;
@@ -60,10 +60,11 @@ public static class AchievementsSettingsPanel
         var strip = CreateImage(panel, "Row", ToastSprites.RoundedRectSmall, StripColor);
         strip.type = Image.Type.Sliced;
         var rect = strip.rectTransform;
-        rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 1f);
+        rect.anchorMin = new Vector2(0f, 1f);
+        rect.anchorMax = new Vector2(1f, 1f);
         rect.pivot = new Vector2(0.5f, 1f);
         rect.anchoredPosition = new Vector2(0f, topY);
-        rect.sizeDelta = new Vector2(680f, 64f);
+        rect.sizeDelta = new Vector2(-80f, 64f);
         return rect;
     }
 
