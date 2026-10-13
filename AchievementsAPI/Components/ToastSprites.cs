@@ -15,6 +15,7 @@ public static class ToastSprites
     private const float CornerRadiusSmall = 14f;
     private const float CornerRadiusTiny = 6f;
     private const float SquircleRadius = 28f;
+    private const float CardRadius = 26f;
 
     private static Sprite? _circle;
     private static Sprite? _roundedRect;
@@ -22,6 +23,7 @@ public static class ToastSprites
     private static Sprite? _roundedRectTiny;
     private static Sprite? _squircle;
     private static Sprite? _gear;
+    private static Sprite? _card;
 
     /// <summary>
     /// A 128x128 anti-aliased filled circle.
@@ -56,6 +58,12 @@ public static class ToastSprites
     /// A 128x128 anti-aliased gear with 8 teeth and an 18px center hole.
     /// </summary>
     public static Sprite Gear => _gear ??= CreateGear();
+
+    /// <summary>
+    /// A 128x128 framed card matching the game's achievement frame: rounded
+    /// corners (radius 26), bevelled rim, dark fill, 9-slice border of 28.
+    /// </summary>
+    public static Sprite Card => _card ??= CreateCard();
 
     private static readonly Dictionary<int, Sprite> _trimmed = new();
 
@@ -126,6 +134,34 @@ public static class ToastSprites
         return sprite;
     }
 
+    private static Sprite CreateCard()
+    {
+        var tex = CreateTexture((x, y) =>
+        {
+            // Signed inset inside the rounded rect (negative = outside)
+            var px = Mathf.Clamp(x, CardRadius, Size - CardRadius);
+            var py = Mathf.Clamp(y, CardRadius, Size - CardRadius);
+            var d = Mathf.Sqrt((x - px) * (x - px) + (y - py) * (y - py));
+            var inset = CardRadius - d;
+            var alpha = Mathf.Clamp01(inset);
+            Color color;
+            if (inset < 2f) color = new Color32(0, 0, 0, 255);
+            else if (inset < 3f) color = new Color32(146, 157, 165, 255);
+            else if (inset < 12f) color = Color.Lerp(new Color32(69, 74, 79, 255), new Color32(112, 114, 118, 255), y / 127f);
+            else if (inset < 13f) color = new Color32(160, 172, 181, 255);
+            else if (inset < 16f) color = new Color32(0, 0, 0, 255);
+            else color = new Color32(41, 40, 41, 255);
+            color.a = alpha;
+            return color;
+        }, "AchToastCard");
+
+        tex.DontUnload();
+        var sprite = Sprite.Create(tex, new Rect(0, 0, Size, Size), new Vector2(0.5f, 0.5f), 100f,
+            0, SpriteMeshType.FullRect, new Vector4(28, 28, 28, 28));
+        sprite.DontUnload();
+        return sprite;
+    }
+
     private static Sprite CreateGear()
     {
         var tex = CreateTexture((x, y) =>
@@ -165,6 +201,9 @@ public static class ToastSprites
     }
 
     private static Texture2D CreateTexture(System.Func<int, int, float> alphaAt, string name)
+        => CreateTexture((x, y) => new Color(1f, 1f, 1f, alphaAt(x, y)), name);
+
+    private static Texture2D CreateTexture(System.Func<int, int, Color> colorAt, string name)
     {
         var tex = new Texture2D(Size, Size, TextureFormat.ARGB32, false)
         {
@@ -178,7 +217,7 @@ public static class ToastSprites
         {
             for (var x = 0; x < Size; x++)
             {
-                pixels[y * Size + x] = new Color(1f, 1f, 1f, alphaAt(x, y));
+                pixels[y * Size + x] = colorAt(x, y);
             }
         }
 

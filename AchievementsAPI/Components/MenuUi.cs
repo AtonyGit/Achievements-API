@@ -13,12 +13,12 @@ namespace AchievementsAPI;
 /// </summary>
 public static class MenuUi
 {
-    internal static readonly Color32 PanelColor = new(26, 26, 26, 250);
-    internal static readonly Color32 StripColor = new(42, 42, 42, 255);
-    internal static readonly Color32 AccentColor = new(16, 124, 16, 255);
-    internal static readonly Color32 PressedColor = new(12, 90, 12, 255);
-    internal static readonly Color32 TrackOffColor = new(70, 70, 70, 255);
-    internal static readonly Color32 ValueColor = new(176, 176, 176, 255);
+    internal static readonly Color32 StripColor = new(71, 72, 71, 255);      // row strip, from the game's settings rows
+    internal static readonly Color32 AccentColor = new(74, 127, 121, 255);   // AU teal
+    internal static readonly Color32 AccentHover = new(126, 203, 195, 255);
+    internal static readonly Color32 PressedColor = new(56, 96, 92, 255);
+    internal static readonly Color32 TrackOffColor = new(112, 112, 112, 255);
+    internal static readonly Color32 ValueColor = new(200, 200, 200, 255);
 
     internal static Image CreateImage(Transform parent, string name, Sprite? sprite, Color color)
     {
@@ -51,6 +51,19 @@ public static class MenuUi
         return tmp;
     }
 
+    internal static Image CreateCard(Transform parent, string name)
+    {
+        var img = CreateImage(parent, name, ToastSprites.Card, Color.white);
+        img.type = Image.Type.Sliced;
+        return img;
+    }
+
+    internal static void Outline(TextMeshProUGUI tmp)
+    {
+        tmp.outlineWidth = 0.25f;
+        tmp.outlineColor = Color.black;
+    }
+
     internal static Button CreateButton(Transform panel, string label, Vector2 position)
     {
         var bg = CreateImage(panel, $"{label}Button", ToastSprites.RoundedRectSmall, Color.white);
@@ -62,6 +75,7 @@ public static class MenuUi
         rect.sizeDelta = new Vector2(180f, 48f);
 
         var text = CreateText(rect, "Label", label, 22f, Color.white, FontStyles.Bold, TextAlignmentOptions.Center);
+        Outline(text);
         var textRect = text.rectTransform;
         textRect.anchorMin = Vector2.zero;
         textRect.anchorMax = Vector2.one;
@@ -71,8 +85,8 @@ public static class MenuUi
         var button = bg.gameObject.AddComponent<Button>();
         button.transition = Selectable.Transition.ColorTint;
         var colors = button.colors;
-        colors.normalColor = StripColor;
-        colors.highlightedColor = AccentColor;
+        colors.normalColor = AccentColor;
+        colors.highlightedColor = AccentHover;
         colors.pressedColor = PressedColor;
         colors.selectedColor = AccentColor;
         colors.colorMultiplier = 1f;

@@ -33,6 +33,7 @@ namespace AchievementsAPI
         public string? FocusAchievementId;
         private GameObject? _settingsPanel;
         private GameObject? _detailPanel;
+        private AchievementsTab? _defaultTab;
         private void Start()
         {
             foreach (var tab in AchievementsManager.Tabs)
@@ -61,6 +62,7 @@ namespace AchievementsAPI
 
             var focused = FocusAchievementId != null ? AchievementsManager.FindAchievement(FocusAchievementId) : null;
             var firstTab = focused?.Tab ?? AchievementsManager.Tabs.FirstOrDefault(x => x.IsSelectable) ?? AchievementsManager.Tabs[0];
+            _defaultTab = AchievementsManager.Tabs.FirstOrDefault(x => x.IsSelectable) ?? AchievementsManager.Tabs[0];
             SetTab(firstTab);
             if (mainMenuManager)
             {
@@ -79,8 +81,7 @@ namespace AchievementsAPI
             gearTab.name = "SettingsTab";
             gearTab.transform.SetAsLastSibling();
             gearTab.GetComponent<Image>().sprite = ToastSprites.Gear;
-            gearTab.GetComponent<Button>().onClick.AddListener(new Action(() =>
-                _settingsPanel.SetActive(!_settingsPanel.activeSelf)));
+            gearTab.GetComponent<Button>().onClick.AddListener(new Action(ShowSettingsTab));
 
             if (focused != null)
             {
@@ -93,8 +94,26 @@ namespace AchievementsAPI
             if (_detailPanel != null) _detailPanel.Destroy();
             _detailPanel = AchievementDetailPanel.Create(transform, achievement);
         }
+        private void SetContentVisible(bool visible)
+        {
+            foreach (var scroll in GetComponentsInChildren<ScrollRect>(true))
+            {
+                scroll.gameObject.SetActive(visible);
+            }
+            progressBar.Value.gameObject.SetActive(visible);
+            percentageText.Value.gameObject.SetActive(visible);
+            _settingsPanel?.SetActive(!visible);
+        }
+
+        private void ShowSettingsTab()
+        {
+            titleText.Value.text = "Settings";
+            SetContentVisible(false);
+        }
+
         private void SetTab(AchievementsTab tab, bool inOptionsMenu = false)
         {
+            SetContentVisible(true);
             foreach (var element in items)
             {
                 element.gameObject.Destroy();
@@ -210,7 +229,7 @@ namespace AchievementsAPI
             }
             if (_settingsPanel != null && _settingsPanel.activeSelf)
             {
-                _settingsPanel.SetActive(false);
+                if (_defaultTab != null) SetTab(_defaultTab);
                 return;
             }
             Close();

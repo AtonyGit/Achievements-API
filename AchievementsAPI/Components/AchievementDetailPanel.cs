@@ -19,8 +19,7 @@ public static class AchievementDetailPanel
         var revealed = !achievement.Hidden || achievement.Unlocked;
         var showRarity = revealed || !achievement.HideRarity;
 
-        var bg = CreateImage(parent, "AchievementDetail", ToastSprites.Squircle, PanelColor);
-        bg.type = Image.Type.Sliced;
+        var bg = CreateCard(parent, "AchievementDetail");
         var panel = bg.gameObject;
         var rect = bg.rectTransform;
         rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
@@ -46,11 +45,12 @@ public static class AchievementDetailPanel
         var iconRect = icon.rectTransform;
         iconRect.anchorMin = iconRect.anchorMax = new Vector2(0.5f, 0.5f);
         iconRect.anchoredPosition = Vector2.zero;
-        iconRect.sizeDelta = new Vector2(104f, 104f);
+        iconRect.sizeDelta = new Vector2(112f, 112f);
 
         // Right column: name, rarity, description, progress, status
         var name = CreateText(rect, "Name", revealed ? achievement.Name : "Hidden Achievement",
             32f, Color.white, FontStyles.Bold);
+        Outline(name);
         var nameRect = name.rectTransform;
         nameRect.anchorMin = nameRect.anchorMax = new Vector2(0.5f, 1f);
         nameRect.pivot = new Vector2(0f, 1f);
@@ -98,7 +98,7 @@ public static class AchievementDetailPanel
         }
 
         var status = CreateText(rect, "Status", achievement.Unlocked ? "Unlocked" : "Locked",
-            22f, achievement.Unlocked ? (Color) AccentColor : ValueColor, FontStyles.Bold);
+            22f, achievement.Unlocked ? (Color) AccentHover : ValueColor, FontStyles.Bold);
         var statusRect = status.rectTransform;
         statusRect.anchorMin = statusRect.anchorMax = new Vector2(0.5f, 0f);
         statusRect.pivot = new Vector2(0f, 0f);

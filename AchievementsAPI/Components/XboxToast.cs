@@ -23,7 +23,7 @@ public static class XboxToast
     private const float PillWidth = 560f;
     private const float CircleSize = PillHeight + 4f;
     private const float PillCollapsedWidth = 36f;
-    private const float IconSize = 64f;
+    private const float IconSize = 84f;
     private const float BottomOffset = 140f;
     private const float DismissThreshold = 140f;
     private const float DismissVelocity = 1500f;
@@ -211,7 +211,7 @@ public static class XboxToast
         pillBgRect.offsetMax = Vector2.zero;
         pillImg.sprite = ToastSprites.Squircle;
         pillImg.type = Image.Type.Sliced;
-        pillImg.color = new Color32(30, 30, 30, 242);
+        pillImg.color = new Color32(41, 40, 41, 242);
 
         // Clip rect so text never overlaps the disc while the pill expands
         var clip = new GameObject("Clip");
@@ -235,7 +235,7 @@ public static class XboxToast
         instance.TextGroup = textGo.AddComponent<CanvasGroup>();
         instance.TextGroup.alpha = 0f;
 
-        var title = CreateText(instance.TextRect, "Title", request.Title, 22f, new Color32(176, 176, 176, 255));
+        var title = CreateText(instance.TextRect, "Title", request.Title, 22f, MenuUi.ValueColor);
         instance.Title = title;
         var titleRect = title.rectTransform;
         titleRect.anchorMin = titleRect.anchorMax = new Vector2(0f, 0.5f);
@@ -247,7 +247,7 @@ public static class XboxToast
         // open the achievement in the menu
         var hint = CreateText(instance.TextRect, "Hint",
             HasController() ? "Hold Y to view" : "Middle-click to view",
-            22f, new Color32(176, 176, 176, 255));
+            22f, MenuUi.ValueColor);
         instance.Hint = hint;
         hint.alpha = 0f;
         var hintRect = hint.rectTransform;

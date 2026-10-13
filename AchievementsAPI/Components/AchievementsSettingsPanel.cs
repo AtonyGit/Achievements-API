@@ -9,9 +9,9 @@ using static AchievementsAPI.MenuUi;
 namespace AchievementsAPI;
 
 /// <summary>
-/// Procedurally built toast settings panel shown inside the achievements menu,
-/// bound directly to the <see cref="AchievementsConfig"/> entries. Styled to
-/// match the toast: dark surfaces, green accents, white text.
+/// Procedurally built toast settings panel shown as a tab inside the
+/// achievements menu, bound directly to the <see cref="AchievementsConfig"/>
+/// entries.
 /// </summary>
 public static class AchievementsSettingsPanel
 {
@@ -29,32 +29,17 @@ public static class AchievementsSettingsPanel
 
     private static GameObject CreatePanel(Transform parent)
     {
-        var bg = CreateImage(parent, "ToastSettingsPanel", ToastSprites.RoundedRectSmall, PanelColor);
-        bg.type = Image.Type.Sliced;
+        var bg = CreateCard(parent, "ToastSettingsPanel");
         var panel = bg.gameObject;
         var rect = bg.rectTransform;
         rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
         rect.pivot = new Vector2(0.5f, 0.5f);
-        rect.anchoredPosition = Vector2.zero;
-        rect.sizeDelta = new Vector2(720f, 636f);
+        // Sits in the content area under the menu title
+        rect.anchoredPosition = new Vector2(0f, -40f);
+        rect.sizeDelta = new Vector2(760f, 560f);
 
-        var title = CreateText(rect, "Title", "Toast Settings", 32f, Color.white, FontStyles.Bold, TextAlignmentOptions.Center);
-        var titleRect = title.rectTransform;
-        titleRect.anchorMin = titleRect.anchorMax = new Vector2(0.5f, 1f);
-        titleRect.pivot = new Vector2(0.5f, 1f);
-        titleRect.anchoredPosition = new Vector2(0f, -24f);
-        titleRect.sizeDelta = new Vector2(560f, 40f);
-
-        var divider = CreateImage(rect, "Divider", ToastSprites.RoundedRectTiny, AccentColor);
-        divider.type = Image.Type.Sliced;
-        var dividerRect = divider.rectTransform;
-        dividerRect.anchorMin = dividerRect.anchorMax = new Vector2(0.5f, 1f);
-        dividerRect.pivot = new Vector2(0.5f, 0.5f);
-        dividerRect.anchoredPosition = new Vector2(0f, -72f);
-        dividerRect.sizeDelta = new Vector2(300f, 3f);
-
-        // Full-width row strips, 76px pitch, first strip 40px below the divider
-        const float rowsTop = -114f;
+        // Full-width row strips, 76px pitch, first strip below the frame edge
+        const float rowsTop = -40f;
         CreateToggleRow(CreateRowStrip(rect, rowsTop), "Show toasts", AchievementsConfig.ToastsEnabled);
         CreateToggleRow(CreateRowStrip(rect, rowsTop - 76f), "Play sound", AchievementsConfig.ToastSoundEnabled);
         CreateSliderRow(CreateRowStrip(rect, rowsTop - 152f), "Volume", AchievementsConfig.ToastVolume, 0f, 1f,
@@ -64,11 +49,8 @@ public static class AchievementsSettingsPanel
         CreateSliderRow(CreateRowStrip(rect, rowsTop - 304f), "Rare duration", AchievementsConfig.RareToastDuration, 1f, 10f,
             v => $"{v:0.0}s");
 
-        var preview = CreateButton(rect, "Preview", new Vector2(-110f, 64f));
+        var preview = CreateButton(rect, "Preview", new Vector2(0f, 48f));
         preview.onClick.AddListener((UnityAction)(() => AchievementToast.ShowPreview()));
-
-        var close = CreateButton(rect, "Close", new Vector2(110f, 64f));
-        close.onClick.AddListener((UnityAction)(() => panel.SetActive(false)));
 
         return panel;
     }
@@ -81,13 +63,14 @@ public static class AchievementsSettingsPanel
         rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 1f);
         rect.pivot = new Vector2(0.5f, 1f);
         rect.anchoredPosition = new Vector2(0f, topY);
-        rect.sizeDelta = new Vector2(660f, 64f);
+        rect.sizeDelta = new Vector2(680f, 64f);
         return rect;
     }
 
     private static void CreateRowLabel(Transform strip, string text)
     {
         var label = CreateText(strip, "Label", text, 24f, Color.white);
+        Outline(label);
         var rect = label.rectTransform;
         rect.anchorMin = rect.anchorMax = new Vector2(0f, 0.5f);
         rect.pivot = new Vector2(0f, 0.5f);
