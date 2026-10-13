@@ -1,3 +1,4 @@
+using System;
 using AchievementsAPI.API;
 using TMPro;
 using UnityEngine;
@@ -152,6 +153,8 @@ public static class MenuUi
     }
 
     internal static void SetProgress(RectTransform fill, float t) => fill.anchorMax = new Vector2(Mathf.Clamp01(t), 1f);
+
+    internal static string FormatUnlockTime(DateTime utc) => utc.ToLocalTime().ToString("g");
 
     // Re-parents `target` next to `source` and copies its anchors/pivot/offsets so it covers the same area.
     internal static void MatchRect(RectTransform target, RectTransform source)

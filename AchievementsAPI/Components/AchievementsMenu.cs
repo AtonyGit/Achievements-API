@@ -203,6 +203,18 @@ namespace AchievementsAPI
                     MenuUi.SetProgress(fill, (float) count.CurrentValue / count.RequiredValue);
                 }
 
+                if (achievement.Unlocked && achievement.UnlockedAt is { } at)
+                {
+                    var unlockedAt = MenuUi.CreateText(uiElement.transform, "UnlockedAt",
+                        MenuUi.FormatUnlockTime(at), 16f, MenuUi.ValueColor,
+                        FontStyles.Normal, TextAlignmentOptions.TopRight);
+                    var unlockedAtRect = unlockedAt.rectTransform;
+                    unlockedAtRect.anchorMin = unlockedAtRect.anchorMax = new Vector2(1f, 1f);
+                    unlockedAtRect.pivot = new Vector2(1f, 1f);
+                    unlockedAtRect.anchoredPosition = new Vector2(-18f, -10f);
+                    unlockedAtRect.sizeDelta = new Vector2(260f, 20f);
+                }
+
                 var button = uiElement.gameObject.AddComponent<Button>();
                 button.targetGraphic = img;
                 button.transition = Selectable.Transition.ColorTint;

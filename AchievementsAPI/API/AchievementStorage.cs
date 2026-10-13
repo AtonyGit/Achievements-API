@@ -15,6 +15,7 @@ public class AchievementData
     public bool Unlocked { get; set; }
     public int Progress { get; set; }
     public string Id { get; set; }
+    public DateTime? UnlockedAt { get; set; }
 }
 
 
@@ -26,16 +27,25 @@ public class AchievementStorage
     public static void AchievementStorageUpdate(BaseAchievement achievement, bool unlocked)
     {
         var data = GetData(achievement);
-        data.Unlocked = unlocked;
+        SetUnlocked(data, unlocked);
 
         Save();
+    }
+
+    // Records the UTC time when an achievement transitions to unlocked, and
+    // clears it when it goes back to locked.
+    private static void SetUnlocked(AchievementData data, bool unlocked)
+    {
+        if (unlocked && !data.Unlocked) data.UnlockedAt = DateTime.UtcNow;
+        else if (!unlocked) data.UnlockedAt = null;
+        data.Unlocked = unlocked;
     }
 
     public static void AchievementStorageUpdate(CountAchievement achievement, int progress, bool unlocked)
     {
         var data = GetData(achievement);
         var newProgress = Math.Clamp(progress, 0, achievement.RequiredValue);
-        data.Unlocked = unlocked;
+        SetUnlocked(data, unlocked);
         if (achievement.ProgressPersists is AchPersistence.ThroughoutSessions || data.Unlocked) data.Progress = newProgress;
 
         Save();
@@ -51,7 +61,7 @@ public class AchievementStorage
         if (unlocked != null)
         {
             achievement.Unlocked = unlocked.Value;
-            data.Unlocked = unlocked.Value;
+            SetUnlocked(data, unlocked.Value);
         }
 
         if (save) Save();
@@ -69,12 +79,12 @@ public class AchievementStorage
         if (unlocked != null)
         {
             achievement.Unlocked = unlocked.Value;
-            data.Unlocked = unlocked.Value;
+            SetUnlocked(data, unlocked.Value);
         }
         else
         {
-            data.Unlocked = data.Progress == achievement.RequiredValue;
-            achievement.Unlocked = data.Progress == achievement.RequiredValue;
+            SetUnlocked(data, data.Progress == achievement.RequiredValue);
+            achievement.Unlocked = data.Unlocked;
         }
 
         if (save) Save();

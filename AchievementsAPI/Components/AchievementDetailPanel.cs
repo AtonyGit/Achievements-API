@@ -81,13 +81,16 @@ public static class AchievementDetailPanel
             SetProgress(fill, (float) count.CurrentValue / count.RequiredValue);
         }
 
-        var status = CreateText(rect, "Status", achievement.Unlocked ? "Unlocked" : "Locked",
+        var statusText = achievement.Unlocked && achievement.UnlockedAt is { } at
+            ? $"Unlocked  {FormatUnlockTime(at)}"
+            : achievement.Unlocked ? "Unlocked" : "Locked";
+        var status = CreateText(rect, "Status", statusText,
             24f, achievement.Unlocked ? (Color) AccentHover : ValueColor, FontStyles.Bold);
         var statusRect = status.rectTransform;
         statusRect.anchorMin = statusRect.anchorMax = new Vector2(0f, 0f);
         statusRect.pivot = new Vector2(0f, 0f);
         statusRect.anchoredPosition = new Vector2(290f, 52f);
-        statusRect.sizeDelta = new Vector2(300f, 30f);
+        statusRect.sizeDelta = new Vector2(600f, 30f);
 
         var back = CreateButton(rect, "Back", Vector2.zero);
         var backRect = back.GetComponent<RectTransform>();

@@ -1,3 +1,4 @@
+    using System;
     using System.Reflection;
     using UnityEngine;
 
@@ -89,6 +90,11 @@
 
         private Sprite _sprite;
         public bool Unlocked;
+
+        /// <summary>
+        /// When this achievement was unlocked (UTC), or null if locked or unlocked before this was tracked.
+        /// </summary>
+        public DateTime? UnlockedAt => Unlocked ? AchievementStorage.GetData(this).UnlockedAt : null;
         /// <summary>
         /// When the achievement is automatically reset back to its locked/unprogressed state.
         /// </summary>
