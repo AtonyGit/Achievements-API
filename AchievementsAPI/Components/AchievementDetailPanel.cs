@@ -21,24 +21,21 @@ public static class AchievementDetailPanel
         var revealed = !achievement.Hidden || achievement.Unlocked;
         var showRarity = revealed || !achievement.HideRarity;
 
-        var bg = CreateCard(parent, "AchievementDetail");
+        var bg = CreateRarityCard(parent, "AchievementDetail", showRarity ? achievement.Rarity : 0);
         var panel = bg.gameObject;
         var rect = bg.rectTransform;
 
-        // Left: rarity disc with the achievement icon
-        var discColor = showRarity ? RarityColor(achievement.Rarity) : (Color) new Color32(60, 60, 60, 255);
-        var disc = CreateImage(rect, "Disc", ToastSprites.Circle, discColor);
-        disc.raycastTarget = false;
-        var discRect = disc.rectTransform;
+        // Left: rarity-ringed disc with the achievement icon
+        var discRect = CreateRarityDisc(rect, "Disc", 200f,
+            showRarity ? RarityColor(achievement.Rarity) : RimColor, out var inner);
         discRect.anchorMin = discRect.anchorMax = new Vector2(0f, 0.5f);
         discRect.pivot = new Vector2(0.5f, 0.5f);
         discRect.anchoredPosition = new Vector2(150f, 10f);
-        discRect.sizeDelta = new Vector2(200f, 200f);
 
         var iconSprite = revealed ? achievement.Icon
             : SpriteTools.LoadSpriteFromPath("AchievementsAPI.Resources.ExampleIcon.png", typeof(AchievementDetailPanel).Assembly, 100);
         var iconColor = achievement.Unlocked ? Color.white : new Color(0.35f, 0.35f, 0.35f);
-        var icon = CreateImage(discRect, "Icon", ToastSprites.TrimTransparent(iconSprite), iconColor);
+        var icon = CreateImage(inner, "Icon", ToastSprites.TrimTransparent(iconSprite), iconColor);
         icon.preserveAspect = true;
         icon.raycastTarget = false;
         var iconRect = icon.rectTransform;

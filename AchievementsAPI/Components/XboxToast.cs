@@ -25,6 +25,8 @@ public static class XboxToast
     private const float PillCollapsedWidth = 36f;
     private const float IconSize = 76f;
     private const float BottomOffset = 140f;
+    private const float TitleY = 15f;
+    private const float SwapOffset = 14f;
     private const float DismissThreshold = 140f;
     private const float DismissVelocity = 1500f;
 
@@ -142,7 +144,6 @@ public static class XboxToast
         public RectTransform Root = null!;
         public RectTransform Pill = null!;
         public RectTransform Circle = null!;
-        public Image Disc = null!;
         public GameObject? IconObj;
         public CanvasGroup Group = null!;
         public RectTransform TextRect = null!;
@@ -192,10 +193,9 @@ public static class XboxToast
         // Hidden behind the disc until the spin completes
         pillGo.SetActive(false);
 
-        // Pill background: the achievement card frame; the disc carries the
-        // rarity color
-        var pillImg = CreateImage(instance.Pill, "Background", ToastSprites.Card, Color.white, true);
-        pillImg.type = Image.Type.Sliced;
+        // Pill background: the achievement card frame with a rarity-tinted rim
+        var pillImg = MenuUi.CreateRarityCard(instance.Pill, "Background", request.Rarity);
+        pillImg.raycastTarget = true;
         var pillBgRect = pillImg.rectTransform;
         pillBgRect.anchorMin = Vector2.zero;
         pillBgRect.anchorMax = Vector2.one;
@@ -252,25 +252,20 @@ public static class XboxToast
         subtitleRect.anchoredPosition = new Vector2(6f, -16f);
         subtitleRect.sizeDelta = new Vector2(PillWidth, 38f);
 
-        // Circle, centered on the pill's left end
-        var circleGo = new GameObject("Circle");
-        instance.Circle = circleGo.AddComponent<RectTransform>();
-        circleGo.transform.SetParent(instance.Root, false);
+        // Disc: dark face inside a rarity-colored ring, centered on the pill's
+        // left end
+        instance.Circle = MenuUi.CreateRarityDisc(instance.Root, "Circle", CircleSize,
+            request.Rarity > 0 ? rarity : MenuUi.RimColor, out var discInner);
         instance.Circle.anchorMin = instance.Circle.anchorMax = new Vector2(0.5f, 0.5f);
         instance.Circle.pivot = new Vector2(0.5f, 0.5f);
         instance.Circle.anchoredPosition = new Vector2(-PillWidth / 2f, 0f);
-        instance.Circle.sizeDelta = new Vector2(CircleSize, CircleSize);
         instance.Circle.localScale = Vector3.zero;
-        instance.Disc = circleGo.AddComponent<Image>();
-        instance.Disc.sprite = ToastSprites.Circle;
-        instance.Disc.color = rarity;
-        instance.Disc.raycastTarget = false;
-        var mask = circleGo.AddComponent<Mask>();
+        var mask = instance.Circle.gameObject.AddComponent<Mask>();
         mask.showMaskGraphic = true;
 
         if (request.Icon != null)
         {
-            var icon = CreateImage(instance.Circle, "Icon", ToastSprites.TrimTransparent(request.Icon), Color.white);
+            var icon = CreateImage(discInner, "Icon", ToastSprites.TrimTransparent(request.Icon), Color.white);
             icon.preserveAspect = true;
             var iconRect = icon.rectTransform;
             iconRect.anchorMin = iconRect.anchorMax = new Vector2(0.5f, 0.5f);
@@ -444,6 +439,19 @@ public static class XboxToast
         var t = 0f;
         var holdT = 0f;
         instance.Title.alpha = 1f;
+        instance.Title.rectTransform.anchoredPosition = new Vector2(6f, TitleY);
+        instance.Hint.rectTransform.anchoredPosition = new Vector2(6f, TitleY - SwapOffset);
+
+        // Vertical swap: the outgoing text slides up and fades, the incoming
+        // slides up into its place
+        void Swap(TextMeshProUGUI outgoing, TextMeshProUGUI incoming, float e)
+        {
+            outgoing.alpha = 1f - e;
+            outgoing.rectTransform.anchoredPosition = new Vector2(6f, TitleY + SwapOffset * e);
+            incoming.alpha = e;
+            incoming.rectTransform.anchoredPosition = new Vector2(6f, TitleY - SwapOffset * (1f - e));
+        }
+
         var duration = request.Rarity > 0 ? AchievementsConfig.RareToastDuration.Value : AchievementsConfig.ToastDuration.Value;
         while (t < duration && !instance.Dismissed)
         {
@@ -470,9 +478,9 @@ public static class XboxToast
                 else
                 {
                     var showHint = cycle >= 2f;
-                    var b = Mathf.Clamp01((cycle - (showHint ? 2f : 0f)) / 0.3f);
-                    instance.Title.alpha = showHint ? 1f - b : b;
-                    instance.Hint.alpha = showHint ? b : 1f - b;
+                    var e = EaseOutCubic(Mathf.Clamp01((cycle - (showHint ? 2f : 0f)) / 0.35f));
+                    if (showHint) Swap(instance.Title, instance.Hint, e);
+                    else Swap(instance.Hint, instance.Title, e);
                 }
             }
             yield return null;

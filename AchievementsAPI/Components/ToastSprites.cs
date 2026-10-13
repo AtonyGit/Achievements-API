@@ -24,6 +24,7 @@ public static class ToastSprites
     private static Sprite? _squircle;
     private static Sprite? _gear;
     private static Sprite? _card;
+    private static Sprite? _cardRim;
 
     /// <summary>
     /// A 128x128 anti-aliased filled circle.
@@ -63,7 +64,13 @@ public static class ToastSprites
     /// A 128x128 framed card matching the game's achievement frame: rounded
     /// corners (radius 26), bevelled rim, dark fill, 9-slice border of 28.
     /// </summary>
-    public static Sprite Card => _card ??= CreateCard();
+    public static Sprite Card => _card ??= CreateCard(false, "AchToastCard");
+
+    /// <summary>
+    /// The rim/bevel bands of <see cref="Card"/> as a grayscale sprite (fill and
+    /// outer edge transparent), so it can be tinted and layered over Card.
+    /// </summary>
+    public static Sprite CardRim => _cardRim ??= CreateCard(true, "AchToastCardRim");
 
     private static readonly Dictionary<int, Sprite> _trimmed = new();
 
@@ -134,7 +141,7 @@ public static class ToastSprites
         return sprite;
     }
 
-    private static Sprite CreateCard()
+    private static Sprite CreateCard(bool rimOnly, string name)
     {
         var tex = CreateTexture((x, y) =>
         {
@@ -145,15 +152,17 @@ public static class ToastSprites
             var inset = CardRadius - d;
             var alpha = Mathf.Clamp01(inset);
             Color color;
-            if (inset < 2f) color = new Color32(0, 0, 0, 255);
-            else if (inset < 3f) color = new Color32(146, 157, 165, 255);
-            else if (inset < 12f) color = Color.Lerp(new Color32(69, 74, 79, 255), new Color32(112, 114, 118, 255), y / 127f);
-            else if (inset < 13f) color = new Color32(160, 172, 181, 255);
-            else if (inset < 16f) color = new Color32(0, 0, 0, 255);
-            else color = new Color32(41, 40, 41, 255);
-            color.a = alpha;
+            if (inset < 2f) color = rimOnly ? new Color(0f, 0f, 0f, 0f) : new Color32(0, 0, 0, 255);
+            else if (inset < 3f) color = rimOnly ? Color.white : new Color32(146, 157, 165, 255);
+            else if (inset < 12f) color = rimOnly
+                ? Color.Lerp(new Color(0.55f, 0.55f, 0.55f), Color.white, y / 127f)
+                : Color.Lerp(new Color32(69, 74, 79, 255), new Color32(112, 114, 118, 255), y / 127f);
+            else if (inset < 13f) color = rimOnly ? Color.white : new Color32(160, 172, 181, 255);
+            else if (inset < 16f) color = rimOnly ? new Color(0f, 0f, 0f, 0f) : new Color32(0, 0, 0, 255);
+            else color = rimOnly ? new Color(0f, 0f, 0f, 0f) : new Color32(41, 40, 41, 255);
+            color.a *= alpha;
             return color;
-        }, "AchToastCard");
+        }, name);
 
         tex.DontUnload();
         var sprite = Sprite.Create(tex, new Rect(0, 0, Size, Size), new Vector2(0.5f, 0.5f), 100f,

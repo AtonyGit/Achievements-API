@@ -19,6 +19,7 @@ public static class MenuUi
     internal static readonly Color32 PressedColor = new(56, 96, 92, 255);
     internal static readonly Color32 TrackOffColor = new(112, 112, 112, 255);
     internal static readonly Color32 ValueColor = new(200, 200, 200, 255);
+    internal static readonly Color32 RimColor = new(112, 114, 118, 255);     // neutral ring for common/no-rarity
 
     internal static Image CreateImage(Transform parent, string name, Sprite? sprite, Color color)
     {
@@ -56,6 +57,44 @@ public static class MenuUi
         var img = CreateImage(parent, name, ToastSprites.Card, Color.white);
         img.type = Image.Type.Sliced;
         return img;
+    }
+
+    // Card frame with a rarity-tinted rim (common keeps the neutral rim). Returns the card image; the rim overlay is a stretched child.
+    internal static Image CreateRarityCard(Transform parent, string name, int rarity)
+    {
+        var card = CreateCard(parent, name);
+        if (rarity > 0)
+        {
+            card.color = Color.Lerp(Color.white, RarityColor(rarity), 0.2f);
+            var c = RarityColor(rarity);
+            var rim = CreateImage(card.rectTransform, "Rim", ToastSprites.CardRim, new Color(c.r, c.g, c.b, 0.85f));
+            rim.type = Image.Type.Sliced;
+            rim.raycastTarget = false;
+            var rimRect = rim.rectTransform;
+            rimRect.anchorMin = Vector2.zero;
+            rimRect.anchorMax = Vector2.one;
+            rimRect.offsetMin = Vector2.zero;
+            rimRect.offsetMax = Vector2.zero;
+        }
+        return card;
+    }
+
+    // Dark disc with a rarity-colored ring (4px). Returns the ring (outer) rect; `inner` is the dark face to parent icons to.
+    internal static RectTransform CreateRarityDisc(Transform parent, string name, float size, Color ringColor, out RectTransform inner)
+    {
+        var ring = CreateImage(parent, name, ToastSprites.Circle, ringColor);
+        ring.raycastTarget = false;
+        var ringRect = ring.rectTransform;
+        ringRect.sizeDelta = new Vector2(size, size);
+
+        var face = CreateImage(ringRect, "Inner", ToastSprites.Circle, new Color32(41, 40, 41, 255));
+        face.raycastTarget = false;
+        inner = face.rectTransform;
+        inner.anchorMin = Vector2.zero;
+        inner.anchorMax = Vector2.one;
+        inner.offsetMin = new Vector2(4f, 4f);
+        inner.offsetMax = new Vector2(-4f, -4f);
+        return ringRect;
     }
 
     internal static void Outline(TextMeshProUGUI tmp)
