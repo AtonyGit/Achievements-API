@@ -22,6 +22,7 @@ public static class XboxToast
     private const float PillWidth = 560f;
     private const float CircleSize = PillHeight + 4f;
     private const float PillCollapsedWidth = 36f;
+    private const float IconSize = 64f;
     private const float BottomOffset = 140f;
     private const float DismissThreshold = 140f;
     private const float DismissVelocity = 1500f;
@@ -273,13 +274,13 @@ public static class XboxToast
 
         if (request.Icon != null)
         {
-            var icon = CreateImage(instance.Circle, "Icon", request.Icon, Color.white);
+            var icon = CreateImage(instance.Circle, "Icon", ToastSprites.TrimTransparent(request.Icon), Color.white);
             icon.preserveAspect = true;
             var iconRect = icon.rectTransform;
             iconRect.anchorMin = iconRect.anchorMax = new Vector2(0.5f, 0.5f);
             iconRect.pivot = new Vector2(0.5f, 0.5f);
             iconRect.anchoredPosition = Vector2.zero;
-            iconRect.sizeDelta = new Vector2(44f, 44f);
+            iconRect.sizeDelta = new Vector2(IconSize, IconSize);
             instance.IconObj = icon.gameObject;
             instance.IconObj.SetActive(false);
         }

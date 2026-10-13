@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Reactor.Utilities.Extensions;
 using UnityEngine;
 
@@ -49,6 +50,61 @@ public static class ToastSprites
     /// 9-slice border, suitable for <see cref="UnityEngine.UI.Image.Type.Sliced"/>.
     /// </summary>
     public static Sprite Squircle => _squircle ??= CreateRoundedRect(SquircleRadius, "AchToastSquircle", 4f);
+
+    private static readonly Dictionary<int, Sprite> _trimmed = new();
+
+    /// <summary>
+    /// Returns a copy of <paramref name="sprite"/> cropped to its opaque bounds so icons
+    /// with different transparent padding render at a consistent size. Falls back to the
+    /// original sprite when the texture is not readable. Results are cached per sprite.
+    /// </summary>
+    public static Sprite TrimTransparent(Sprite sprite)
+    {
+        if (_trimmed.TryGetValue(sprite.GetInstanceID(), out var cached)) return cached;
+
+        var result = sprite;
+        try
+        {
+            var pixels = sprite.texture.GetPixels32();
+            var texW = sprite.texture.width;
+            var x0 = Mathf.RoundToInt(sprite.rect.x);
+            var y0 = Mathf.RoundToInt(sprite.rect.y);
+            var x1 = x0 + Mathf.RoundToInt(sprite.rect.width);
+            var y1 = y0 + Mathf.RoundToInt(sprite.rect.height);
+
+            var minX = x1; var minY = y1; var maxX = x0; var maxY = y0;
+            var found = false;
+            for (var y = y0; y < y1; y++)
+            {
+                for (var x = x0; x < x1; x++)
+                {
+                    if (pixels[y * texW + x].a <= 10) continue;
+                    found = true;
+                    if (x < minX) minX = x;
+                    if (x > maxX) maxX = x;
+                    if (y < minY) minY = y;
+                    if (y > maxY) maxY = y;
+                }
+            }
+
+            if (found && (minX > x0 || minY > y0 || maxX < x1 - 1 || maxY < y1 - 1))
+            {
+                var trimmed = Sprite.Create(sprite.texture,
+                    new Rect(minX, minY, maxX - minX + 1, maxY - minY + 1),
+                    new Vector2(0.5f, 0.5f), sprite.pixelsPerUnit);
+                trimmed.name = $"{sprite.name}_trimmed";
+                trimmed.DontUnload();
+                result = trimmed;
+            }
+        }
+        catch (System.Exception)
+        {
+            // Texture not readable; keep the original sprite
+        }
+
+        _trimmed[sprite.GetInstanceID()] = result;
+        return result;
+    }
 
     private static Sprite CreateCircle()
     {
