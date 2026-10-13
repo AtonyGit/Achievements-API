@@ -58,7 +58,7 @@ public static class XboxToast
         {
             var request = _queue.Dequeue();
             var instance = CreateToast(request);
-            yield return Coroutines.Start(CoPlay(instance, request));
+            yield return CoPlay(instance, request);
             instance.Root.gameObject.Destroy();
             yield return new WaitForSecondsRealtime(0.2f);
         }
@@ -337,53 +337,70 @@ public static class XboxToast
         return 1f + (c + 1f) * Mathf.Pow(t - 1f, 3f) + c * Mathf.Pow(t - 1f, 2f);
     }
 
+    private static float EaseInCubic(float t) => t * t * t;
+
+    private static float EaseInBack(float t)
+    {
+        const float c1 = 1.70158f;
+        const float c3 = c1 + 1f;
+        return c3 * t * t * t - c1 * t * t;
+    }
+
     // Runs apply(k) with k in [0,1] eased by unscaled time; stops early when
-    // instance is dismissed (if given).
+    // instance is dismissed or destroyed (if given).
     private static IEnumerator CoTween(float duration, System.Action<float> apply, ToastInstance? abortOn = null)
     {
+        bool Aborted() => abortOn != null && (abortOn.Dismissed || abortOn.Root == null);
         var t = 0f;
-        while (t < duration && !(abortOn?.Dismissed ?? false))
+        while (t < duration && !Aborted())
         {
             t += Time.unscaledDeltaTime;
             apply(Mathf.Clamp01(t / duration));
             yield return null;
         }
-        if (!(abortOn?.Dismissed ?? false)) apply(1f);
+        if (!Aborted()) apply(1f);
+    }
+
+    // Flips the disc 360° around Y; the icon appears (or, reversed, disappears)
+    // at the halfway point.
+    private static IEnumerator CoFlip(ToastInstance instance, bool reverse)
+    {
+        var iconToggled = false;
+        yield return CoTween(0.45f, k =>
+        {
+            var angle = reverse ? 360f - k * 360f : k * 360f;
+            instance.Circle.localEulerAngles = new Vector3(0f, angle, 0f);
+            if (!iconToggled && k >= 0.5f && instance.IconObj != null)
+            {
+                iconToggled = true;
+                instance.IconObj.SetActive(!reverse);
+            }
+        }, reverse ? null : instance);
+        instance.Circle.localEulerAngles = Vector3.zero;
+        if (!reverse && !iconToggled && instance.IconObj != null)
+        {
+            instance.IconObj.SetActive(true);
+        }
     }
 
     private static IEnumerator CoPlay(ToastInstance instance, AchievementToast.ToastRequest request)
     {
         // Step 1: pop (circle scales in with overshoot); chime fires here
         if (request.IsUnlock) AchievementToast.PlayUnlockSound(request.Rarity);
-        yield return Coroutines.Start(CoTween(0.25f, k =>
+        yield return CoTween(0.25f, k =>
         {
             var s = EaseOutBack(k);
             instance.Circle.localScale = new Vector3(s, s, 1f);
-        }, instance));
+        }, instance);
 
         // Step 2: coin flip; the icon flips in at the halfway point. Pill stays
         // hidden behind the disc.
-        var iconShown = false;
-        yield return Coroutines.Start(CoTween(0.45f, k =>
-        {
-            var angle = k * 360f;
-            instance.Circle.localEulerAngles = new Vector3(0f, angle, 0f);
-            if (!iconShown && angle >= 180f && instance.IconObj != null)
-            {
-                iconShown = true;
-                instance.IconObj.SetActive(true);
-            }
-        }, instance));
-        instance.Circle.localEulerAngles = Vector3.zero;
-        if (!iconShown && instance.IconObj != null)
-        {
-            instance.IconObj.SetActive(true);
-        }
+        yield return CoFlip(instance, reverse: false);
 
         // Step 3: pill expands from the circle outward; text fades/slides in
         // once the pill has mostly opened
         instance.Pill.gameObject.SetActive(true);
-        yield return Coroutines.Start(CoTween(0.4f, k =>
+        yield return CoTween(0.4f, k =>
         {
             var elapsed = k * 0.4f;
             var w = Mathf.Lerp(CircleSize / 2f, PillWidth, EaseOutCubic(Mathf.Clamp01(elapsed / 0.35f)));
@@ -391,7 +408,7 @@ public static class XboxToast
             var tt = Mathf.Clamp01((elapsed - 0.12f) / 0.25f);
             instance.TextGroup.alpha = tt;
             instance.TextRect.anchoredPosition = new Vector2(Mathf.Lerp(-28f, 0f, EaseOutCubic(tt)), 0f);
-        }, instance));
+        }, instance);
 
         // Step 4: hold (paused while dragging; spring-back applied after release)
         var t = 0f;
@@ -418,29 +435,37 @@ public static class XboxToast
             // Swiped away: fly off in that direction and finish early
             var startX = instance.OffsetX;
             var startAlpha = instance.Group.alpha;
-            yield return Coroutines.Start(CoTween(0.2f, k =>
+            yield return CoTween(0.2f, k =>
             {
                 instance.Root.anchoredPosition = new Vector2(Mathf.Lerp(startX, instance.DismissDir * 1600f, k), BottomOffset);
                 instance.Group.alpha = Mathf.Lerp(startAlpha, 0f, k);
-            }));
+            });
             yield break;
         }
 
-        // Step 5: pill collapses back into the disc while the text snaps out,
-        // then the whole toast scales out as one
-        yield return Coroutines.Start(CoTween(0.3f, k =>
+        // Step 5: the intro in reverse — pill collapses into the disc while the
+        // text slides out, the disc flips back, then shrinks away
+        yield return CoTween(0.35f, k =>
         {
-            var elapsed = k * 0.3f;
-            var w = Mathf.Lerp(PillWidth, CircleSize / 2f, EaseOutCubic(k));
+            var elapsed = k * 0.35f;
+            var w = Mathf.Lerp(PillWidth, CircleSize / 2f, EaseInCubic(k));
             instance.Pill.sizeDelta = new Vector2(w, PillHeight);
-            instance.TextGroup.alpha = 1f - Mathf.Clamp01(elapsed / 0.12f);
-        }));
+            var tt = Mathf.Clamp01(elapsed / 0.2f);
+            instance.TextGroup.alpha = 1f - tt;
+            instance.TextRect.anchoredPosition = new Vector2(Mathf.Lerp(0f, -28f, EaseInCubic(tt)), 0f);
+        });
         instance.Pill.gameObject.SetActive(false);
 
-        yield return Coroutines.Start(CoTween(0.2f, k =>
+        // Disc alone for a beat
+        yield return new WaitForSecondsRealtime(0.15f);
+
+        yield return CoFlip(instance, reverse: true);
+
+        // Mirror of step 1: the disc shrinks back to nothing
+        yield return CoTween(0.25f, k =>
         {
-            var s = 1f - Smooth(k);
-            instance.Root.localScale = new Vector3(s, s, 1f);
-        }));
+            var s = Mathf.Max(1f - EaseInBack(k), 0f);
+            instance.Circle.localScale = new Vector3(s, s, 1f);
+        });
     }
 }
