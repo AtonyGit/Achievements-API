@@ -17,8 +17,9 @@ public static class WavLoader
     /// </summary>
     /// <param name="assembly">The assembly containing the embedded resource.</param>
     /// <param name="resourcePath">The manifest resource name of the WAV file.</param>
+    /// <param name="fadeOutSeconds">Length of a smooth fade applied to the end of the clip; 0 for none.</param>
     /// <returns>The loaded <see cref="AudioClip"/>, or null if loading failed.</returns>
-    public static AudioClip? LoadFromResource(Assembly assembly, string resourcePath)
+    public static AudioClip? LoadFromResource(Assembly assembly, string resourcePath, float fadeOutSeconds = 0.6f)
     {
         try
         {
@@ -98,6 +99,7 @@ public static class WavLoader
 
             // Convert PCM data to float array
             var samples = ConvertPcmToFloat(audioData, bitsPerSample);
+            FadeOut(samples, channels, Mathf.RoundToInt(fadeOutSeconds * sampleRate));
 
             // Create the AudioClip
             var audioClip = AudioClip.Create(resourcePath, samples.Length / channels, channels, sampleRate, false);
@@ -110,6 +112,19 @@ public static class WavLoader
         {
             AchievementsAPIPlugin.Instance.Log.LogWarning($"Failed to load WAV resource {resourcePath}: {e}");
             return null;
+        }
+    }
+
+    // Smoothstep fade over the last `fadeFrames` frames (a frame = one sample per channel)
+    private static void FadeOut(float[] samples, int channels, int fadeFrames)
+    {
+        var frames = samples.Length / channels;
+        fadeFrames = Math.Clamp(fadeFrames, 0, frames);
+        for (var f = frames - fadeFrames; f < frames; f++)
+        {
+            var t = (frames - 1 - f) / (float) Math.Max(fadeFrames - 1, 1);
+            var gain = t * t * (3f - 2f * t);
+            for (var c = 0; c < channels; c++) samples[f * channels + c] *= gain;
         }
     }
 

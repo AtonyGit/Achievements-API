@@ -65,9 +65,9 @@ public static class MenuUi
         var card = CreateCard(parent, name);
         if (rarity > 0)
         {
-            card.color = Color.Lerp(Color.white, RarityColor(rarity), 0.2f);
+            card.color = Color.Lerp(Color.white, RarityColor(rarity), 0.12f);
             var c = RarityColor(rarity);
-            var rim = CreateImage(card.rectTransform, "Rim", ToastSprites.CardRim, new Color(c.r, c.g, c.b, 0.85f));
+            var rim = CreateImage(card.rectTransform, "Rim", ToastSprites.CardRim, new Color(c.r, c.g, c.b, 0.65f));
             rim.type = Image.Type.Sliced;
             rim.raycastTarget = false;
             var rimRect = rim.rectTransform;
@@ -170,9 +170,9 @@ public static class MenuUi
     {
         return rarity switch
         {
-            1 => new Color32(112, 208, 255, 255),
-            2 => new Color32(187, 88, 255, 255),
-            3 => new Color32(255, 226, 64, 255),
+            1 => new Color32(104, 172, 212, 255),
+            2 => new Color32(158, 112, 214, 255),
+            3 => new Color32(214, 184, 92, 255),
             _ => new Color32(16, 124, 16, 255)
         };
     }
