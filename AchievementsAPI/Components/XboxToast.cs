@@ -20,7 +20,7 @@ public static class XboxToast
 {
     private const float PillHeight = 96f;
     private const float PillWidth = 560f;
-    private const float CircleSize = 84f;
+    private const float CircleSize = PillHeight + 4f;
     private const float BottomOffset = 140f;
     private const float DismissThreshold = 140f;
     private const float DismissVelocity = 1500f;
@@ -186,7 +186,24 @@ public static class XboxToast
         instance.Pill.pivot = new Vector2(0f, 0.5f);
         instance.Pill.anchoredPosition = new Vector2(-PillWidth / 2f, 0f);
         instance.Pill.sizeDelta = new Vector2(CircleSize, PillHeight);
-        var pillImg = pillGo.AddComponent<Image>();
+
+        // Rarity outline frame, 3px proud of the pill on every side. Created
+        // first so it renders under the pill background; stretches with it.
+        var frame = CreateImage(instance.Pill, "Frame", ToastSprites.RoundedRect, rarity);
+        frame.type = Image.Type.Sliced;
+        var frameRect = frame.rectTransform;
+        frameRect.anchorMin = Vector2.zero;
+        frameRect.anchorMax = Vector2.one;
+        frameRect.offsetMin = new Vector2(-3f, -3f);
+        frameRect.offsetMax = new Vector2(3f, 3f);
+
+        // Pill background, drawn over the frame so only the 3px edge shows
+        var pillImg = CreateImage(instance.Pill, "Background", null, Color.white, true);
+        var pillBgRect = pillImg.rectTransform;
+        pillBgRect.anchorMin = Vector2.zero;
+        pillBgRect.anchorMax = Vector2.one;
+        pillBgRect.offsetMin = Vector2.zero;
+        pillBgRect.offsetMax = Vector2.zero;
         if (request.BgSprite != null)
         {
             pillImg.sprite = request.BgSprite;
@@ -197,16 +214,6 @@ public static class XboxToast
             pillImg.type = Image.Type.Sliced;
             pillImg.color = new Color32(30, 30, 30, 242);
         }
-        pillImg.raycastTarget = true;
-
-        // Rarity accent strip along the pill's bottom edge
-        var accent = CreateImage(instance.Pill, "Accent", null, rarity);
-        var accentRect = accent.rectTransform;
-        accentRect.anchorMin = new Vector2(0f, 0f);
-        accentRect.anchorMax = new Vector2(1f, 0f);
-        accentRect.pivot = new Vector2(0.5f, 0.5f);
-        accentRect.anchoredPosition = new Vector2(0, 6f);
-        accentRect.sizeDelta = new Vector2(-16f, 3f);
 
         // Clip rect so text is only visible once uncovered by the expanding pill
         var clip = new GameObject("Clip");
@@ -256,7 +263,7 @@ public static class XboxToast
             iconRect.anchorMin = iconRect.anchorMax = new Vector2(0.5f, 0.5f);
             iconRect.pivot = new Vector2(0.5f, 0.5f);
             iconRect.anchoredPosition = Vector2.zero;
-            iconRect.sizeDelta = new Vector2(56f, 56f);
+            iconRect.sizeDelta = new Vector2(44f, 44f);
             instance.IconObj = icon.gameObject;
             instance.IconObj.SetActive(false);
         }
