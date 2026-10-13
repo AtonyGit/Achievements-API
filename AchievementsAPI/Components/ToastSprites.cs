@@ -1,3 +1,4 @@
+using Reactor.Utilities.Extensions;
 using UnityEngine;
 
 namespace AchievementsAPI;
@@ -33,7 +34,10 @@ public static class ToastSprites
             return Mathf.Clamp01(64f - d);
         }, "AchToastCircle");
 
-        return Sprite.Create(tex, new Rect(0, 0, Size, Size), new Vector2(0.5f, 0.5f), 100f);
+        tex.DontUnload();
+        var sprite = Sprite.Create(tex, new Rect(0, 0, Size, Size), new Vector2(0.5f, 0.5f), 100f);
+        sprite.DontUnload();
+        return sprite;
     }
 
     private static Sprite CreateRoundedRect()
@@ -47,8 +51,11 @@ public static class ToastSprites
             return Mathf.Clamp01(CornerRadius - d);
         }, "AchToastRoundedRect");
 
-        return Sprite.Create(tex, new Rect(0, 0, Size, Size), new Vector2(0.5f, 0.5f), 100f,
+        tex.DontUnload();
+        var sprite = Sprite.Create(tex, new Rect(0, 0, Size, Size), new Vector2(0.5f, 0.5f), 100f,
             0, SpriteMeshType.FullRect, new Vector4(CornerRadius, CornerRadius, CornerRadius, CornerRadius));
+        sprite.DontUnload();
+        return sprite;
     }
 
     private static Texture2D CreateTexture(System.Func<int, int, float> alphaAt, string name)

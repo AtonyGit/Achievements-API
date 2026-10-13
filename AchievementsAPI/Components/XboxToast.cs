@@ -174,7 +174,7 @@ public static class XboxToast
         instance.Root.pivot = new Vector2(0.5f, 0.5f);
         instance.Root.anchoredPosition = new Vector2(0, BottomOffset);
         instance.Root.sizeDelta = new Vector2(PillWidth + CircleSize, PillHeight + 8);
-        instance.Group = root.GetComponent<CanvasGroup>();
+        instance.Group = root.AddComponent<CanvasGroup>();
 
         var rarity = RarityColor(request.Rarity);
 
@@ -184,7 +184,7 @@ public static class XboxToast
         pillGo.transform.SetParent(instance.Root, false);
         instance.Pill.anchorMin = instance.Pill.anchorMax = new Vector2(0.5f, 0.5f);
         instance.Pill.pivot = new Vector2(0f, 0.5f);
-        instance.Pill.anchoredPosition = Vector2.zero;
+        instance.Pill.anchoredPosition = new Vector2(-PillWidth / 2f, 0f);
         instance.Pill.sizeDelta = new Vector2(CircleSize, PillHeight);
         var pillImg = pillGo.AddComponent<Image>();
         if (request.BgSprite != null)
@@ -238,7 +238,7 @@ public static class XboxToast
         circleGo.transform.SetParent(instance.Root, false);
         instance.Circle.anchorMin = instance.Circle.anchorMax = new Vector2(0.5f, 0.5f);
         instance.Circle.pivot = new Vector2(0.5f, 0.5f);
-        instance.Circle.anchoredPosition = Vector2.zero;
+        instance.Circle.anchoredPosition = new Vector2(-PillWidth / 2f, 0f);
         instance.Circle.sizeDelta = new Vector2(CircleSize, CircleSize);
         instance.Circle.localScale = Vector3.zero;
         instance.Disc = circleGo.AddComponent<Image>();
@@ -345,7 +345,6 @@ public static class XboxToast
             {
                 iconShown = true;
                 instance.IconObj.SetActive(true);
-                instance.Disc.color = new Color(0f, 0f, 0f, 0f);
             }
             yield return null;
         }
@@ -353,7 +352,6 @@ public static class XboxToast
         if (!iconShown && instance.IconObj != null)
         {
             instance.IconObj.SetActive(true);
-            instance.Disc.color = new Color(0f, 0f, 0f, 0f);
         }
 
         // Step 3: pill expands from the circle outward
