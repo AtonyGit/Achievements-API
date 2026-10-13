@@ -156,6 +156,7 @@ public static class XboxToast
         public RectTransform TextRect = null!;
         public CanvasGroup TextGroup = null!;
         public float OffsetX;
+        public float SlideX;
         public bool Dragging;
         public bool Dismissed;
         public float DismissDir;
@@ -163,6 +164,8 @@ public static class XboxToast
         public float SpringFrom;
         public float SpringT = 1f;
     }
+
+    private static void ApplyPosition(ToastInstance i) => i.Root.anchoredPosition = new Vector2(i.OffsetX + i.SlideX, BottomOffset);
 
     private static ToastInstance CreateToast(AchievementToast.ToastRequest request)
     {
@@ -174,7 +177,9 @@ public static class XboxToast
         root.transform.SetParent(canvas.transform, false);
         instance.Root.anchorMin = instance.Root.anchorMax = new Vector2(0.5f, 0f);
         instance.Root.pivot = new Vector2(0.5f, 0.5f);
-        instance.Root.anchoredPosition = new Vector2(0, BottomOffset);
+        // Disc starts at screen center; the toast slides left as the pill expands
+        instance.SlideX = PillWidth / 2f;
+        ApplyPosition(instance);
         instance.Root.sizeDelta = new Vector2(PillWidth + CircleSize, PillHeight + 8);
         instance.Root.localScale = Vector3.one;
         instance.Group = root.AddComponent<CanvasGroup>();
@@ -304,7 +309,7 @@ public static class XboxToast
             var dx = pointer.delta.x / scale;
             instance.OffsetX += dx;
             if (Time.unscaledDeltaTime > 0f) instance.Velocity = dx / Time.unscaledDeltaTime;
-            instance.Root.anchoredPosition = new Vector2(instance.OffsetX, BottomOffset);
+            ApplyPosition(instance);
             instance.Group.alpha = Mathf.Max(1f - Mathf.Abs(instance.OffsetX) / 400f, 0.3f);
         }));
         trigger.triggers.Add(drag);
@@ -397,14 +402,18 @@ public static class XboxToast
         // hidden behind the disc.
         yield return CoFlip(instance, reverse: false);
 
-        // Step 3: pill expands from the circle outward; text fades/slides in
-        // once the pill has mostly opened
+        // Step 3: pill expands from the circle outward while the toast slides
+        // left so the pill ends centered; text fades/slides in once the pill
+        // has mostly opened
         instance.Pill.gameObject.SetActive(true);
         yield return CoTween(0.4f, k =>
         {
             var elapsed = k * 0.4f;
-            var w = Mathf.Lerp(CircleSize / 2f, PillWidth, EaseOutCubic(Mathf.Clamp01(elapsed / 0.35f)));
+            var e = EaseOutCubic(Mathf.Clamp01(elapsed / 0.35f));
+            var w = Mathf.Lerp(CircleSize / 2f, PillWidth, e);
             instance.Pill.sizeDelta = new Vector2(w, PillHeight);
+            instance.SlideX = Mathf.Lerp(PillWidth / 2f, 0f, e);
+            ApplyPosition(instance);
             var tt = Mathf.Clamp01((elapsed - 0.12f) / 0.25f);
             instance.TextGroup.alpha = tt;
             instance.TextRect.anchoredPosition = new Vector2(Mathf.Lerp(-28f, 0f, EaseOutCubic(tt)), 0f);
@@ -423,7 +432,7 @@ public static class XboxToast
                 {
                     instance.SpringT += dt;
                     instance.OffsetX = Mathf.Lerp(instance.SpringFrom, 0f, Smooth(Mathf.Clamp01(instance.SpringT / 0.2f)));
-                    instance.Root.anchoredPosition = new Vector2(instance.OffsetX, BottomOffset);
+                    ApplyPosition(instance);
                     instance.Group.alpha = Mathf.Max(1f - Mathf.Abs(instance.OffsetX) / 400f, 0.3f);
                 }
             }
@@ -437,19 +446,24 @@ public static class XboxToast
             var startAlpha = instance.Group.alpha;
             yield return CoTween(0.2f, k =>
             {
-                instance.Root.anchoredPosition = new Vector2(Mathf.Lerp(startX, instance.DismissDir * 1600f, k), BottomOffset);
+                instance.OffsetX = Mathf.Lerp(startX, instance.DismissDir * 1600f, k);
+                ApplyPosition(instance);
                 instance.Group.alpha = Mathf.Lerp(startAlpha, 0f, k);
             });
             yield break;
         }
 
         // Step 5: the intro in reverse — pill collapses into the disc while the
-        // text slides out, the disc flips back, then shrinks away
+        // toast slides back to center and the text slides out, the disc flips
+        // back, then shrinks away
         yield return CoTween(0.35f, k =>
         {
             var elapsed = k * 0.35f;
-            var w = Mathf.Lerp(PillWidth, CircleSize / 2f, EaseInCubic(k));
+            var e = EaseInCubic(k);
+            var w = Mathf.Lerp(PillWidth, CircleSize / 2f, e);
             instance.Pill.sizeDelta = new Vector2(w, PillHeight);
+            instance.SlideX = Mathf.Lerp(0f, PillWidth / 2f, e);
+            ApplyPosition(instance);
             var tt = Mathf.Clamp01(elapsed / 0.2f);
             instance.TextGroup.alpha = 1f - tt;
             instance.TextRect.anchoredPosition = new Vector2(Mathf.Lerp(0f, -28f, EaseInCubic(tt)), 0f);
