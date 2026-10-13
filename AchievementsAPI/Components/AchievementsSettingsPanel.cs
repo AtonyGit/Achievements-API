@@ -4,6 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
+using static AchievementsAPI.MenuUi;
 
 namespace AchievementsAPI;
 
@@ -14,16 +15,8 @@ namespace AchievementsAPI;
 /// </summary>
 public static class AchievementsSettingsPanel
 {
-    private static readonly Color32 PanelColor = new(26, 26, 26, 250);
-    private static readonly Color32 StripColor = new(42, 42, 42, 255);
-    private static readonly Color32 AccentColor = new(16, 124, 16, 255);
-    private static readonly Color32 PressedColor = new(12, 90, 12, 255);
-    private static readonly Color32 TrackOffColor = new(70, 70, 70, 255);
-    private static readonly Color32 ValueColor = new(176, 176, 176, 255);
-
     /// <summary>
-    /// Creates the settings gear button (top-right of the parent) and the settings
-    /// panel (hidden until the gear is clicked).
+    /// Creates the settings panel (hidden until toggled by the caller).
     /// </summary>
     /// <param name="parent">The menu root transform.</param>
     /// <returns>The created settings panel.</returns>
@@ -31,65 +24,7 @@ public static class AchievementsSettingsPanel
     {
         var panel = CreatePanel(parent);
         panel.SetActive(false);
-
-        var gear = CreateGearButton(parent);
-        gear.onClick.AddListener((UnityAction)(() => panel.SetActive(!panel.activeSelf)));
-
         return panel;
-    }
-
-    private static Image CreateImage(Transform parent, string name, Sprite? sprite, Color color)
-    {
-        var go = new GameObject(name);
-        var rect = go.AddComponent<RectTransform>();
-        rect.SetParent(parent, false);
-        var img = go.AddComponent<Image>();
-        if (sprite != null) img.sprite = sprite;
-        img.color = color;
-        return img;
-    }
-
-    private static TextMeshProUGUI CreateText(Transform parent, string name, string text, float size,
-        Color color, FontStyles style = FontStyles.Normal, TextAlignmentOptions alignment = TextAlignmentOptions.MidlineLeft)
-    {
-        var go = new GameObject(name);
-        var rect = go.AddComponent<RectTransform>();
-        rect.SetParent(parent, false);
-        var tmp = go.AddComponent<TextMeshProUGUI>();
-        var font = AchievementToast.ResolveFont();
-        if (font != null) tmp.font = font;
-        tmp.text = text;
-        tmp.fontSize = size;
-        tmp.fontStyle = style;
-        tmp.color = color;
-        tmp.alignment = alignment;
-        tmp.enableWordWrapping = false;
-        tmp.overflowMode = TextOverflowModes.Ellipsis;
-        tmp.raycastTarget = false;
-        return tmp;
-    }
-
-    private static Button CreateGearButton(Transform parent)
-    {
-        var img = CreateImage(parent, "SettingsGear", ToastSprites.RoundedRectSmall, new Color32(26, 26, 26, 242));
-        img.type = Image.Type.Sliced;
-        var rect = img.rectTransform;
-        rect.anchorMin = rect.anchorMax = new Vector2(1f, 1f);
-        rect.pivot = new Vector2(1f, 1f);
-        rect.anchoredPosition = new Vector2(-40f, -40f);
-        rect.sizeDelta = new Vector2(56f, 56f);
-
-        var font = AchievementToast.ResolveFont();
-        var label = font != null && font.HasCharacter('⚙') ? "⚙" : "Settings";
-        var text = CreateText(rect, "Label", label, label.Length > 1 ? 13f : 30f, Color.white,
-            FontStyles.Bold, TextAlignmentOptions.Center);
-        var textRect = text.rectTransform;
-        textRect.anchorMin = Vector2.zero;
-        textRect.anchorMax = Vector2.one;
-        textRect.offsetMin = Vector2.zero;
-        textRect.offsetMax = Vector2.zero;
-
-        return img.gameObject.AddComponent<Button>();
     }
 
     private static GameObject CreatePanel(Transform parent)
@@ -259,35 +194,5 @@ public static class AchievementsSettingsPanel
             entry.Value = v;
             valueLabel.text = format(v);
         }));
-    }
-
-    private static Button CreateButton(Transform panel, string label, Vector2 position)
-    {
-        var bg = CreateImage(panel, $"{label}Button", ToastSprites.RoundedRectSmall, Color.white);
-        bg.type = Image.Type.Sliced;
-        var rect = bg.rectTransform;
-        rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0f);
-        rect.pivot = new Vector2(0.5f, 0.5f);
-        rect.anchoredPosition = position;
-        rect.sizeDelta = new Vector2(180f, 48f);
-
-        var text = CreateText(rect, "Label", label, 22f, Color.white, FontStyles.Bold, TextAlignmentOptions.Center);
-        var textRect = text.rectTransform;
-        textRect.anchorMin = Vector2.zero;
-        textRect.anchorMax = Vector2.one;
-        textRect.offsetMin = Vector2.zero;
-        textRect.offsetMax = Vector2.zero;
-
-        var button = bg.gameObject.AddComponent<Button>();
-        button.transition = Selectable.Transition.ColorTint;
-        var colors = button.colors;
-        colors.normalColor = StripColor;
-        colors.highlightedColor = AccentColor;
-        colors.pressedColor = PressedColor;
-        colors.selectedColor = AccentColor;
-        colors.colorMultiplier = 1f;
-        colors.fadeDuration = 0.1f;
-        button.colors = colors;
-        return button;
     }
 }

@@ -21,6 +21,7 @@ public static class ToastSprites
     private static Sprite? _roundedRectSmall;
     private static Sprite? _roundedRectTiny;
     private static Sprite? _squircle;
+    private static Sprite? _gear;
 
     /// <summary>
     /// A 128x128 anti-aliased filled circle.
@@ -50,6 +51,11 @@ public static class ToastSprites
     /// 9-slice border, suitable for <see cref="UnityEngine.UI.Image.Type.Sliced"/>.
     /// </summary>
     public static Sprite Squircle => _squircle ??= CreateRoundedRect(SquircleRadius, "AchToastSquircle", 4f);
+
+    /// <summary>
+    /// A 128x128 anti-aliased gear with 8 teeth and an 18px center hole.
+    /// </summary>
+    public static Sprite Gear => _gear ??= CreateGear();
 
     private static readonly Dictionary<int, Sprite> _trimmed = new();
 
@@ -113,6 +119,25 @@ public static class ToastSprites
             var d = Mathf.Sqrt((x - 63.5f) * (x - 63.5f) + (y - 63.5f) * (y - 63.5f));
             return Mathf.Clamp01(64f - d);
         }, "AchToastCircle");
+
+        tex.DontUnload();
+        var sprite = Sprite.Create(tex, new Rect(0, 0, Size, Size), new Vector2(0.5f, 0.5f), 100f);
+        sprite.DontUnload();
+        return sprite;
+    }
+
+    private static Sprite CreateGear()
+    {
+        var tex = CreateTexture((x, y) =>
+        {
+            var dx = x - 63.5f;
+            var dy = y - 63.5f;
+            var d = Mathf.Sqrt(dx * dx + dy * dy);
+            var angle = Mathf.Atan2(dy, dx);
+            var tooth = 0.5f + 0.5f * Mathf.Cos(angle * 8f);
+            var outer = Mathf.Lerp(44f, 56f, Mathf.Clamp01((tooth - 0.5f) * 6f));
+            return Mathf.Clamp01(outer - d) * Mathf.Clamp01(d - 18f);
+        }, "AchToastGear");
 
         tex.DontUnload();
         var sprite = Sprite.Create(tex, new Rect(0, 0, Size, Size), new Vector2(0.5f, 0.5f), 100f);

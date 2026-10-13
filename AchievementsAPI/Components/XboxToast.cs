@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using AchievementsAPI.API;
+using AchievementsAPI.Patches.MainMenu;
 using Reactor.Utilities;
 using Reactor.Utilities.Extensions;
 using TMPro;
@@ -107,17 +108,6 @@ public static class XboxToast
         return _canvas;
     }
 
-    private static Color RarityColor(int rarity)
-    {
-        return rarity switch
-        {
-            1 => new Color32(112, 208, 255, 255),
-            2 => new Color32(187, 88, 255, 255),
-            3 => new Color32(255, 226, 64, 255),
-            _ => new Color32(16, 124, 16, 255)
-        };
-    }
-
     private static Image CreateImage(Transform parent, string name, Sprite? sprite, Color color, bool raycast = false)
     {
         var go = new GameObject(name);
@@ -165,6 +155,9 @@ public static class XboxToast
         public float Velocity;
         public float SpringFrom;
         public float SpringT = 1f;
+        public TextMeshProUGUI Title = null!;
+        public TextMeshProUGUI Hint = null!;
+        public bool Opened;
     }
 
     private static void ApplyPosition(ToastInstance i) => i.Root.anchoredPosition = new Vector2(i.OffsetX + i.SlideX, BottomOffset);
@@ -186,7 +179,7 @@ public static class XboxToast
         instance.Root.localScale = Vector3.one;
         instance.Group = root.AddComponent<CanvasGroup>();
 
-        var rarity = RarityColor(request.Rarity);
+        var rarity = MenuUi.RarityColor(request.Rarity);
 
         // Pill
         var pillGo = new GameObject("Pill");
@@ -243,11 +236,25 @@ public static class XboxToast
         instance.TextGroup.alpha = 0f;
 
         var title = CreateText(instance.TextRect, "Title", request.Title, 22f, new Color32(176, 176, 176, 255));
+        instance.Title = title;
         var titleRect = title.rectTransform;
         titleRect.anchorMin = titleRect.anchorMax = new Vector2(0f, 0.5f);
         titleRect.pivot = new Vector2(0f, 0.5f);
         titleRect.anchoredPosition = new Vector2(6f, 15f);
         titleRect.sizeDelta = new Vector2(PillWidth, 26f);
+
+        // Alternates with the title while the toast is held, prompting how to
+        // open the achievement in the menu
+        var hint = CreateText(instance.TextRect, "Hint",
+            HasController() ? "Hold Y to view" : "Middle-click to view",
+            22f, new Color32(176, 176, 176, 255));
+        instance.Hint = hint;
+        hint.alpha = 0f;
+        var hintRect = hint.rectTransform;
+        hintRect.anchorMin = hintRect.anchorMax = new Vector2(0f, 0.5f);
+        hintRect.pivot = new Vector2(0f, 0.5f);
+        hintRect.anchoredPosition = new Vector2(6f, 15f);
+        hintRect.sizeDelta = new Vector2(PillWidth, 26f);
 
         var subtitle = CreateText(instance.TextRect, "Subtitle", request.Subtitle, 30f, Color.white, FontStyles.Bold);
         var subtitleRect = subtitle.rectTransform;
@@ -285,11 +292,23 @@ public static class XboxToast
             instance.IconObj.SetActive(false);
         }
 
-        AddSwipeHandlers(instance);
+        AddSwipeHandlers(instance, request);
         return instance;
     }
 
-    private static void AddSwipeHandlers(ToastInstance instance)
+    private static bool HasController() => Input.GetJoystickNames().Any(n => !string.IsNullOrEmpty(n));
+
+    private static void Open(ToastInstance instance, AchievementToast.ToastRequest request)
+    {
+        if (instance.Opened) return;
+        instance.Opened = true;
+        instance.Dismissed = true;
+        // Zero direction: the fly-off just fades in place
+        instance.DismissDir = 0f;
+        AchievementsMenuOpen.OpenMenu(request.AchievementId);
+    }
+
+    private static void AddSwipeHandlers(ToastInstance instance, AchievementToast.ToastRequest request)
     {
         var trigger = instance.Pill.gameObject.AddComponent<EventTrigger>();
         var scale = EnsureCanvas().scaleFactor;
@@ -332,6 +351,15 @@ public static class XboxToast
             }
         }));
         trigger.triggers.Add(up);
+
+        var click = new EventTrigger.Entry { eventID = EventTriggerType.PointerClick };
+        click.callback.AddListener((UnityAction<BaseEventData>)(data =>
+        {
+            var pointer = data.TryCast<PointerEventData>();
+            if (pointer == null || pointer.button != PointerEventData.InputButton.Middle) return;
+            Open(instance, request);
+        }));
+        trigger.triggers.Add(click);
     }
 
     private static float Smooth(float t) => t * t * (3f - 2f * t);
@@ -421,12 +449,18 @@ public static class XboxToast
             instance.TextRect.anchoredPosition = new Vector2(Mathf.Lerp(-28f, 0f, EaseOutCubic(tt)), 0f);
         }, instance);
 
-        // Step 4: hold (paused while dragging; spring-back applied after release)
+        // Step 4: hold (paused while dragging; spring-back applied after
+        // release). The title alternates with an "open in menu" hint, and
+        // holding Y / middle-clicking opens it.
         var t = 0f;
+        var holdT = 0f;
+        instance.Title.alpha = 1f;
         var duration = request.Rarity > 0 ? AchievementsConfig.RareToastDuration.Value : AchievementsConfig.ToastDuration.Value;
         while (t < duration && !instance.Dismissed)
         {
             var dt = Time.unscaledDeltaTime;
+            holdT = Input.GetKey(KeyCode.JoystickButton3) ? holdT + dt : 0f;
+            if (holdT >= 0.6f) Open(instance, request);
             if (!instance.Dragging)
             {
                 t += dt;
@@ -436,6 +470,20 @@ public static class XboxToast
                     instance.OffsetX = Mathf.Lerp(instance.SpringFrom, 0f, Smooth(Mathf.Clamp01(instance.SpringT / 0.2f)));
                     ApplyPosition(instance);
                     instance.Group.alpha = Mathf.Max(1f - Mathf.Abs(instance.OffsetX) / 400f, 0.3f);
+                }
+
+                var cycle = t % 4f;
+                if (t < 2f)
+                {
+                    instance.Title.alpha = 1f;
+                    instance.Hint.alpha = 0f;
+                }
+                else
+                {
+                    var showHint = cycle >= 2f;
+                    var b = Mathf.Clamp01((cycle - (showHint ? 2f : 0f)) / 0.3f);
+                    instance.Title.alpha = showHint ? 1f - b : b;
+                    instance.Hint.alpha = showHint ? b : 1f - b;
                 }
             }
             yield return null;

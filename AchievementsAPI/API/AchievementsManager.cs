@@ -31,6 +31,19 @@ public static class AchievementsManager
         return Tabs.FirstOrDefault(x => x.Name == name);
     }
 
+    /// <summary>
+    /// Finds a registered achievement by Id across all tabs.
+    /// </summary>
+    public static (AchievementsTab Tab, BaseAchievement Achievement)? FindAchievement(string id)
+    {
+        foreach (var tab in Tabs)
+        {
+            var achievement = tab.GetAchievements().FirstOrDefault(x => x.Id == id);
+            if (achievement != null) return (tab, achievement);
+        }
+        return null;
+    }
+
     public static void Initialize()
     {
         RegisterTab(new ExampleTab());

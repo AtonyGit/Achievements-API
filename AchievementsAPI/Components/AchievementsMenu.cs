@@ -30,7 +30,9 @@ namespace AchievementsAPI
         public MainMenuManager mainMenuManager;
         public OptionsMenuBehaviour OptionsMenuBehaviour;
         public List<AchievementsMenuItem> items = new();
+        public string? FocusAchievementId;
         private GameObject? _settingsPanel;
+        private GameObject? _detailPanel;
         private void Start()
         {
             foreach (var tab in AchievementsManager.Tabs)
@@ -57,7 +59,8 @@ namespace AchievementsAPI
                 AchievementStorage.AchievementStorageGet(tab);
             }
 
-            var firstTab = AchievementsManager.Tabs.FirstOrDefault(x => x.IsSelectable) ?? AchievementsManager.Tabs[0];
+            var focused = FocusAchievementId != null ? AchievementsManager.FindAchievement(FocusAchievementId) : null;
+            var firstTab = focused?.Tab ?? AchievementsManager.Tabs.FirstOrDefault(x => x.IsSelectable) ?? AchievementsManager.Tabs[0];
             SetTab(firstTab);
             if (mainMenuManager)
             {
@@ -70,6 +73,25 @@ namespace AchievementsAPI
             }
 
             _settingsPanel = AchievementsSettingsPanel.Create(transform);
+
+            // Settings is a tab-style button pinned as the last tab
+            var gearTab = Instantiate(tabPrefab.Value, tabsParent);
+            gearTab.name = "SettingsTab";
+            gearTab.transform.SetAsLastSibling();
+            gearTab.GetComponent<Image>().sprite = ToastSprites.Gear;
+            gearTab.GetComponent<Button>().onClick.AddListener(new Action(() =>
+                _settingsPanel.SetActive(!_settingsPanel.activeSelf)));
+
+            if (focused != null)
+            {
+                ShowDetail(focused.Value.Achievement);
+            }
+        }
+
+        private void ShowDetail(BaseAchievement achievement)
+        {
+            if (_detailPanel != null) _detailPanel.Destroy();
+            _detailPanel = AchievementDetailPanel.Create(transform, achievement);
         }
         private void SetTab(AchievementsTab tab, bool inOptionsMenu = false)
         {
@@ -133,6 +155,26 @@ namespace AchievementsAPI
                     }
                 }
                 
+                if (achievement is CountAchievement count && count.RequiredValue > 0 && !(count.HideProgress && count.Hidden))
+                {
+                    var bar = MenuUi.CreateProgressBar(uiElement.transform, MenuUi.RarityColor(achievement.Rarity), out var fill);
+                    bar.anchorMin = new Vector2(0f, 0f);
+                    bar.anchorMax = new Vector2(1f, 0f);
+                    bar.pivot = new Vector2(0.5f, 0f);
+                    bar.anchoredPosition = new Vector2(0f, 6f);
+                    bar.sizeDelta = new Vector2(-24f, 6f);
+                    MenuUi.SetProgress(fill, (float) count.CurrentValue / count.RequiredValue);
+                }
+
+                var button = uiElement.gameObject.AddComponent<Button>();
+                button.targetGraphic = img;
+                button.transition = Selectable.Transition.ColorTint;
+                var buttonColors = button.colors;
+                buttonColors.highlightedColor = new Color(1.1f, 1.1f, 1.1f);
+                buttonColors.colorMultiplier = 1f;
+                button.colors = buttonColors;
+                button.onClick.AddListener(new Action(() => ShowDetail(achievement)));
+
                 achievementCount++;
                 if (achievement.Unlocked) completedAchievementCount++;
                 
@@ -160,6 +202,12 @@ namespace AchievementsAPI
         private void Update()
         {
             if (!Input.GetKeyDown(KeyCode.Escape)) return;
+            if (_detailPanel != null && _detailPanel.activeSelf)
+            {
+                _detailPanel.Destroy();
+                _detailPanel = null;
+                return;
+            }
             if (_settingsPanel != null && _settingsPanel.activeSelf)
             {
                 _settingsPanel.SetActive(false);
