@@ -13,7 +13,11 @@ public class ExampleTab : AchievementsTab
         return Color.red;
     }
 
-    public BaseAchievement achievement { get; set; } = new BaseAchievement("Getting Started!", "Check out the achievements button on the main menu!", "AchievementsAPI.Resources.ExampleIcon.png");
+    public BaseAchievement achievement { get; set; } = new BaseAchievement("Getting Started!", "Check out the achievements button on the main menu!", "AchievementsAPI.Resources.ExampleIcon.png")
+    {
+        ResetTrigger = AchResetTrigger.OnGameEnd,
+        ToastTiming = AchToastTiming.OnMeetingStart
+    };
     public override Sprite GetIcon()
     {
         return SpriteTools.LoadSpriteFromPath("AchievementsAPI.Resources.ExampleIcon.png", Assembly.GetCallingAssembly(), 100);
