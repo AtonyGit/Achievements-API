@@ -165,7 +165,7 @@ public static class AchievementsSettingsPanel
         var boxRect = box.rectTransform;
         boxRect.anchorMin = boxRect.anchorMax = new Vector2(1f, 0.5f);
         boxRect.pivot = new Vector2(0.5f, 0.5f);
-        boxRect.anchoredPosition = new Vector2(-24f - 36f - 8f - 100f, 0f);
+        boxRect.anchoredPosition = new Vector2(-152f, 0f);
         boxRect.sizeDelta = new Vector2(200f, 36f);
 
         var valueText = CreateText(boxRect, "Value", EnumDisplayName(entry.Value), 20f, Color.white,
@@ -185,8 +185,8 @@ public static class AchievementsSettingsPanel
             valueText.text = EnumDisplayName(entry.Value);
         }
 
-        Arrow($"{label}Left", "<", -24f - 36f - 8f - 200f - 8f).onClick.AddListener((UnityAction)(() => Step(-1)));
-        Arrow($"{label}Right", ">", -24f).onClick.AddListener((UnityAction)(() => Step(1)));
+        Arrow($"{label}Left", "<", -278f).onClick.AddListener((UnityAction)(() => Step(-1)));
+        Arrow($"{label}Right", ">", -26f).onClick.AddListener((UnityAction)(() => Step(1)));
     }
 
     private static void CreateSliderRow(Transform strip, string label, ConfigEntry<float> entry,

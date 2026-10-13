@@ -46,12 +46,12 @@ public static class AchievementsConfig
         ToastsEnabled = config.Bind(section, nameof(ToastsEnabled), true,
             "Whether achievement toast popups are shown.");
 
-        ToastDuration = config.Bind(section, nameof(ToastDuration), 4f,
+        ToastDuration = config.Bind(section, nameof(ToastDuration), 4.4f,
             new ConfigDescription(
                 "Seconds an achievement toast stays fully visible on screen.",
                 new AcceptableValueRange<float>(1f, 10f)));
 
-        RareToastDuration = config.Bind(section, nameof(RareToastDuration), 6f,
+        RareToastDuration = config.Bind(section, nameof(RareToastDuration), 6.0f,
             new ConfigDescription(
                 "Seconds a rare (rarity above 0) achievement toast stays fully visible on screen.",
                 new AcceptableValueRange<float>(1f, 10f)));
@@ -59,7 +59,7 @@ public static class AchievementsConfig
         ToastSoundEnabled = config.Bind(section, nameof(ToastSoundEnabled), true,
             "Whether a sound plays when an achievement unlock toast appears.");
 
-        ToastVolume = config.Bind(section, nameof(ToastVolume), 0.8f,
+        ToastVolume = config.Bind(section, nameof(ToastVolume), 0.5f,
             new ConfigDescription(
                 "Volume of the achievement unlock sound.",
                 new AcceptableValueRange<float>(0f, 1f)));
