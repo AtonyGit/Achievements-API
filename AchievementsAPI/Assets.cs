@@ -12,5 +12,10 @@ public class Assets
     public static GameObject achievementToastCanvasPrefab { get; set; } = assetBundle.LoadAsset<GameObject>("ToastCanvas").DontDestroy().DontDestroyOnLoad().DontDestroyOnLoad();
     public static GameObject achievementToastPrefab { get; set; } = assetBundle.LoadAsset<GameObject>("Toast").DontDestroy().DontDestroyOnLoad().DontDestroyOnLoad();
     public static Sprite StarSprite { get; set; } = assetBundle.LoadAsset<Sprite>("Star");
-    
+
+    private static AudioClip? _lockChime;
+    /// <summary>
+    /// The chime played when an achievement unlock toast appears.
+    /// </summary>
+    public static AudioClip? LockChime => _lockChime ??= WavLoader.LoadFromResource(typeof(Assets).Assembly, "AchievementsAPI.Resources.LockChime.wav");
 }

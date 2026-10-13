@@ -55,6 +55,17 @@ public class AchievementToast
         subtitleObj.transform.localPosition += subtitleOffset;
     }
 
+    /// <summary>
+    /// Plays the unlock chime, if enabled in the config.
+    /// </summary>
+    public static void PlayUnlockSound()
+    {
+        if (!AchievementsConfig.ToastSoundEnabled.Value) return;
+        var clip = Assets.LockChime;
+        if (clip == null || SoundManager.Instance == null) return;
+        SoundManager.Instance.PlaySound(clip, false, AchievementsConfig.ToastVolume.Value);
+    }
+
     private static IEnumerator CoAnimateAndDestroyToast()
     {
         Vector3 onScreenPos = currentToast.localPosition;
@@ -64,7 +75,7 @@ public class AchievementToast
             Effects.Slide2D(currentToast, offScreenRight, onScreenPos, 0.7f));
 
         float time = 0;
-        while (time <= 3)
+        while (time <= AchievementsConfig.ToastDuration.Value)
         {
             time += Time.deltaTime;
             yield return null;
@@ -104,6 +115,7 @@ public class AchievementToast
             img.m_Sprite = achievement.ToastBgSprite;
         }
 
+        PlayUnlockSound();
         yield return Coroutines.Start(CoAnimateAndDestroyToast());
     }
 
@@ -139,6 +151,7 @@ public class AchievementToast
             img.m_Sprite = achievement.ToastBgSprite;
         }
 
+        if (unlocked) PlayUnlockSound();
         yield return Coroutines.Start(CoAnimateAndDestroyToast());
     }
 }
