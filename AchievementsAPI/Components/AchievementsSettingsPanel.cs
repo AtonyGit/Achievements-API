@@ -101,7 +101,7 @@ public static class AchievementsSettingsPanel
         rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
         rect.pivot = new Vector2(0.5f, 0.5f);
         rect.anchoredPosition = Vector2.zero;
-        rect.sizeDelta = new Vector2(720f, 560f);
+        rect.sizeDelta = new Vector2(720f, 636f);
 
         var title = CreateText(rect, "Title", "Toast Settings", 32f, Color.white, FontStyles.Bold, TextAlignmentOptions.Center);
         var titleRect = title.rectTransform;
@@ -125,6 +125,8 @@ public static class AchievementsSettingsPanel
         CreateSliderRow(CreateRowStrip(rect, rowsTop - 152f), "Volume", AchievementsConfig.ToastVolume, 0f, 1f,
             v => $"{Mathf.RoundToInt(v * 100f)}%");
         CreateSliderRow(CreateRowStrip(rect, rowsTop - 228f), "Toast duration", AchievementsConfig.ToastDuration, 1f, 10f,
+            v => $"{v:0.0}s");
+        CreateSliderRow(CreateRowStrip(rect, rowsTop - 304f), "Rare duration", AchievementsConfig.RareToastDuration, 1f, 10f,
             v => $"{v:0.0}s");
 
         var preview = CreateButton(rect, "Preview", new Vector2(-110f, 64f));

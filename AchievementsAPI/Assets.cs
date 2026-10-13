@@ -18,4 +18,10 @@ public class Assets
     /// The chime played when an achievement unlock toast appears.
     /// </summary>
     public static AudioClip? LockChime => _lockChime ??= WavLoader.LoadFromResource(typeof(Assets).Assembly, "AchievementsAPI.Resources.LockChime.wav");
+
+    private static AudioClip? _rareChime;
+    /// <summary>
+    /// The chime played when a rare (rarity above 0) achievement unlock toast appears.
+    /// </summary>
+    public static AudioClip? RareChime => _rareChime ??= WavLoader.LoadFromResource(typeof(Assets).Assembly, "AchievementsAPI.Resources.RareChime.wav");
 }

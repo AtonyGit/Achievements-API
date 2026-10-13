@@ -18,6 +18,11 @@ public static class AchievementsConfig
     public static ConfigEntry<float> ToastDuration { get; private set; } = null!;
 
     /// <summary>
+    /// Seconds a rare (rarity above 0) toast stays fully visible on screen.
+    /// </summary>
+    public static ConfigEntry<float> RareToastDuration { get; private set; } = null!;
+
+    /// <summary>
     /// Whether a sound plays when an achievement unlock toast appears.
     /// </summary>
     public static ConfigEntry<bool> ToastSoundEnabled { get; private set; } = null!;
@@ -37,6 +42,11 @@ public static class AchievementsConfig
         ToastDuration = config.Bind(section, nameof(ToastDuration), 4f,
             new ConfigDescription(
                 "Seconds an achievement toast stays fully visible on screen.",
+                new AcceptableValueRange<float>(1f, 10f)));
+
+        RareToastDuration = config.Bind(section, nameof(RareToastDuration), 6f,
+            new ConfigDescription(
+                "Seconds a rare (rarity above 0) achievement toast stays fully visible on screen.",
                 new AcceptableValueRange<float>(1f, 10f)));
 
         ToastSoundEnabled = config.Bind(section, nameof(ToastSoundEnabled), true,
