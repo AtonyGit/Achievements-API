@@ -44,6 +44,7 @@ public static class AchievementsSettingsPanel
             v => $"{v:0.0}s");
         CreateSliderRow(CreateRowStrip(rect, rowsTop - 304f), "Rare duration", AchievementsConfig.RareToastDuration, 1f, 10f,
             v => $"{v:0.0}s");
+        CreateCycleRow(CreateRowStrip(rect, rowsTop - 380f), "Position", AchievementsConfig.Position);
 
         var preview = CreateButton(rect, "Preview", Vector2.zero);
         var previewRect = preview.GetComponent<RectTransform>();
@@ -124,6 +125,68 @@ public static class AchievementsSettingsPanel
             entry.Value = v;
             ApplySwitchState(knobRect, track, v);
         }));
+    }
+
+    private static void CreateCycleRow<T>(Transform strip, string label, ConfigEntry<T> entry) where T : struct, System.Enum
+    {
+        CreateRowLabel(strip, label);
+
+        Button Arrow(string name, string text, float x)
+        {
+            var bg = CreateImage(strip, name, ToastSprites.RoundedRectTiny, Color.white);
+            bg.type = Image.Type.Sliced;
+            var rect = bg.rectTransform;
+            rect.anchorMin = rect.anchorMax = new Vector2(1f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = new Vector2(x, 0f);
+            rect.sizeDelta = new Vector2(36f, 36f);
+
+            var labelText = CreateText(rect, "Label", text, 22f, Color.white, FontStyles.Bold, TextAlignmentOptions.Center);
+            labelText.rectTransform.anchorMin = Vector2.zero;
+            labelText.rectTransform.anchorMax = Vector2.one;
+            labelText.rectTransform.offsetMin = Vector2.zero;
+            labelText.rectTransform.offsetMax = Vector2.zero;
+
+            var button = bg.gameObject.AddComponent<Button>();
+            button.transition = Selectable.Transition.ColorTint;
+            var colors = button.colors;
+            colors.normalColor = AccentColor;
+            colors.highlightedColor = AccentHover;
+            colors.pressedColor = PressedColor;
+            colors.selectedColor = AccentColor;
+            colors.colorMultiplier = 1f;
+            colors.fadeDuration = 0.1f;
+            button.colors = colors;
+            return button;
+        }
+
+        var box = CreateImage(strip, $"{label}ValueBox", ToastSprites.RoundedRectTiny, new Color32(41, 40, 41, 255));
+        box.type = Image.Type.Sliced;
+        var boxRect = box.rectTransform;
+        boxRect.anchorMin = boxRect.anchorMax = new Vector2(1f, 0.5f);
+        boxRect.pivot = new Vector2(0.5f, 0.5f);
+        boxRect.anchoredPosition = new Vector2(-24f - 36f - 8f - 100f, 0f);
+        boxRect.sizeDelta = new Vector2(200f, 36f);
+
+        var valueText = CreateText(boxRect, "Value", EnumDisplayName(entry.Value), 20f, Color.white,
+            FontStyles.Normal, TextAlignmentOptions.Center);
+        Outline(valueText);
+        var valueRect = valueText.rectTransform;
+        valueRect.anchorMin = Vector2.zero;
+        valueRect.anchorMax = Vector2.one;
+        valueRect.offsetMin = Vector2.zero;
+        valueRect.offsetMax = Vector2.zero;
+
+        var values = System.Enum.GetValues(typeof(T));
+        void Step(int dir)
+        {
+            var i = System.Array.IndexOf(values, entry.Value);
+            entry.Value = (T) values.GetValue((i + dir + values.Length) % values.Length);
+            valueText.text = EnumDisplayName(entry.Value);
+        }
+
+        Arrow($"{label}Left", "<", -24f - 36f - 8f - 200f - 8f).onClick.AddListener((UnityAction)(() => Step(-1)));
+        Arrow($"{label}Right", ">", -24f).onClick.AddListener((UnityAction)(() => Step(1)));
     }
 
     private static void CreateSliderRow(Transform strip, string label, ConfigEntry<float> entry,

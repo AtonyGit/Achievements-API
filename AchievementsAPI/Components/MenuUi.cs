@@ -156,6 +156,10 @@ public static class MenuUi
 
     internal static string FormatUnlockTime(DateTime utc) => utc.ToLocalTime().ToString("g");
 
+    // "BottomCenter" -> "Bottom Center"
+    internal static string EnumDisplayName(Enum value)
+        => System.Text.RegularExpressions.Regex.Replace(value.ToString(), "(\\B[A-Z])", " $1");
+
     // Re-parents `target` next to `source` and copies its anchors/pivot/offsets so it covers the same area.
     internal static void MatchRect(RectTransform target, RectTransform source)
     {

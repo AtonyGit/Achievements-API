@@ -2,6 +2,8 @@ using BepInEx.Configuration;
 
 namespace AchievementsAPI.API;
 
+public enum ToastPosition { BottomCenter, BottomLeft, BottomRight, TopCenter, TopLeft, TopRight }
+
 /// <summary>
 /// Configuration for achievement toast notifications, backed by the plugin's BepInEx config file.
 /// </summary>
@@ -32,6 +34,11 @@ public static class AchievementsConfig
     /// </summary>
     public static ConfigEntry<float> ToastVolume { get; private set; } = null!;
 
+    /// <summary>
+    /// Where achievement toasts appear on screen.
+    /// </summary>
+    public static ConfigEntry<ToastPosition> Position { get; private set; } = null!;
+
     internal static void Bind(ConfigFile config)
     {
         const string section = "Toasts";
@@ -56,5 +63,8 @@ public static class AchievementsConfig
             new ConfigDescription(
                 "Volume of the achievement unlock sound.",
                 new AcceptableValueRange<float>(0f, 1f)));
+
+        Position = config.Bind(section, nameof(Position), ToastPosition.BottomCenter,
+            "Where achievement toasts appear on screen.");
     }
 }

@@ -24,7 +24,8 @@ public static class XboxToast
     private const float CircleSize = PillHeight + 4f;
     private const float PillCollapsedWidth = 36f;
     private const float IconSize = 76f;
-    private const float BottomOffset = 140f;
+    private const float EdgeOffset = 140f;
+    private const float SideMargin = 40f;
     private const float TitleY = 15f;
     private const float SwapOffset = 14f;
     private const float DismissThreshold = 140f;
@@ -150,6 +151,10 @@ public static class XboxToast
         public CanvasGroup TextGroup = null!;
         public float OffsetX;
         public float SlideX;
+        public float SlideStart;
+        public float BaseX;
+        public float BaseY;
+        public int Side;
         public bool Dragging;
         public bool Dismissed;
         public float DismissDir;
@@ -161,20 +166,38 @@ public static class XboxToast
         public bool Opened;
     }
 
-    private static void ApplyPosition(ToastInstance i) => i.Root.anchoredPosition = new Vector2(i.OffsetX + i.SlideX, BottomOffset);
+    private static void ApplyPosition(ToastInstance i) => i.Root.anchoredPosition = new Vector2(i.BaseX + i.OffsetX + i.SlideX, i.BaseY);
 
     private static ToastInstance CreateToast(AchievementToast.ToastRequest request)
     {
         var canvas = EnsureCanvas();
         var instance = new ToastInstance();
 
+        // Layout from the configured position: corners anchor to their screen
+        // edge, centered toasts start with the disc at the anchor and slide out
+        var pos = AchievementsConfig.Position.Value;
+        var top = pos is ToastPosition.TopCenter or ToastPosition.TopLeft or ToastPosition.TopRight;
+        var hx = pos is ToastPosition.BottomLeft or ToastPosition.TopLeft ? 0f
+            : pos is ToastPosition.BottomRight or ToastPosition.TopRight ? 1f : 0.5f;
+        instance.BaseY = top ? -EdgeOffset : EdgeOffset;
+        var rootWidth = PillWidth + CircleSize;
+        instance.BaseX = hx switch
+        {
+            0f => rootWidth / 2f + SideMargin,
+            1f => -(rootWidth / 2f + SideMargin),
+            _ => 0f
+        };
+        // Right-aligned toasts put the disc on the right so they grow out from
+        // the screen edge; everything else keeps the disc on the left
+        instance.Side = hx == 1f ? 1 : -1;
+        instance.SlideStart = hx == 0.5f ? -instance.Side * PillWidth / 2f : 0f;
+        instance.SlideX = instance.SlideStart;
+
         var root = new GameObject("Toast");
         instance.Root = root.AddComponent<RectTransform>();
         root.transform.SetParent(canvas.transform, false);
-        instance.Root.anchorMin = instance.Root.anchorMax = new Vector2(0.5f, 0f);
+        instance.Root.anchorMin = instance.Root.anchorMax = new Vector2(hx, top ? 1f : 0f);
         instance.Root.pivot = new Vector2(0.5f, 0.5f);
-        // Disc starts at screen center; the toast slides left as the pill expands
-        instance.SlideX = PillWidth / 2f;
         ApplyPosition(instance);
         instance.Root.sizeDelta = new Vector2(PillWidth + CircleSize, PillHeight + 8);
         instance.Root.localScale = Vector3.one;
@@ -187,8 +210,9 @@ public static class XboxToast
         instance.Pill = pillGo.AddComponent<RectTransform>();
         pillGo.transform.SetParent(instance.Root, false);
         instance.Pill.anchorMin = instance.Pill.anchorMax = new Vector2(0.5f, 0.5f);
-        instance.Pill.pivot = new Vector2(0f, 0.5f);
-        instance.Pill.anchoredPosition = new Vector2(-PillWidth / 2f, 0f);
+        instance.Pill.pivot = new Vector2(instance.Side == -1 ? 0f : 1f, 0.5f);
+        var discX = instance.Side * PillWidth / 2f;
+        instance.Pill.anchoredPosition = new Vector2(discX, 0f);
         instance.Pill.sizeDelta = new Vector2(PillCollapsedWidth, PillHeight);
         // Hidden behind the disc until the spin completes
         pillGo.SetActive(false);
@@ -209,8 +233,8 @@ public static class XboxToast
         clip.transform.SetParent(instance.Pill, false);
         clipRect.anchorMin = Vector2.zero;
         clipRect.anchorMax = Vector2.one;
-        clipRect.offsetMin = new Vector2(CircleSize / 2f + 6f, 0f);
-        clipRect.offsetMax = new Vector2(-28f, 0f);
+        clipRect.offsetMin = new Vector2(instance.Side == -1 ? CircleSize / 2f + 6f : 28f, 0f);
+        clipRect.offsetMax = new Vector2(instance.Side == -1 ? -28f : -(CircleSize / 2f + 6f), 0f);
 
         // Text container, faded/slid in once the pill has expanded
         var textGo = new GameObject("Text");
@@ -258,7 +282,7 @@ public static class XboxToast
             request.Rarity > 0 ? rarity : MenuUi.RimColor, out var discInner);
         instance.Circle.anchorMin = instance.Circle.anchorMax = new Vector2(0.5f, 0.5f);
         instance.Circle.pivot = new Vector2(0.5f, 0.5f);
-        instance.Circle.anchoredPosition = new Vector2(-PillWidth / 2f, 0f);
+        instance.Circle.anchoredPosition = new Vector2(discX, 0f);
         instance.Circle.localScale = Vector3.zero;
         var mask = instance.Circle.gameObject.AddComponent<Mask>();
         mask.showMaskGraphic = true;
@@ -426,7 +450,7 @@ public static class XboxToast
             var e = EaseOutCubic(Mathf.Clamp01(elapsed / 0.35f));
             var w = Mathf.Lerp(PillCollapsedWidth, PillWidth, e);
             instance.Pill.sizeDelta = new Vector2(w, PillHeight);
-            instance.SlideX = Mathf.Lerp(PillWidth / 2f, 0f, e);
+            instance.SlideX = Mathf.Lerp(instance.SlideStart, 0f, e);
             ApplyPosition(instance);
             var tt = Mathf.Clamp01((elapsed - 0.12f) / 0.25f);
             instance.TextGroup.alpha = tt;
@@ -509,7 +533,7 @@ public static class XboxToast
             var e = EaseInCubic(k);
             var w = Mathf.Lerp(PillWidth, PillCollapsedWidth, e);
             instance.Pill.sizeDelta = new Vector2(w, PillHeight);
-            instance.SlideX = Mathf.Lerp(0f, PillWidth / 2f, e);
+            instance.SlideX = Mathf.Lerp(0f, instance.SlideStart, e);
             ApplyPosition(instance);
             var tt = Mathf.Clamp01(elapsed / 0.2f);
             instance.TextGroup.alpha = 1f - tt;
