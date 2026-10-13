@@ -80,15 +80,30 @@ public class AchievementToast
             0, true, null, "preview"));
     }
 
+    private static AudioSource? _chimeSource;
+
     /// <summary>
-    /// Plays the unlock chime, if enabled in the config.
+    /// Plays the unlock chime, if enabled in the config, through a dedicated
+    /// <see cref="AudioSource"/> so the configured volume is honored.
     /// </summary>
     public static void PlayUnlockSound()
     {
         if (!AchievementsConfig.ToastSoundEnabled.Value) return;
         var clip = Assets.LockChime;
-        if (clip == null || SoundManager.Instance == null) return;
-        SoundManager.Instance.PlaySound(clip, false, AchievementsConfig.ToastVolume.Value);
+        if (clip == null) return;
+        _chimeSource ??= CreateChimeSource();
+        _chimeSource.PlayOneShot(clip, AchievementsConfig.ToastVolume.Value);
+    }
+
+    private static AudioSource CreateChimeSource()
+    {
+        var go = new GameObject("AchievementSound") { hideFlags = HideFlags.HideInHierarchy };
+        UnityEngine.Object.DontDestroyOnLoad(go);
+        var source = go.AddComponent<AudioSource>();
+        source.playOnAwake = false;
+        source.volume = 1f;
+        source.spatialBlend = 0f;
+        return source;
     }
 
     private static TMP_FontAsset? _font;
