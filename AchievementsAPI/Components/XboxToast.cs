@@ -282,7 +282,8 @@ public static class XboxToast
         var drag = new EventTrigger.Entry { eventID = EventTriggerType.Drag };
         drag.callback.AddListener((UnityAction<BaseEventData>)(data =>
         {
-            if (data is not PointerEventData pointer) return;
+            var pointer = data.TryCast<PointerEventData>();
+            if (pointer == null) return;
             var dx = pointer.delta.x / scale;
             instance.OffsetX += dx;
             if (Time.unscaledDeltaTime > 0f) instance.Velocity = dx / Time.unscaledDeltaTime;
