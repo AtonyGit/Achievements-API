@@ -206,21 +206,38 @@ namespace AchievementsAPI
                 if (achievement.Unlocked && achievement.UnlockedAt is { } at)
                 {
                     var unlockedAt = MenuUi.CreateText(uiElement.transform, "UnlockedAt",
-                        MenuUi.FormatUnlockTime(at), 16f, MenuUi.ValueColor,
-                        FontStyles.Normal, TextAlignmentOptions.TopRight);
+                        MenuUi.FormatUnlockTime(at), 14f, new Color(0.75f, 0.75f, 0.75f, 1f),
+                        FontStyles.Normal, TextAlignmentOptions.BottomRight);
+                    MenuUi.Outline(unlockedAt);
                     var unlockedAtRect = unlockedAt.rectTransform;
-                    unlockedAtRect.anchorMin = unlockedAtRect.anchorMax = new Vector2(1f, 1f);
-                    unlockedAtRect.pivot = new Vector2(1f, 1f);
-                    unlockedAtRect.anchoredPosition = new Vector2(-18f, -10f);
-                    unlockedAtRect.sizeDelta = new Vector2(260f, 20f);
+                    unlockedAtRect.anchorMin = unlockedAtRect.anchorMax = new Vector2(1f, 0f);
+                    unlockedAtRect.pivot = new Vector2(1f, 0f);
+                    unlockedAtRect.anchoredPosition = new Vector2(-14f, 18f);
+                    unlockedAtRect.sizeDelta = new Vector2(200f, 18f);
                 }
 
                 var button = uiElement.gameObject.AddComponent<Button>();
-                button.targetGraphic = img;
                 button.transition = Selectable.Transition.ColorTint;
+
+                // A translucent white overlay is used for the hover tint so the
+                // underlying rarity/menu sprite color stays unchanged.
+                var hover = MenuUi.CreateImage(uiElement.transform, "HoverOverlay", img.sprite, Color.white);
+                hover.type = img.type;
+                var hoverRect = hover.rectTransform;
+                hoverRect.anchorMin = Vector2.zero;
+                hoverRect.anchorMax = Vector2.one;
+                hoverRect.offsetMin = Vector2.zero;
+                hoverRect.offsetMax = Vector2.zero;
+                hover.raycastTarget = true;
+
+                button.targetGraphic = hover;
                 var buttonColors = button.colors;
-                buttonColors.highlightedColor = new Color(1.1f, 1.1f, 1.1f);
+                buttonColors.normalColor = new Color(1f, 1f, 1f, 0f);
+                buttonColors.highlightedColor = new Color(1f, 1f, 1f, 0.2f);
+                buttonColors.pressedColor = new Color(1f, 1f, 1f, 0.3f);
+                buttonColors.selectedColor = new Color(1f, 1f, 1f, 0f);
                 buttonColors.colorMultiplier = 1f;
+                buttonColors.fadeDuration = 0.1f;
                 button.colors = buttonColors;
                 button.onClick.AddListener(new Action(() => ShowDetail(achievement)));
 
