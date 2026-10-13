@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using JetBrains.Annotations;
 using UnityEngine;
@@ -9,6 +11,41 @@ namespace AchievementsAPI.API;
 /// </summary>
 public abstract class AchievementsTab
 {
+    private readonly List<BaseAchievement> _softAchievements = new();
+    private List<BaseAchievement>? _propertyAchievements;
+
+    /// <summary>
+    /// Registers an achievement on this tab at runtime, without needing a property on the tab class.
+    /// Loads the achievement's stored state. Does nothing if an achievement with the same Id is already present.
+    /// </summary>
+    /// <param name="achievement">The achievement to register.</param>
+    public void RegisterAchievement(BaseAchievement achievement)
+    {
+        if (GetAchievements().Any(x => x.Id == achievement.Id)) return;
+        _softAchievements.Add(achievement);
+        AchievementStorage.AchievementStorageGet(achievement);
+    }
+
+    /// <summary>
+    /// Gets all achievements on this tab: the ones declared as properties, followed by
+    /// soft-registered ones, de-duplicated by Id.
+    /// </summary>
+    public IReadOnlyList<BaseAchievement> GetAchievements()
+    {
+        _propertyAchievements ??= GetType().GetProperties()
+            .Where(x => x.PropertyType.IsAssignableTo(typeof(BaseAchievement)))
+            .Select(x => x.GetValue(this) as BaseAchievement)
+            .Where(x => x != null)
+            .Cast<BaseAchievement>()
+            .ToList();
+
+        return _propertyAchievements
+            .Concat(_softAchievements)
+            .GroupBy(x => x.Id)
+            .Select(x => x.First())
+            .ToList();
+    }
+
     /// <summary>
     /// The name of the Achievements Tab, displayed in UI.
     /// </summary>

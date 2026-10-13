@@ -82,11 +82,8 @@ namespace AchievementsAPI
             titleText.Value.text = tab.Name;
             int achievementCount = 0;
             int completedAchievementCount = 0;
-            foreach (var propInfo in tab.GetType().GetProperties().Where(x => x.PropertyType.IsSubclassOf(typeof(BaseAchievement)) || x.PropertyType == typeof(BaseAchievement)))
+            foreach (var achievement in tab.GetAchievements())
             {
-                var achievement = (BaseAchievement) propInfo.GetValue(tab);
-                if (achievement == null) continue; 
-
                 var parent = achievement.Unlocked ? unlockedContentParent.Value : lockedContentParent.Value;
                 var uiElement = Object.Instantiate(achievementItemPrefab.Value, parent).GetComponent<AchievementsMenuItem>();
                 uiElement.nameText.Value.text = (!achievement.Hidden || achievement.Unlocked) ? achievement.Name : "Hidden Achievement";

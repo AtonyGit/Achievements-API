@@ -40,7 +40,7 @@ public class AchievementStorage
 
         Save();
     }
-    public static void AchievementDataReset(BaseAchievement achievement, bool? unlocked = false)
+    public static void AchievementDataReset(BaseAchievement achievement, bool? unlocked = false, bool save = true)
     {
         var data = GetData(achievement);
         if (unlocked != null)
@@ -49,10 +49,10 @@ public class AchievementStorage
             data.Unlocked = unlocked.Value;
         }
 
-        Save();
+        if (save) Save();
     }
 
-    public static void AchievementDataReset(CountAchievement achievement, int progress = 0, bool? unlocked = null)
+    public static void AchievementDataReset(CountAchievement achievement, int progress = 0, bool? unlocked = null, bool save = true)
     {
         var data = GetData(achievement);
         data.Progress = Math.Clamp(progress, 0, achievement.RequiredValue);
@@ -67,7 +67,7 @@ public class AchievementStorage
             achievement.Unlocked = data.Progress == achievement.RequiredValue;
         }
 
-        Save();
+        if (save) Save();
     }
 
     public static AchievementData GetData(BaseAchievement achievement)
@@ -103,27 +103,21 @@ public class AchievementStorage
 
     public static void AchievementStorageGet(AchievementsTab tab)
     {
-        foreach (var propInfo in tab.GetType().GetProperties().Where(x =>
-                                 x.PropertyType.IsAssignableTo(typeof(BaseAchievement))))
+        foreach (var achievement in tab.GetAchievements())
         {
-            var achievement = propInfo.GetValue(tab) as BaseAchievement;
-            if (achievement == null) continue;
-            var data = BaseAchievements.Find(x =>
-                x.Name == achievement.Name && x.Id == achievement.Id);
-            if (data == null) continue;
-            achievement.Unlocked = data.Unlocked;
+            AchievementStorageGet(achievement);
         }
+    }
 
-        foreach (var propInfo in tab.GetType().GetProperties().Where(x =>
-                                 x.PropertyType.IsAssignableTo(typeof(CountAchievement))))
+    public static void AchievementStorageGet(BaseAchievement achievement)
+    {
+        var data = BaseAchievements.Find(x =>
+            x.Name == achievement.Name && x.Id == achievement.Id);
+        if (data == null) return;
+        achievement.Unlocked = data.Unlocked;
+        if (achievement is CountAchievement countAchievement)
         {
-            var achievement = propInfo.GetValue(tab) as CountAchievement;
-            if (achievement == null) continue;
-            var data = BaseAchievements.Find(x =>
-                x.Name == achievement.Name && x.Id == achievement.Id);
-            if (data == null) continue;
-            achievement.CurrentValue = data.Progress;
-            achievement.Unlocked = data.Unlocked;
+            countAchievement.CurrentValue = data.Progress;
         }
     }
 
