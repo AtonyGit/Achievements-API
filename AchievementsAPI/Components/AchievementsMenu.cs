@@ -203,23 +203,30 @@ namespace AchievementsAPI
                     MenuUi.SetProgress(fill, (float) count.CurrentValue / count.RequiredValue);
                 }
 
+                if (!achievement.Unlocked)
+                {
+                    img.color *= new Color(0.5f, 0.5f, 0.5f, 1f);
+                    uiElement.nameText.Value.color = new Color(0.55f, 0.55f, 0.55f, 1f);
+                    uiElement.descriptionText.Value.color = new Color(0.45f, 0.45f, 0.45f, 1f);
+                }
+
                 if (achievement.Unlocked && achievement.UnlockedAt is { } at)
                 {
                     var unlockedAt = MenuUi.CreateText(uiElement.transform, "UnlockedAt",
-                        MenuUi.FormatUnlockTime(at), 14f, new Color(0.75f, 0.75f, 0.75f, 1f),
-                        FontStyles.Normal, TextAlignmentOptions.BottomRight);
+                        $"Unlocked {MenuUi.FormatUnlockTime(at)}", 18f, MenuUi.ValueColor,
+                        FontStyles.Normal, TextAlignmentOptions.MidlineRight);
                     MenuUi.Outline(unlockedAt);
                     var unlockedAtRect = unlockedAt.rectTransform;
-                    unlockedAtRect.anchorMin = unlockedAtRect.anchorMax = new Vector2(1f, 0f);
-                    unlockedAtRect.pivot = new Vector2(1f, 0f);
-                    unlockedAtRect.anchoredPosition = new Vector2(-14f, 18f);
-                    unlockedAtRect.sizeDelta = new Vector2(200f, 18f);
+                    unlockedAtRect.anchorMin = unlockedAtRect.anchorMax = new Vector2(1f, 0.5f);
+                    unlockedAtRect.pivot = new Vector2(1f, 0.5f);
+                    unlockedAtRect.anchoredPosition = new Vector2(-40f, 0f);
+                    unlockedAtRect.sizeDelta = new Vector2(300f, 24f);
                 }
 
                 var button = uiElement.gameObject.AddComponent<Button>();
                 button.transition = Selectable.Transition.ColorTint;
 
-                // A translucent white overlay is used for the hover tint so the
+                // A translucent overlay is used for the hover tint so the
                 // underlying rarity/menu sprite color stays unchanged.
                 var hover = MenuUi.CreateImage(uiElement.transform, "HoverOverlay", img.sprite, Color.white);
                 hover.type = img.type;
@@ -233,8 +240,8 @@ namespace AchievementsAPI
                 button.targetGraphic = hover;
                 var buttonColors = button.colors;
                 buttonColors.normalColor = new Color(1f, 1f, 1f, 0f);
-                buttonColors.highlightedColor = new Color(1f, 1f, 1f, 0.2f);
-                buttonColors.pressedColor = new Color(1f, 1f, 1f, 0.3f);
+                buttonColors.highlightedColor = new Color(0f, 0f, 0f, 0.25f);
+                buttonColors.pressedColor = new Color(0f, 0f, 0f, 0.4f);
                 buttonColors.selectedColor = new Color(1f, 1f, 1f, 0f);
                 buttonColors.colorMultiplier = 1f;
                 buttonColors.fadeDuration = 0.1f;
