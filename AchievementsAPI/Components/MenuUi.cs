@@ -275,7 +275,7 @@ public static class MenuUi
         }
     }
 
-    private static void PlayUiSound(bool click)
+    internal static void PlayUiSound(bool click)
     {
         var clip = click ? ClickSound : HoverSound;
         if (clip && Constants.ShouldPlaySfx() && SoundManager.Instance)

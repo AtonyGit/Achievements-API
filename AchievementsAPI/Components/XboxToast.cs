@@ -522,7 +522,7 @@ public static class XboxToast
         while (t < duration && !instance.Dismissed)
         {
             var dt = Time.unscaledDeltaTime;
-            holdT = Input.GetKey(KeyCode.JoystickButton3) ? holdT + dt : 0f;
+            holdT = Input.GetKey(KeyCode.JoystickButton3) && !AchievementsMenu.IsOpen ? holdT + dt : 0f;
             if (holdT >= 0.6f) Open(instance, request);
             if (!instance.Dragging)
             {

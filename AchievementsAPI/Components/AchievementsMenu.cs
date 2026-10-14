@@ -9,6 +9,7 @@ using Reactor.Utilities.Attributes;
 using Reactor.Utilities.Extensions;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.Events;
 using UnityEngine.UI;
 using static AchievementsAPI.MenuUi;
@@ -58,6 +59,13 @@ namespace AchievementsAPI
         private GameObject _emptyState;
         private TextMeshProUGUI _emptyText;
         private int _rebuildGen;
+        private bool _controllerMode;
+        private Image _focusRing;
+        private BaseAchievement _detailAchievement;
+        private Vector3 _lastMousePos;
+        private bool _mousePrimed;
+        private readonly Vector3[] _itemCorners = new Vector3[4];
+        private readonly Vector3[] _viewCorners = new Vector3[4];
 
         private sealed class ListRow
         {
@@ -76,6 +84,7 @@ namespace AchievementsAPI
             public TextMeshProUGUI PillText = null!;
             public GameObject Badge = null!;
             public TextMeshProUGUI BadgeText = null!;
+            public Button Button = null!;
             public BaseAchievement Achievement = null!;
             public int FillGen;
         }
@@ -131,6 +140,20 @@ namespace AchievementsAPI
             if (focused != null && focused.Value.Tab.IsSelectable)
             {
                 ShowDetail(focused.Value.Achievement);
+            }
+
+            try
+            {
+                if ((ControllerManager.Instance != null && ControllerManager.Instance.IsUiControllerActive)
+                    || Input.GetJoystickNames().Any(n => !string.IsNullOrEmpty(n)))
+                {
+                    _controllerMode = true;
+                    EnsureSelection();
+                }
+            }
+            catch
+            {
+                // ControllerManager not available; stay in mouse mode
             }
         }
 
@@ -385,6 +408,15 @@ namespace AchievementsAPI
             _scroll.movementType = ScrollRect.MovementType.Clamped;
             _scroll.scrollSensitivity = 100f;
             _listScrollbar = CreateScrollbar(_panel, _scroll, new Vector2(-76f, 64f), new Vector2(-62f, -122f));
+
+            _focusRing = CreateImage(transform, "FocusRing", ToastSprites.OutlineBoxSmall, AccentHover);
+            _focusRing.type = Image.Type.Sliced;
+            _focusRing.raycastTarget = false;
+            var ringRect = _focusRing.rectTransform;
+            ringRect.anchorMin = ringRect.anchorMax = new Vector2(0.5f, 0.5f);
+            ringRect.pivot = new Vector2(0.5f, 0.5f);
+            ringRect.SetAsLastSibling();
+            _focusRing.gameObject.SetActive(false);
         }
 
         // Wiki-scroller-style vertical scrollbar: dark translucent track with a
@@ -422,6 +454,7 @@ namespace AchievementsAPI
             // UnityEngine.UI.Scrollbar: a plain `Scrollbar` here resolves to
             // the game's own scrollbar class
             var bar = track.gameObject.AddComponent<UnityEngine.UI.Scrollbar>();
+            bar.navigation = new Navigation { mode = Navigation.Mode.None };
             bar.handleRect = handleRect;
             bar.targetGraphic = handle;
             bar.direction = UnityEngine.UI.Scrollbar.Direction.BottomToTop;
@@ -818,6 +851,7 @@ namespace AchievementsAPI
             }
 
             _scroll.verticalNormalizedPosition = 1f;
+            if (_controllerMode) EnsureSelection();
         }
 
         [HideFromIl2Cpp]
@@ -1031,6 +1065,7 @@ namespace AchievementsAPI
             button.colors = colors;
             button.onClick.AddListener((UnityAction)(() => ShowDetail(row.Achievement)));
             AttachGameSounds(card.gameObject, hoverSound: false);
+            row.Button = button;
             row.Root = card.gameObject;
             return row;
         }
@@ -1167,6 +1202,16 @@ namespace AchievementsAPI
             }
             SetTitle(_currentCategory?.Name ?? "Achievements", _currentCategory?.GetIcon() ?? AchievementIcon);
             ShowPage(null);
+
+            if (_controllerMode)
+            {
+                var row = _detailAchievement == null ? null
+                    : _rows.FirstOrDefault(r => r.Achievement == _detailAchievement
+                        && r.Root.activeInHierarchy && r.Button.interactable);
+                _detailAchievement = null;
+                if (row != null) Select(row.Button);
+                else EnsureSelection();
+            }
         }
 
         private void ShowSettingsPage()
@@ -1178,6 +1223,7 @@ namespace AchievementsAPI
             }
             SetTitle("Settings", ToastSprites.Gear);
             ShowPage(_settingsPanel);
+            if (_controllerMode) EnsureSelection();
         }
 
         [HideFromIl2Cpp]
@@ -1207,11 +1253,183 @@ namespace AchievementsAPI
                 revealed ? achievement.Icon : null);
             _detailPanel = AchievementDetailPanel.Create(_panel, achievement, BackToList);
             ShowPage(_detailPanel);
+            _detailAchievement = achievement;
+            if (_controllerMode) EnsureSelection();
         }
 
         private void Update()
         {
-            if (!Input.GetKeyDown(KeyCode.Escape)) return;
+            MenuInput.Poll();
+
+            var mouse = Input.mousePosition;
+            if (_mousePrimed && _controllerMode &&
+                ((mouse - _lastMousePos).sqrMagnitude > 4f
+                 || Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1) || Input.GetMouseButtonDown(2)))
+            {
+                _controllerMode = false;
+            }
+            _lastMousePos = mouse;
+            _mousePrimed = true;
+
+            if (MenuInput.AnyNavigation && !_controllerMode)
+            {
+                _controllerMode = true;
+                EnsureSelection();
+            }
+
+            if (MenuInput.Cancel)
+            {
+                CancelPage();
+                return;
+            }
+
+            if (MenuInput.Up) MoveSelection(NavDirection.Up);
+            else if (MenuInput.Down) MoveSelection(NavDirection.Down);
+            else if (MenuInput.Left) MoveSelection(NavDirection.Left);
+            else if (MenuInput.Right) MoveSelection(NavDirection.Right);
+
+            if (MenuInput.Confirm) ConfirmSelection();
+            if (MenuInput.PrevCategory) CycleCategory(-1);
+            if (MenuInput.NextCategory) CycleCategory(1);
+            if (MenuInput.PrevFilter) CycleFilter(-1);
+            if (MenuInput.NextFilter) CycleFilter(1);
+        }
+
+        private void LateUpdate()
+        {
+            if (_focusRing == null) return;
+            var selected = _controllerMode ? CurrentSelectable() : null;
+            _focusRing.gameObject.SetActive(selected != null);
+            if (selected == null) return;
+
+            var rect = (RectTransform) selected.transform;
+            rect.GetWorldCorners(_itemCorners);
+            var parent = _focusRing.rectTransform.parent;
+            var min = parent.InverseTransformPoint(_itemCorners[0]);
+            var max = parent.InverseTransformPoint(_itemCorners[2]);
+            var ring = _focusRing.rectTransform;
+            ring.anchoredPosition = (min + max) * 0.5f;
+            ring.sizeDelta = new Vector2(max.x - min.x + 8f, max.y - min.y + 8f);
+            ring.SetAsLastSibling();
+        }
+
+        private Selectable CurrentSelectable()
+        {
+            var current = EventSystem.current;
+            if (current == null) return null;
+            var go = current.currentSelectedGameObject;
+            if (go == null || !go.activeInHierarchy) return null;
+            var sel = go.GetComponent<Selectable>();
+            if (sel == null || !sel.interactable || !sel.transform.IsChildOf(transform)) return null;
+            return sel;
+        }
+
+        private void Select(Selectable sel)
+        {
+            if (sel == null || EventSystem.current == null) return;
+            EventSystem.current.SetSelectedGameObject(sel.gameObject);
+            EnsureVisible(sel);
+        }
+
+        private GameObject ActivePage()
+        {
+            if (_detailPanel != null && _detailPanel.activeSelf) return _detailPanel;
+            if (_settingsPanel != null && _settingsPanel.activeSelf) return _settingsPanel;
+            return null;
+        }
+
+        private static Selectable FirstSelectableIn(GameObject page)
+        {
+            var selectables = page.GetComponentsInChildren<Selectable>(false);
+            foreach (var s in selectables)
+            {
+                if (s.interactable && s is Button
+                    && s.name.IndexOf("Back", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return s;
+                }
+            }
+            foreach (var s in selectables)
+            {
+                if (s.interactable) return s;
+            }
+            return null;
+        }
+
+        [HideFromIl2Cpp]
+        private void EnsureSelection()
+        {
+            var current = CurrentSelectable();
+            var page = ActivePage();
+            if (page != null)
+            {
+                if (current != null && current.transform.IsChildOf(page.transform)) return;
+                Select(FirstSelectableIn(page));
+                return;
+            }
+
+            if (current != null)
+            {
+                EnsureVisible(current);
+                return;
+            }
+
+            var row = _rows.FirstOrDefault(r =>
+                r.Root != null && r.Root.activeInHierarchy && r.Button.interactable);
+            Select(row != null ? (Selectable) row.Button
+                : _filterTabs.Count > 0 ? _filterTabs[0].button : null);
+        }
+
+        private enum NavDirection { Up, Down, Left, Right }
+
+        private void MoveSelection(NavDirection direction)
+        {
+            var sel = CurrentSelectable();
+            if (sel == null)
+            {
+                EnsureSelection();
+                return;
+            }
+
+            if (sel is Slider slider && (direction == NavDirection.Left || direction == NavDirection.Right))
+            {
+                var step = (slider.maxValue - slider.minValue) / 20f;
+                slider.value += direction == NavDirection.Right ? step : -step;
+                return;
+            }
+
+            var next = direction switch
+            {
+                NavDirection.Up => sel.FindSelectableOnUp(),
+                NavDirection.Down => sel.FindSelectableOnDown(),
+                NavDirection.Left => sel.FindSelectableOnLeft(),
+                _ => sel.FindSelectableOnRight()
+            };
+            if (next == null || !next.gameObject.activeInHierarchy || !next.interactable
+                || !next.transform.IsChildOf(transform)) return;
+            Select(next);
+        }
+
+        private void ConfirmSelection()
+        {
+            var sel = CurrentSelectable();
+            switch (sel)
+            {
+                case null:
+                    return;
+                case Button button:
+                    PlayUiSound(true);
+                    button.onClick.Invoke();
+                    break;
+                case Toggle toggle:
+                    toggle.isOn = !toggle.isOn;
+                    PlayUiSound(true);
+                    break;
+            }
+        }
+
+        private void CancelPage()
+        {
             if ((_detailPanel != null && _detailPanel.activeSelf) ||
                 (_settingsPanel != null && _settingsPanel.activeSelf))
             {
@@ -1221,8 +1439,43 @@ namespace AchievementsAPI
             Close();
         }
 
+        [HideFromIl2Cpp]
+        private void CycleCategory(int delta)
+        {
+            var total = _categories.Count + 1;
+            if (total <= 1) return;
+            var cur = _currentCategory == null ? 0 : _categories.IndexOf(_currentCategory) + 1;
+            var index = (cur + delta + total) % total;
+            _categoryPage = index / CategoryPageSize;
+            RebuildCategories();
+            SelectCategory(index == 0 ? null : _categories[index - 1]);
+        }
+
+        private void CycleFilter(int delta) => SetFilter((_filter + delta + _filterTabs.Count) % _filterTabs.Count);
+
+        private void EnsureVisible(Selectable sel)
+        {
+            if (_scroll == null || _scroll.content == null || _scroll.viewport == null) return;
+            if (!sel.transform.IsChildOf(_scroll.content)) return;
+            Canvas.ForceUpdateCanvases();
+            var item = (RectTransform) sel.transform;
+            var viewport = _scroll.viewport;
+            item.GetWorldCorners(_itemCorners);
+            viewport.GetWorldCorners(_viewCorners);
+            var dy = 0f;
+            if (_itemCorners[0].y < _viewCorners[0].y) dy = _itemCorners[0].y - _viewCorners[0].y;
+            else if (_itemCorners[2].y > _viewCorners[2].y) dy = _itemCorners[2].y - _viewCorners[2].y;
+            if (dy == 0f) return;
+            var overflow = _scroll.content.rect.height - viewport.rect.height;
+            if (overflow <= 0f) return;
+            _scroll.verticalNormalizedPosition = Mathf.Clamp01(
+                _scroll.verticalNormalizedPosition + dy / _scroll.content.lossyScale.y / overflow);
+        }
+
         public void Close()
         {
+            _controllerMode = false;
+            if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null);
             if (mainMenuManager)
             {
                 mainMenuManager.ActivateMainMenuUI();
