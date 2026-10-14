@@ -61,6 +61,7 @@ namespace AchievementsAPI
         private TextMeshProUGUI _emptyText;
         private int _rebuildGen;
         private bool _controllerMode;
+        private float _navUnlockTime;
         private bool _restoreNavigationEvents;
         private Image _focusRing;
         private BaseAchievement _detailAchievement;
@@ -146,18 +147,7 @@ namespace AchievementsAPI
                 ShowDetail(focused.Value.Achievement);
             }
 
-            try
-            {
-                if (ControllerManager.Instance != null && ControllerManager.Instance.IsUiControllerActive)
-                {
-                    _controllerMode = true;
-                    EnsureSelection();
-                }
-            }
-            catch
-            {
-                // ControllerManager not available; stay in mouse mode
-            }
+            _navUnlockTime = Time.unscaledTime + 1f;
 
             if (EventSystem.current != null)
             {
@@ -1298,7 +1288,7 @@ namespace AchievementsAPI
 
             if (!_controllerMode && CurrentSelectable() != null) EventSystem.current.SetSelectedGameObject(null);
 
-            if (MenuInput.AnyDirection && !_controllerMode)
+            if (MenuInput.AnyDirection && !_controllerMode && Time.unscaledTime >= _navUnlockTime)
             {
                 _controllerMode = true;
                 var last = _lastSelected != null && _lastSelected.activeInHierarchy ? _lastSelected.GetComponent<Selectable>() : null;
