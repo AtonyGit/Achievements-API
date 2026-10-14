@@ -5,19 +5,21 @@ using AchievementsAPI.API;
 namespace AchievementsAPI;
 
 /// <summary>
-/// Hidden tab for developer-only achievements. It is never selectable, so its
-/// achievements never appear in the menu or stats; unlock toasts still show.
+/// Tab for developer-encounter achievements. It stays completely out of the menu
+/// and stats until its achievement is unlocked, at which point it becomes visible.
 /// </summary>
 public class DeveloperTab : AchievementsTab
 {
+    private const string TrophyIcon = "AchievementsAPI.Resources.AchievementsIcon.png";
+
     internal static readonly string[] DeveloperFriendCodes = { "fancyswell#8073" };
 
     public override string Name => "Developer Tab";
-    public override bool IsSelectable => false;
+    public override bool IsSelectable => PlayedWithDeveloper.Unlocked;
+    public override string IconPath => TrophyIcon;
 
     public BaseAchievement PlayedWithDeveloper { get; set; } = new BaseAchievement(
-        "Among Legends", "Play a game with a developer.",
-        "AchievementsAPI.Resources.ExampleIcon.png", rarity: 3, hidden: true);
+        "Among Legends", "Play a game with a developer.", TrophyIcon, rarity: 3, hidden: true);
 
     internal static bool IsDeveloper(string? friendCode) =>
         !string.IsNullOrEmpty(friendCode) &&
