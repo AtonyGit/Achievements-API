@@ -7,6 +7,7 @@ public static class AchievementsMenuOpen
 {
     private static AchievementsMenu Create()
     {
+        MenuUi.PlayUiSound(true);
         var go = new GameObject("AchievementsMenu");
         var canvas = go.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
