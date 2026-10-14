@@ -53,6 +53,39 @@ namespace AchievementsAPI
         private int _filter;                    // 0 All, 1 Completed, 2 In Progress, 3 Locked
         private readonly List<(Button button, TextMeshProUGUI label)> _filterTabs = new();
         private readonly List<(AchievementCategory category, Button button)> _categoryRows = new();
+        private readonly List<ListRow> _rows = new();
+        private readonly List<ListHeader> _headers = new();
+        private GameObject _emptyState;
+        private TextMeshProUGUI _emptyText;
+        private int _rebuildGen;
+
+        private sealed class ListRow
+        {
+            public GameObject Root = null!;
+            public Image Card = null!;
+            public Image Rim = null!;
+            public Image Ring = null!;
+            public Image Icon = null!;
+            public Image SubIcon = null!;
+            public TextMeshProUGUI NameText = null!;
+            public TextMeshProUGUI DescText = null!;
+            public Image Fill = null!;
+            public RectTransform FillRect = null!;
+            public TextMeshProUGUI ProgressLabel = null!;
+            public Image Pill = null!;
+            public TextMeshProUGUI PillText = null!;
+            public GameObject Badge = null!;
+            public TextMeshProUGUI BadgeText = null!;
+            public BaseAchievement Achievement = null!;
+            public int FillGen;
+        }
+
+        private sealed class ListHeader
+        {
+            public GameObject Root = null!;
+            public Image Icon = null!;
+            public TextMeshProUGUI NameText = null!;
+        }
 
         private void Awake() => Instance = this;
 
@@ -689,8 +722,6 @@ namespace AchievementsAPI
 
         private void RebuildList()
         {
-            ClearChildren(_listContent);
-
             var counts = EnumerateAchievements().Select(x => x.Achievement).ToList();
             var filterCounts = new[]
             {
@@ -719,37 +750,93 @@ namespace AchievementsAPI
                 .Where(g => g.items.Count > 0)
                 .ToList();
 
-            var index = 0;
-            var any = false;
             var showHeaders = allGroups.Count >= 2;
+            var plan = new List<(AchievementsTab Tab, BaseAchievement Achievement)>();
             foreach (var (tab, items) in groups)
             {
                 items.Sort(CompareRows);
-                if (showHeaders) AddGroupHeader(tab);
+                if (showHeaders) plan.Add((tab, null));
                 foreach (var achievement in items)
                 {
-                    BuildRow(achievement, index++);
-                    any = true;
+                    plan.Add((null, achievement));
                 }
             }
 
-            if (!any)
+            _rebuildGen++;
+            Coroutines.Start(CoRebuildList(plan,
+                _filter == 3 ? "Everything unlocked!" : "Nothing here yet", _rebuildGen));
+        }
+
+        [HideFromIl2Cpp]
+        private IEnumerator CoRebuildList(List<(AchievementsTab Tab, BaseAchievement Achievement)> plan,
+            string emptyText, int gen)
+        {
+            var usedRows = 0;
+            var usedHeaders = 0;
+            var sibling = 0;
+            foreach (var r in _rows) r.Root.SetActive(false);
+            foreach (var h in _headers) h.Root.SetActive(false);
+            if (_emptyState != null) _emptyState.SetActive(false);
+            var frameStart = Time.realtimeSinceStartup;
+            foreach (var item in plan)
             {
-                var go = new GameObject("Empty");
-                var rect = go.AddComponent<RectTransform>();
-                rect.SetParent(_listContent, false);
-                var le = go.AddComponent<LayoutElement>();
-                le.preferredHeight = 300f;
-                var text = CreateText(rect, "Text",
-                    _filter == 3 ? "Everything unlocked!" : "Nothing here yet",
-                    26f, ValueColor, FontStyles.Normal, TextAlignmentOptions.Center);
-                text.rectTransform.anchorMin = Vector2.zero;
-                text.rectTransform.anchorMax = Vector2.one;
-                text.rectTransform.offsetMin = Vector2.zero;
-                text.rectTransform.offsetMax = Vector2.zero;
+                if (gen != _rebuildGen || _listContent == null) yield break;
+                if (item.Achievement == null)
+                {
+                    var header = GetHeader(usedHeaders++);
+                    header.Icon.sprite = item.Tab.ModIcon;
+                    header.NameText.text = item.Tab.ModName;
+                    header.Root.SetActive(true);
+                    header.Root.transform.SetSiblingIndex(sibling++);
+                }
+                else
+                {
+                    var row = GetRow(usedRows++);
+                    BindRow(row, item.Achievement, usedRows - 1);
+                    row.Root.transform.SetSiblingIndex(sibling++);
+                }
+
+                if (Time.realtimeSinceStartup - frameStart > 0.004f)
+                {
+                    yield return null;
+                    frameStart = Time.realtimeSinceStartup;
+                }
+            }
+
+            if (gen != _rebuildGen || _listContent == null) yield break;
+
+            if (usedRows == 0)
+            {
+                EnsureEmptyState();
+                _emptyText.text = emptyText;
+                _emptyState.SetActive(true);
+                _emptyState.transform.SetSiblingIndex(sibling);
+            }
+            else if (_emptyState != null)
+            {
+                _emptyState.SetActive(false);
             }
 
             _scroll.verticalNormalizedPosition = 1f;
+        }
+
+        [HideFromIl2Cpp]
+        private void EnsureEmptyState()
+        {
+            if (_emptyState != null) return;
+            var go = new GameObject("Empty");
+            var rect = go.AddComponent<RectTransform>();
+            rect.SetParent(_listContent, false);
+            var le = go.AddComponent<LayoutElement>();
+            le.preferredHeight = 300f;
+            _emptyText = CreateText(rect, "Text", "", 26f, ValueColor,
+                FontStyles.Normal, TextAlignmentOptions.Center);
+            _emptyText.rectTransform.anchorMin = Vector2.zero;
+            _emptyText.rectTransform.anchorMax = Vector2.one;
+            _emptyText.rectTransform.offsetMin = Vector2.zero;
+            _emptyText.rectTransform.offsetMax = Vector2.zero;
+            _emptyState = go;
+            go.SetActive(false);
         }
 
         // Unlocked first (most recent first), then in-progress by fraction, then
@@ -768,15 +855,22 @@ namespace AchievementsAPI
         }
 
         [HideFromIl2Cpp]
-        private void AddGroupHeader(AchievementsTab tab)
+        private ListHeader GetHeader(int i)
         {
-            var go = new GameObject($"Header_{tab.ModName}");
+            while (_headers.Count <= i) _headers.Add(CreateHeader());
+            return _headers[i];
+        }
+
+        [HideFromIl2Cpp]
+        private ListHeader CreateHeader()
+        {
+            var go = new GameObject("Header");
             var rect = go.AddComponent<RectTransform>();
             rect.SetParent(_listContent, false);
             var le = go.AddComponent<LayoutElement>();
             le.preferredHeight = 36f;
 
-            var icon = CreateImage(rect, "Icon", tab.ModIcon, Color.white);
+            var icon = CreateImage(rect, "Icon", null, Color.white);
             icon.preserveAspect = true;
             icon.raycastTarget = false;
             var iconRect = icon.rectTransform;
@@ -785,79 +879,206 @@ namespace AchievementsAPI
             iconRect.anchoredPosition = new Vector2(12f, 0f);
             iconRect.sizeDelta = new Vector2(24f, 24f);
 
-            var name = CreateText(rect, "Name", tab.ModName, 20f, ValueColor, FontStyles.Bold);
+            var name = CreateText(rect, "Name", "", 20f, ValueColor, FontStyles.Bold);
             var nameRect = name.rectTransform;
             nameRect.anchorMin = Vector2.zero;
             nameRect.anchorMax = Vector2.one;
             nameRect.offsetMin = new Vector2(44f, 0f);
             nameRect.offsetMax = Vector2.zero;
+
+            return new ListHeader { Root = go, Icon = icon, NameText = name };
         }
 
         [HideFromIl2Cpp]
-        private void BuildRow(BaseAchievement achievement, int index)
+        private ListRow GetRow(int i)
         {
-            var revealed = !achievement.Hidden || achievement.Unlocked;
-            var showRarity = revealed || !achievement.HideRarity;
-            var card = CreateRarityCard(_listContent, achievement.Name, showRarity ? achievement.Rarity : 0);
+            while (_rows.Count <= i) _rows.Add(CreateRow());
+            return _rows[i];
+        }
+
+        [HideFromIl2Cpp]
+        private ListRow CreateRow()
+        {
+            var row = new ListRow();
+            var card = CreateCard(_listContent, "Row");
+            row.Card = card;
             var le = card.gameObject.AddComponent<LayoutElement>();
             le.preferredHeight = 128f;
-            var row = card.rectTransform;
+            var rowRect = card.rectTransform;
 
-            var disc = CreateRarityDisc(row, "Disc", 76f,
-                showRarity ? RarityColor(achievement.Rarity) : RimColor, out var inner);
+            var rim = CreateImage(rowRect, "Rim", ToastSprites.CardRim, Color.white);
+            rim.type = Image.Type.Sliced;
+            rim.raycastTarget = false;
+            var rimRect = rim.rectTransform;
+            rimRect.anchorMin = Vector2.zero;
+            rimRect.anchorMax = Vector2.one;
+            rimRect.offsetMin = Vector2.zero;
+            rimRect.offsetMax = Vector2.zero;
+            rim.gameObject.SetActive(false);
+            row.Rim = rim;
+
+            var disc = CreateRarityDisc(rowRect, "Disc", 76f, RimColor, out var inner);
             disc.anchorMin = disc.anchorMax = new Vector2(0f, 0.5f);
             disc.pivot = new Vector2(0.5f, 0.5f);
             disc.anchoredPosition = new Vector2(56f, 0f);
+            row.Ring = disc.GetComponent<Image>();
 
-            var iconSprite = revealed ? achievement.Icon
-                : SpriteTools.LoadSpriteFromPath("AchievementsAPI.Resources.ExampleIcon.png",
-                    typeof(AchievementsMenu).Assembly, 100);
-            var icon = CreateImage(inner, "Icon", ToastSprites.TrimTransparent(iconSprite),
-                achievement.Unlocked ? Color.white : new Color(0.35f, 0.35f, 0.35f));
+            var icon = CreateImage(inner, "Icon", null, Color.white);
             icon.preserveAspect = true;
             icon.raycastTarget = false;
             var iconRect = icon.rectTransform;
             iconRect.anchorMin = iconRect.anchorMax = new Vector2(0.5f, 0.5f);
             iconRect.anchoredPosition = Vector2.zero;
             iconRect.sizeDelta = new Vector2(54f, 54f);
+            row.Icon = icon;
 
-            if (achievement.MenuSubIcon != null)
-            {
-                var sub = CreateImage(disc, "SubIcon", achievement.MenuSubIcon, Color.white);
-                sub.raycastTarget = false;
-                var subRect = sub.rectTransform;
-                subRect.anchorMin = subRect.anchorMax = new Vector2(1f, 0f);
-                subRect.pivot = new Vector2(0.5f, 0.5f);
-                subRect.anchoredPosition = new Vector2(-2f, 2f);
-                subRect.sizeDelta = new Vector2(36f, 36f);
-                subRect.localScale = achievement.MenuSubIconScale;
-            }
+            var sub = CreateImage(disc, "SubIcon", null, Color.white);
+            sub.raycastTarget = false;
+            var subRect = sub.rectTransform;
+            subRect.anchorMin = subRect.anchorMax = new Vector2(1f, 0f);
+            subRect.pivot = new Vector2(0.5f, 0.5f);
+            subRect.anchoredPosition = new Vector2(-2f, 2f);
+            subRect.sizeDelta = new Vector2(36f, 36f);
+            sub.gameObject.SetActive(false);
+            row.SubIcon = sub;
 
-            var name = CreateText(row, "Name", revealed ? achievement.Name : "Hidden Achievement",
-                26f, achievement.Unlocked ? Color.white : new Color(0.56f, 0.56f, 0.56f), FontStyles.Bold);
+            var name = CreateText(rowRect, "Name", "", 26f, Color.white, FontStyles.Bold);
             name.overflowMode = TextOverflowModes.Overflow;
             var nameRect = name.rectTransform;
             nameRect.anchorMin = new Vector2(0f, 1f);
             nameRect.anchorMax = new Vector2(1f, 1f);
             nameRect.offsetMin = new Vector2(112f, -52f);
             nameRect.offsetMax = new Vector2(-180f, -22f);
+            row.NameText = name;
 
-            var desc = CreateText(row, "Description",
-                revealed ? achievement.Description : "Hidden Achievement", 19f,
-                achievement.Unlocked ? ValueColor : new Color(0.42f, 0.42f, 0.42f));
+            var desc = CreateText(rowRect, "Description", "", 19f, ValueColor);
             desc.enableWordWrapping = false;
             var descRect = desc.rectTransform;
             descRect.anchorMin = new Vector2(0f, 1f);
             descRect.anchorMax = new Vector2(1f, 1f);
             descRect.offsetMin = new Vector2(112f, -80f);
             descRect.offsetMax = new Vector2(-180f, -56f);
+            row.DescText = desc;
 
-            var bar = CreateProgressBar(row, showRarity ? ProgressColor(achievement.Rarity) : RimColor,
-                out var fill);
+            var bar = CreateProgressBar(rowRect, RimColor, out var fill);
             bar.anchorMin = new Vector2(0f, 0f);
             bar.anchorMax = new Vector2(1f, 0f);
             bar.offsetMin = new Vector2(112f, 30f);
             bar.offsetMax = new Vector2(-180f, 40f);
+            row.Fill = fill.GetComponent<Image>();
+            row.FillRect = fill;
+
+            var progressLabel = CreateText(rowRect, "ProgressLabel", "", 16f, ValueColor,
+                FontStyles.Normal, TextAlignmentOptions.MidlineRight);
+            var progressLabelRect = progressLabel.rectTransform;
+            progressLabelRect.anchorMin = progressLabelRect.anchorMax = new Vector2(1f, 0f);
+            progressLabelRect.pivot = new Vector2(1f, 0f);
+            progressLabelRect.anchoredPosition = new Vector2(-180f, 42f);
+            progressLabelRect.sizeDelta = new Vector2(200f, 20f);
+            progressLabel.gameObject.SetActive(false);
+            row.ProgressLabel = progressLabel;
+
+            var pill = CreateImage(rowRect, "PointsPill", ToastSprites.ButtonBox, Color.white);
+            pill.type = Image.Type.Sliced;
+            pill.raycastTarget = false;
+            var pillRect = pill.rectTransform;
+            pillRect.anchorMin = pillRect.anchorMax = new Vector2(1f, 0.5f);
+            pillRect.pivot = new Vector2(1f, 0.5f);
+            pillRect.anchoredPosition = new Vector2(-22f, 0f);
+            pillRect.sizeDelta = new Vector2(96f, 44f);
+            row.Pill = pill;
+
+            var pillEmblem = CreateScoreEmblem(pillRect, 22f);
+            pillEmblem.anchorMin = pillEmblem.anchorMax = new Vector2(0f, 0.5f);
+            pillEmblem.pivot = new Vector2(0.5f, 0.5f);
+            pillEmblem.anchoredPosition = new Vector2(20f, 0f);
+
+            var pillText = CreateText(pillRect, "Label", "", 22f, Color.white, FontStyles.Bold,
+                TextAlignmentOptions.Center);
+            var pillTextRect = pillText.rectTransform;
+            pillTextRect.anchorMin = Vector2.zero;
+            pillTextRect.anchorMax = Vector2.one;
+            pillTextRect.offsetMin = new Vector2(34f, 0f);
+            pillTextRect.offsetMax = Vector2.zero;
+            row.PillText = pillText;
+
+            var badge = CreateMultiplierBadge(pillRect, 2, new Vector2(6f, 6f));
+            row.Badge = badge.gameObject;
+            row.BadgeText = badge.GetComponentInChildren<TextMeshProUGUI>();
+            badge.gameObject.SetActive(false);
+
+            // Translucent overlay carries the hover tint so the rarity card
+            // color stays unchanged; it also gives the ScrollRect a raycast hit.
+            var overlay = CreateImage(rowRect, "HoverOverlay", ToastSprites.Card, Color.white);
+            overlay.type = Image.Type.Sliced;
+            var overlayRect = overlay.rectTransform;
+            overlayRect.anchorMin = Vector2.zero;
+            overlayRect.anchorMax = Vector2.one;
+            overlayRect.offsetMin = Vector2.zero;
+            overlayRect.offsetMax = Vector2.zero;
+            overlay.raycastTarget = true;
+
+            var button = card.gameObject.AddComponent<Button>();
+            button.transition = Selectable.Transition.ColorTint;
+            button.targetGraphic = overlay;
+            var colors = button.colors;
+            colors.normalColor = new Color(1f, 1f, 1f, 0f);
+            colors.highlightedColor = new Color(0f, 0f, 0f, 0.25f);
+            colors.pressedColor = new Color(0f, 0f, 0f, 0.4f);
+            colors.selectedColor = new Color(1f, 1f, 1f, 0f);
+            colors.colorMultiplier = 1f;
+            colors.fadeDuration = 0.1f;
+            button.colors = colors;
+            button.onClick.AddListener((UnityAction)(() => ShowDetail(row.Achievement)));
+            AttachGameSounds(card.gameObject, hoverSound: false);
+            row.Root = card.gameObject;
+            return row;
+        }
+
+        [HideFromIl2Cpp]
+        private void BindRow(ListRow row, BaseAchievement achievement, int index)
+        {
+            row.Achievement = achievement;
+            var revealed = !achievement.Hidden || achievement.Unlocked;
+            var showRarity = revealed || !achievement.HideRarity;
+            var rarity = showRarity ? achievement.Rarity : 0;
+
+            if (rarity > 0)
+            {
+                var c = RarityColor(rarity);
+                row.Card.color = Color.Lerp(Color.white, c, 0.12f);
+                row.Rim.color = new Color(c.r, c.g, c.b, 0.65f);
+                row.Rim.gameObject.SetActive(true);
+            }
+            else
+            {
+                row.Card.color = Color.white;
+                row.Rim.gameObject.SetActive(false);
+            }
+
+            row.Ring.color = rarity > 0 ? RarityColor(rarity) : RimColor;
+
+            var iconSprite = revealed ? achievement.Icon
+                : SpriteTools.LoadSpriteFromPath("AchievementsAPI.Resources.ExampleIcon.png",
+                    typeof(AchievementsMenu).Assembly, 100);
+            row.Icon.sprite = ToastSprites.TrimTransparent(iconSprite);
+            row.Icon.color = achievement.Unlocked ? Color.white : new Color(0.35f, 0.35f, 0.35f);
+
+            var subIcon = achievement.MenuSubIcon;
+            row.SubIcon.gameObject.SetActive(subIcon != null);
+            if (subIcon != null)
+            {
+                row.SubIcon.sprite = subIcon;
+                row.SubIcon.rectTransform.localScale = achievement.MenuSubIconScale;
+            }
+
+            row.NameText.text = revealed ? achievement.Name : "Hidden Achievement";
+            row.NameText.color = achievement.Unlocked ? Color.white : new Color(0.56f, 0.56f, 0.56f);
+
+            row.DescText.text = revealed ? achievement.Description : "Hidden Achievement";
+            row.DescText.color = achievement.Unlocked ? (Color) ValueColor : new Color(0.42f, 0.42f, 0.42f);
+
+            row.Fill.color = showRarity ? ProgressColor(achievement.Rarity) : RimColor;
 
             float target;
             string progressLabel = null;
@@ -880,72 +1101,28 @@ namespace AchievementsAPI
                     progressLabelColor = AccentHover;
                 }
             }
-            Coroutines.Start(CoFill(fill, target, index * 0.03f));
+            SetProgress(row.FillRect, 0f);
+            var fillGen = ++row.FillGen;
+            Coroutines.Start(CoFill(row, target, index * 0.03f, fillGen));
 
+            row.ProgressLabel.gameObject.SetActive(progressLabel != null);
             if (progressLabel != null)
             {
-                var label = CreateText(row, "ProgressLabel", progressLabel, 16f, progressLabelColor,
-                    FontStyles.Normal, TextAlignmentOptions.MidlineRight);
-                var labelRect = label.rectTransform;
-                labelRect.anchorMin = labelRect.anchorMax = new Vector2(1f, 0f);
-                labelRect.pivot = new Vector2(1f, 0f);
-                labelRect.anchoredPosition = new Vector2(-180f, 42f);
-                labelRect.sizeDelta = new Vector2(200f, 20f);
+                row.ProgressLabel.text = progressLabel;
+                row.ProgressLabel.color = progressLabelColor;
             }
 
-            var pill = CreateImage(row, "PointsPill", ToastSprites.ButtonBox,
-                achievement.Unlocked ? RarityColor(achievement.Rarity) : new Color(0.55f, 0.55f, 0.55f));
-            pill.type = Image.Type.Sliced;
-            pill.raycastTarget = false;
-            var pillRect = pill.rectTransform;
-            pillRect.anchorMin = pillRect.anchorMax = new Vector2(1f, 0.5f);
-            pillRect.pivot = new Vector2(1f, 0.5f);
-            pillRect.anchoredPosition = new Vector2(-22f, 0f);
-            pillRect.sizeDelta = new Vector2(96f, 44f);
+            row.Pill.color = achievement.Unlocked
+                ? RarityColor(achievement.Rarity)
+                : new Color(0.55f, 0.55f, 0.55f);
+            row.PillText.text = $"{achievement.BasePoints}";
+            row.PillText.color = achievement.Unlocked ? Color.white : (Color) ValueColor;
 
-            var pillEmblem = CreateScoreEmblem(pillRect, 22f);
-            pillEmblem.anchorMin = pillEmblem.anchorMax = new Vector2(0f, 0.5f);
-            pillEmblem.pivot = new Vector2(0.5f, 0.5f);
-            pillEmblem.anchoredPosition = new Vector2(20f, 0f);
+            var multiplier = achievement.PointsMultiplier;
+            row.Badge.SetActive(multiplier > 1);
+            if (multiplier > 1) row.BadgeText.text = $"x{multiplier}";
 
-            var pillText = CreateText(pillRect, "Label", $"{achievement.BasePoints}", 22f,
-                achievement.Unlocked ? Color.white : (Color) ValueColor, FontStyles.Bold,
-                TextAlignmentOptions.Center);
-            var pillTextRect = pillText.rectTransform;
-            pillTextRect.anchorMin = Vector2.zero;
-            pillTextRect.anchorMax = Vector2.one;
-            pillTextRect.offsetMin = new Vector2(34f, 0f);
-            pillTextRect.offsetMax = Vector2.zero;
-
-            if (achievement.PointsMultiplier > 1)
-            {
-                CreateMultiplierBadge(pillRect, achievement.PointsMultiplier, new Vector2(6f, 6f));
-            }
-
-            // Translucent overlay carries the hover tint so the rarity card
-            // color stays unchanged; it also gives the ScrollRect a raycast hit.
-            var overlay = CreateImage(row, "HoverOverlay", ToastSprites.Card, Color.white);
-            overlay.type = Image.Type.Sliced;
-            var overlayRect = overlay.rectTransform;
-            overlayRect.anchorMin = Vector2.zero;
-            overlayRect.anchorMax = Vector2.one;
-            overlayRect.offsetMin = Vector2.zero;
-            overlayRect.offsetMax = Vector2.zero;
-            overlay.raycastTarget = true;
-
-            var button = card.gameObject.AddComponent<Button>();
-            button.transition = Selectable.Transition.ColorTint;
-            button.targetGraphic = overlay;
-            var colors = button.colors;
-            colors.normalColor = new Color(1f, 1f, 1f, 0f);
-            colors.highlightedColor = new Color(0f, 0f, 0f, 0.25f);
-            colors.pressedColor = new Color(0f, 0f, 0f, 0.4f);
-            colors.selectedColor = new Color(1f, 1f, 1f, 0f);
-            colors.colorMultiplier = 1f;
-            colors.fadeDuration = 0.1f;
-            button.colors = colors;
-            button.onClick.AddListener((UnityAction)(() => ShowDetail(achievement)));
-            AttachGameSounds(card.gameObject, hoverSound: false);
+            row.Root.SetActive(true);
         }
 
         // Hides the list and shows `page` over the right column (null = list back).
@@ -1076,6 +1253,19 @@ namespace AchievementsAPI
             rect.localScale = Vector3.one;
             group.alpha = 1f;
             scrim.color = new Color(0f, 0f, 0f, 0.5f);
+        }
+
+        [HideFromIl2Cpp]
+        private IEnumerator CoFill(ListRow row, float target, float delay, int gen)
+        {
+            for (var t = -delay; t < 0.45f; t += Time.unscaledDeltaTime)
+            {
+                if (row.FillRect == null || row.FillGen != gen) yield break;
+                if (t >= 0f) SetProgress(row.FillRect, EaseOutCubic(Mathf.Clamp01(t / 0.45f)) * target);
+                yield return null;
+            }
+            if (row.FillRect == null || row.FillGen != gen) yield break;
+            SetProgress(row.FillRect, target);
         }
 
         [HideFromIl2Cpp]

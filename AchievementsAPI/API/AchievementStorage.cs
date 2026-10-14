@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Linq;
 using System.IO;
 using System.Text;
+using Reactor.Utilities;
 using UnityEngine;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
@@ -23,6 +24,46 @@ public class AchievementData
 public class AchievementStorage
 {
     public static List<AchievementData> BaseAchievements = new List<AchievementData>();
+
+    private static readonly Dictionary<string, AchievementData> _index = new();
+    private static bool _saveScheduled;
+
+    private static string Key(string id, string name) => id + "\u001f" + name;
+
+    private static void EnsureIndex()
+    {
+        if (_index.Count == BaseAchievements.Count) return;
+        _index.Clear();
+        foreach (var data in BaseAchievements) _index[Key(data.Id, data.Name)] = data;
+    }
+
+    private static AchievementData FindData(string id, string name)
+    {
+        EnsureIndex();
+        return _index.TryGetValue(Key(id, name), out var data) ? data : null;
+    }
+
+    private static void AddData(AchievementData data)
+    {
+        BaseAchievements.Add(data);
+        EnsureIndex();
+        _index[Key(data.Id, data.Name)] = data;
+    }
+
+    private static void RequestSave()
+    {
+        if (_saveScheduled) return;
+        _saveScheduled = true;
+        Coroutines.Start(CoSave());
+    }
+
+    private static System.Collections.IEnumerator CoSave()
+    {
+        yield return new WaitForSecondsRealtime(0.5f);
+        if (!_saveScheduled) yield break;
+        _saveScheduled = false;
+        Save();
+    }
     public static string JsonPath => OperatingSystem.IsAndroid() ? Path.Combine(Environment.GetEnvironmentVariable("STAR_DATA_PATH"), "AchievementsAPIData/achievements.json") : Path.Combine(Application.persistentDataPath, "AchievementsAPIData/achievements.json");
     
     public static void AchievementStorageUpdate(BaseAchievement achievement, bool unlocked)
@@ -30,6 +71,7 @@ public class AchievementStorage
         var data = GetData(achievement);
         SetUnlocked(data, unlocked);
 
+        _saveScheduled = false;
         Save();
     }
 
@@ -51,7 +93,7 @@ public class AchievementStorage
         // progress for disk based on ProgressPersists.
         data.Progress = newProgress;
 
-        Save();
+        RequestSave();
     }
     public static void AchievementDataReset(BaseAchievement achievement, bool? unlocked = false)
     {
@@ -95,20 +137,18 @@ public class AchievementStorage
 
     public static AchievementData GetData(BaseAchievement achievement)
     {
-        var data =  BaseAchievements.Find(x =>
-            x.Name == achievement.Name && x.Id == achievement.Id);
+        var data = FindData(achievement.Id, achievement.Name);
         if (data == null)
         {
             data = new AchievementData { Id = achievement.Assembly.GetName().Name + "_" + achievement.Name, Name = achievement.Name, Unlocked = false };
-            BaseAchievements.Add(data);
+            AddData(data);
         }
         return data;
     }
-    
+
     public static AchievementData GetData(CountAchievement achievement)
     {
-        var data = BaseAchievements.Find(x =>
-            x.Name == achievement.Name && x.Id == achievement.Id);
+        var data = FindData(achievement.Id, achievement.Name);
         if (data == null)
         {
             // Bug 1 fixed: Id was missing, causing Find() to never match on reload
@@ -119,7 +159,7 @@ public class AchievementStorage
                 Unlocked = false,
                 Progress = achievement.CurrentValue
             };
-            BaseAchievements.Add(data);
+            AddData(data);
         }
         return data;
     }
@@ -134,8 +174,7 @@ public class AchievementStorage
 
     public static void AchievementStorageGet(BaseAchievement achievement)
     {
-        var data = BaseAchievements.Find(x =>
-            x.Name == achievement.Name && x.Id == achievement.Id);
+        var data = FindData(achievement.Id, achievement.Name);
         if (data == null) return;
         achievement.Unlocked = data.Unlocked;
         if (achievement is CountAchievement countAchievement)

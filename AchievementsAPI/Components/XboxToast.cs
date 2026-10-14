@@ -79,6 +79,25 @@ public static class XboxToast
         _running = false;
     }
 
+    // Builds the shared canvas, sprite set, font and chime clips at the main
+    // menu so the first toast mid-game has nothing heavy left to do.
+    internal static IEnumerator CoPrewarm()
+    {
+        yield return ToastSprites.CoPrewarm();
+        EnsureCanvas();
+        _ = AchievementToast.ResolveFont();
+        _ = Assets.LockChime;
+        yield return null;
+        _ = Assets.RareChime;
+        MenuUi.Prewarm();
+
+        var warm = CreateText(_canvas!.transform, "Prewarm",
+            "Achievement Unlocked! 0123456789/%() x", 22f, Color.white);
+        warm.ForceMeshUpdate();
+        yield return null;
+        warm.gameObject.Destroy();
+    }
+
     private static Canvas EnsureCanvas()
     {
         if (_canvas == null)

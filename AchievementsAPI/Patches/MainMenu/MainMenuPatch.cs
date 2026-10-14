@@ -1,5 +1,6 @@
 ﻿using AchievementsAPI.API;
 using HarmonyLib;
+using Reactor.Utilities;
 
 namespace AchievementsAPI.Patches.MainMenu;
 [HarmonyPatch]
@@ -20,6 +21,8 @@ public class MainMenuPatches
             {
                 AchievementStorage.AchievementStorageGet(tab);
             }
+
+            Coroutines.Start(XboxToast.CoPrewarm());
 
             if (AchievementsManager.Tabs.Count == 1)
             {

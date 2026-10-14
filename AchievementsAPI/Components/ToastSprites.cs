@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using Reactor.Utilities.Extensions;
 using UnityEngine;
@@ -121,6 +122,31 @@ public static class ToastSprites
     /// close button.
     /// </summary>
     public static Sprite CloseX => _closeX ??= CreateCloseX();
+
+    /// <summary>
+    /// Builds every lazily created sprite, one per yielded frame, so the first
+    /// toast or menu open does not pay the generation cost mid-game.
+    /// </summary>
+    internal static IEnumerator CoPrewarm()
+    {
+        _ = Circle; yield return null;
+        _ = Card; yield return null;
+        _ = CardRim; yield return null;
+        _ = OutlineBox; yield return null;
+        _ = PanelBox; yield return null;
+        _ = OutlineBoxSmall; yield return null;
+        _ = PanelBoxSmall; yield return null;
+        _ = RoundedRect; yield return null;
+        _ = RoundedRectSmall; yield return null;
+        _ = RoundedRectTiny; yield return null;
+        _ = Squircle; yield return null;
+        _ = Gear; yield return null;
+        _ = CloseX; yield return null;
+        _ = WikiPanel; yield return null;
+        _ = MenuUi.AchievementIcon;
+        _ = SpriteTools.LoadSpriteFromPath("AchievementsAPI.Resources.ExampleIcon.png",
+            typeof(ToastSprites).Assembly, 100);
+    }
 
     private static readonly Dictionary<int, Sprite> _trimmed = new();
 
@@ -381,7 +407,7 @@ public static class ToastSprites
             name = name
         };
 
-        var pixels = new Color[size * size];
+        var pixels = new Color32[size * size];
         for (var y = 0; y < size; y++)
         {
             for (var x = 0; x < size; x++)
@@ -390,8 +416,8 @@ public static class ToastSprites
             }
         }
 
-        tex.SetPixels(pixels);
-        tex.Apply();
+        tex.SetPixels32(pixels);
+        tex.Apply(mipmaps, true);
         return tex;
     }
 }

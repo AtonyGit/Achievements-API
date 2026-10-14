@@ -393,6 +393,14 @@ public static class MenuUi
 
     internal static string FormatUnlockTime(DateTime utc) => utc.ToLocalTime().ToString("g");
 
+    internal static void Prewarm()
+    {
+        _ = AchievementIcon;
+        _ = CloseButtonSprite;
+        _ = ClickSound;
+        _ = HoverSound;
+    }
+
     // "BottomCenter" -> "Bottom Center"
     internal static string EnumDisplayName(Enum value)
         => System.Text.RegularExpressions.Regex.Replace(value.ToString(), "(\\B[A-Z])", " $1");
