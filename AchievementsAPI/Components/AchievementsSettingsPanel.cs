@@ -47,6 +47,7 @@ public static class AchievementsSettingsPanel
         CreateSliderRow(CreateRowStrip(rect, rowsTop - 304f), "Rare duration", AchievementsConfig.RareToastDuration, 1f, 10f,
             v => $"{v:0.0}s");
         CreateCycleRow(CreateRowStrip(rect, rowsTop - 380f), "Position", AchievementsConfig.Position);
+        CreateToggleRow(CreateRowStrip(rect, rowsTop - 456f), "Trackpad mode", AchievementsConfig.TrackpadMode);
 
         var preview = CreateButton(rect, "Preview", Vector2.zero);
         var previewRect = preview.GetComponent<RectTransform>();

@@ -151,6 +151,7 @@ public static class XboxToast
         public float BaseY;
         public int Side;
         public bool Dragging;
+        public float DragDistance;
         public bool Dismissed;
         public float DismissDir;
         public float Velocity;
@@ -255,7 +256,8 @@ public static class XboxToast
         // Alternates with the title while the toast is held, prompting how to
         // open the achievement in the menu
         var hint = CreateText(instance.TextRect, "Hint",
-            HasController() ? "Hold Y to view" : "Middle-click to view",
+            HasController() ? "Hold Y to view"
+                : AchievementsConfig.TrackpadMode.Value ? "Click to view" : "Middle-click to view",
             22f, MenuUi.ValueColor);
         hint.overflowMode = TextOverflowModes.Overflow;
         instance.Hint = hint;
@@ -323,6 +325,7 @@ public static class XboxToast
         down.callback.AddListener((UnityAction<BaseEventData>)(_ =>
         {
             instance.Dragging = true;
+            instance.DragDistance = 0f;
             instance.Velocity = 0f;
             instance.SpringT = 1f;
         }));
@@ -334,6 +337,7 @@ public static class XboxToast
             var pointer = data.TryCast<PointerEventData>();
             if (pointer == null) return;
             var dx = pointer.delta.x / scale;
+            instance.DragDistance += Mathf.Abs(dx);
             instance.OffsetX += dx;
             if (Time.unscaledDeltaTime > 0f) instance.Velocity = dx / Time.unscaledDeltaTime;
             ApplyPosition(instance);
@@ -362,7 +366,11 @@ public static class XboxToast
         click.callback.AddListener((UnityAction<BaseEventData>)(data =>
         {
             var pointer = data.TryCast<PointerEventData>();
-            if (pointer == null || pointer.button != PointerEventData.InputButton.Middle) return;
+            if (pointer == null) return;
+            var trackpadClick = AchievementsConfig.TrackpadMode.Value &&
+                                pointer.button == PointerEventData.InputButton.Left &&
+                                instance.DragDistance < 10f;
+            if (pointer.button != PointerEventData.InputButton.Middle && !trackpadClick) return;
             Open(instance, request);
         }));
         trigger.triggers.Add(click);

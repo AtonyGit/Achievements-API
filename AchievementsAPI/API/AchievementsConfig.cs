@@ -39,6 +39,11 @@ public static class AchievementsConfig
     /// </summary>
     public static ConfigEntry<ToastPosition> Position { get; private set; } = null!;
 
+    /// <summary>
+    /// Whether a normal click opens the achievement from a toast (for trackpads).
+    /// </summary>
+    public static ConfigEntry<bool> TrackpadMode { get; private set; } = null!;
+
     internal static void Bind(ConfigFile config)
     {
         const string section = "Toasts";
@@ -66,5 +71,8 @@ public static class AchievementsConfig
 
         Position = config.Bind(section, nameof(Position), ToastPosition.BottomCenter,
             "Where achievement toasts appear on screen.");
+
+        TrackpadMode = config.Bind(section, nameof(TrackpadMode), false,
+            "Open achievements from a toast with a normal click instead of middle-click (for trackpads).");
     }
 }

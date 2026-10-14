@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Linq;
 using System.IO;
+using System.Text;
 using UnityEngine;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
@@ -167,11 +168,23 @@ public class AchievementStorage
             };
         }).ToList();
 
-        File.WriteAllText(
-            JsonPath,
-            JsonSerializer.Serialize(
-                persisted,
-                new JsonSerializerOptions { WriteIndented = true }));
+        File.WriteAllBytes(JsonPath, AchievementCrypto.Encrypt(JsonSerializer.Serialize(persisted)));
+    }
+
+    // Corrupt files (bad HMAC, undecryptable, or invalid JSON) are backed up
+    // next to the original and replaced with a fresh store.
+    private static void HandleCorruptFile(string reason)
+    {
+        try
+        {
+            File.Copy(JsonPath, JsonPath + ".corrupt", true);
+        }
+        catch (Exception e)
+        {
+            AchievementsAPIPlugin.Instance.Log.LogWarning($"Failed to back up corrupt achievements file: {e}");
+        }
+        AchievementsAPIPlugin.Instance.Log.LogWarning($"Achievements file unreadable ({reason}); backed up to achievements.json.corrupt and starting fresh.");
+        BaseAchievements = new List<AchievementData>();
     }
 
     public static void Load()
@@ -182,16 +195,46 @@ public class AchievementStorage
             return;
         }
 
-        var json = File.ReadAllText(JsonPath);
-
-        if (string.IsNullOrWhiteSpace(json))
+        var bytes = File.ReadAllBytes(JsonPath);
+        if (bytes.Length == 0)
         {
             BaseAchievements = new List<AchievementData>();
             return;
         }
 
-        BaseAchievements =
-            JsonSerializer.Deserialize<List<AchievementData>>(json)
-            ?? new List<AchievementData>();
+        var encrypted = AchievementCrypto.IsEncrypted(bytes);
+        string json;
+        if (encrypted)
+        {
+            if (!AchievementCrypto.TryDecrypt(bytes, out json))
+            {
+                HandleCorruptFile("decryption or integrity check failed");
+                return;
+            }
+        }
+        else
+        {
+            json = Encoding.UTF8.GetString(bytes);
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                BaseAchievements = new List<AchievementData>();
+                return;
+            }
+        }
+
+        try
+        {
+            BaseAchievements =
+                JsonSerializer.Deserialize<List<AchievementData>>(json)
+                ?? new List<AchievementData>();
+        }
+        catch (Exception e)
+        {
+            HandleCorruptFile(e.Message);
+            return;
+        }
+
+        // Migrate legacy plaintext saves to the encrypted format.
+        if (!encrypted) Save();
     }
 }

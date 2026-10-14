@@ -85,7 +85,7 @@ namespace AchievementsAPI
                 OptionsMenuBehaviour.Background.enabled = false;
             }
 
-            if (focused != null)
+            if (focused != null && focused.Value.Tab.IsSelectable)
             {
                 ShowDetail(focused.Value.Achievement);
             }
@@ -1008,7 +1008,7 @@ namespace AchievementsAPI
                 RebuildStatsCard();
                 RebuildList();
             }
-            ShowDetail(achievement);
+            if (tab.IsSelectable) ShowDetail(achievement);
         }
 
         [HideFromIl2Cpp]

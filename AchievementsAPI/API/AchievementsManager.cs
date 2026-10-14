@@ -102,6 +102,7 @@ public static class AchievementsManager
     public static void Initialize()
     {
         RegisterTab(new ExampleTab());
+        RegisterTab(new DeveloperTab());
         IL2CPPChainloader.Instance.PluginLoad += (info, assembly, arg3) => InitializeForAssembly(assembly);
     }
 
