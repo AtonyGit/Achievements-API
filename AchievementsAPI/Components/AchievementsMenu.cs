@@ -147,7 +147,7 @@ namespace AchievementsAPI
                 ShowDetail(focused.Value.Achievement);
             }
 
-            _navUnlockTime = Time.unscaledTime + 1f;
+            _navUnlockTime = Time.unscaledTime + 0.1f;
 
             if (EventSystem.current != null)
             {
