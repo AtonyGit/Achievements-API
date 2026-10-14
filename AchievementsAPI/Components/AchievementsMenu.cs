@@ -60,6 +60,7 @@ namespace AchievementsAPI
         private TextMeshProUGUI _emptyText;
         private int _rebuildGen;
         private bool _controllerMode;
+        private bool _restoreNavigationEvents;
         private Image _focusRing;
         private BaseAchievement _detailAchievement;
         private Vector3 _lastMousePos;
@@ -101,6 +102,7 @@ namespace AchievementsAPI
         private void OnDestroy()
         {
             if (Instance == this) Instance = null;
+            if (EventSystem.current != null) EventSystem.current.sendNavigationEvents = _restoreNavigationEvents;
         }
 
         private void Start()
@@ -154,6 +156,12 @@ namespace AchievementsAPI
             catch
             {
                 // ControllerManager not available; stay in mouse mode
+            }
+
+            if (EventSystem.current != null)
+            {
+                _restoreNavigationEvents = EventSystem.current.sendNavigationEvents;
+                EventSystem.current.sendNavigationEvents = false;
             }
         }
 
@@ -1193,14 +1201,24 @@ namespace AchievementsAPI
             }
         }
 
+        private void DeselectIfInside(GameObject root)
+        {
+            var current = EventSystem.current;
+            if (root == null || current == null) return;
+            var go = current.currentSelectedGameObject;
+            if (go != null && go.transform.IsChildOf(root.transform)) current.SetSelectedGameObject(null);
+        }
+
         private void BackToList()
         {
             if (_detailPanel != null)
             {
+                DeselectIfInside(_detailPanel);
                 _detailPanel.Destroy();
                 _detailPanel = null;
             }
             SetTitle(_currentCategory?.Name ?? "Achievements", _currentCategory?.GetIcon() ?? AchievementIcon);
+            DeselectIfInside(_settingsPanel);
             ShowPage(null);
 
             if (_controllerMode)
@@ -1218,6 +1236,7 @@ namespace AchievementsAPI
         {
             if (_detailPanel != null)
             {
+                DeselectIfInside(_detailPanel);
                 _detailPanel.Destroy();
                 _detailPanel = null;
             }
@@ -1247,7 +1266,11 @@ namespace AchievementsAPI
         [HideFromIl2Cpp]
         private void ShowDetail(BaseAchievement achievement)
         {
-            if (_detailPanel != null) _detailPanel.Destroy();
+            if (_detailPanel != null)
+            {
+                DeselectIfInside(_detailPanel);
+                _detailPanel.Destroy();
+            }
             var revealed = !achievement.Hidden || achievement.Unlocked;
             SetTitle(revealed ? achievement.Name : "Hidden Achievement",
                 revealed ? achievement.Icon : null);
@@ -1302,7 +1325,8 @@ namespace AchievementsAPI
             _focusRing.gameObject.SetActive(selected != null);
             if (selected == null) return;
 
-            var rect = (RectTransform) selected.transform;
+            var rect = selected.GetComponent<RectTransform>();
+            if (rect == null) return;
             rect.GetWorldCorners(_itemCorners);
             var parent = _focusRing.rectTransform.parent;
             var min = parent.InverseTransformPoint(_itemCorners[0]);
@@ -1458,7 +1482,8 @@ namespace AchievementsAPI
             if (_scroll == null || _scroll.content == null || _scroll.viewport == null) return;
             if (!sel.transform.IsChildOf(_scroll.content)) return;
             Canvas.ForceUpdateCanvases();
-            var item = (RectTransform) sel.transform;
+            var item = sel.GetComponent<RectTransform>();
+            if (item == null) return;
             var viewport = _scroll.viewport;
             item.GetWorldCorners(_itemCorners);
             viewport.GetWorldCorners(_viewCorners);
