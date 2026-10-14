@@ -898,7 +898,7 @@ namespace AchievementsAPI
             pillEmblem.pivot = new Vector2(0.5f, 0.5f);
             pillEmblem.anchoredPosition = new Vector2(20f, 0f);
 
-            var pillText = CreateText(pillRect, "Label", $"{achievement.Points}", 22f,
+            var pillText = CreateText(pillRect, "Label", $"{achievement.BasePoints}", 22f,
                 achievement.Unlocked ? Color.white : (Color) ValueColor, FontStyles.Bold,
                 TextAlignmentOptions.Center);
             var pillTextRect = pillText.rectTransform;
@@ -906,6 +906,11 @@ namespace AchievementsAPI
             pillTextRect.anchorMax = Vector2.one;
             pillTextRect.offsetMin = new Vector2(34f, 0f);
             pillTextRect.offsetMax = Vector2.zero;
+
+            if (achievement.PointsMultiplier > 1)
+            {
+                CreateMultiplierBadge(pillRect, achievement.PointsMultiplier, new Vector2(6f, 6f));
+            }
 
             // Translucent overlay carries the hover tint so the rarity card
             // color stays unchanged; it also gives the ScrollRect a raycast hit.

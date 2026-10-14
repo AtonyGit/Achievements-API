@@ -162,6 +162,32 @@ public static class MenuUi
         return rect;
     }
 
+    /// <summary>
+    /// Small teal "xN" tag pinned to the top-right corner of <paramref name="parent"/>, used to
+    /// show a points multiplier next to the base score rather than inflating the number.
+    /// </summary>
+    internal static RectTransform CreateMultiplierBadge(Transform parent, int multiplier, Vector2 overhang)
+    {
+        var badge = CreateImage(parent, "MultiplierBadge", ToastSprites.ButtonBox, AccentHover);
+        badge.type = Image.Type.Sliced;
+        badge.raycastTarget = false;
+        var rect = badge.rectTransform;
+        rect.anchorMin = rect.anchorMax = new Vector2(1f, 1f);
+        rect.pivot = new Vector2(1f, 1f);
+        rect.anchoredPosition = overhang;
+        rect.sizeDelta = new Vector2(34f, 20f);
+
+        var text = CreateText(rect, "Label", $"x{multiplier}", 14f, Color.black, FontStyles.Bold,
+            TextAlignmentOptions.Center);
+        text.overflowMode = TextOverflowModes.Overflow;
+        var textRect = text.rectTransform;
+        textRect.anchorMin = Vector2.zero;
+        textRect.anchorMax = Vector2.one;
+        textRect.offsetMin = Vector2.zero;
+        textRect.offsetMax = Vector2.zero;
+        return rect;
+    }
+
     private static AudioClip _clickSound;
     private static AudioClip _hoverSound;
     private static Sprite _closeButtonSprite;

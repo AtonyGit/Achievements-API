@@ -45,13 +45,15 @@ public static class AchievementsManager
 
     /// <summary>
     /// Resolves the category an achievement is displayed under: its own <see cref="BaseAchievement.Category"/>,
-    /// else its tab's <see cref="AchievementsTab.CategoryId"/>, else General.
+    /// else its tab's <see cref="AchievementsTab.CategoryId"/>. An id nobody registered is created on the
+    /// fly (display name = the id, trophy icon) so a mod can introduce a category just by naming it;
+    /// register it with <see cref="GetOrCreateCategory"/> to give it a proper name, icon and order.
     /// </summary>
     public static AchievementCategory ResolveCategory(AchievementsTab tab, BaseAchievement achievement)
     {
-        return GetCategory(achievement.Category ?? tab.CategoryId)
-               ?? GetCategory(AchievementCategories.General)
-               ?? Categories[0];
+        var id = achievement.Category ?? tab.CategoryId;
+        if (string.IsNullOrWhiteSpace(id)) id = AchievementCategories.General;
+        return GetOrCreateCategory(id, id);
     }
 
     /// <summary>

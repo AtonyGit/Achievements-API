@@ -59,10 +59,18 @@ public static class AchievementDetailPanel
             nextY -= 34f;
         }
 
-        var pointsLabel = $"Skeld Score: {achievement.Points}";
-        if (achievement.Hidden) pointsLabel += " <color=#BEBEBE>(Hidden x2)</color>";
-        var points = CreateText(rect, "Points", pointsLabel, 22f, Color.white, FontStyles.Bold);
+        var points = CreateText(rect, "Points", $"Skeld Score: {achievement.BasePoints}", 22f, Color.white, FontStyles.Bold);
         StretchRight(points.rectTransform, nextY, 30f);
+        if (achievement.PointsMultiplier > 1)
+        {
+            // Sits right after the text; the text is left-aligned so measure its width.
+            points.ForceMeshUpdate();
+            var badge = CreateMultiplierBadge(points.rectTransform, achievement.PointsMultiplier, Vector2.zero);
+            badge.anchorMin = badge.anchorMax = new Vector2(0f, 0.5f);
+            badge.pivot = new Vector2(0f, 0.5f);
+            badge.anchoredPosition = new Vector2(points.preferredWidth + 10f, 0f);
+            badge.sizeDelta = new Vector2(40f, 24f);
+        }
         nextY -= 34f;
 
         var desc = CreateText(rect, "Description", revealed ? achievement.Description : "Hidden Achievement",

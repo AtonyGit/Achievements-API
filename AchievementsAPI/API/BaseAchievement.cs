@@ -114,10 +114,18 @@
         /// <summary>
         /// Points awarded when this achievement is unlocked, shown as "Skeld Score"
         /// (with the ringed S emblem) in the achievements menu. Defaults from
-        /// <see cref="Rarity"/>: 10 (common), 25 (rare), 50 (epic), 100 (legendary).
-        /// <see cref="Hidden"/> achievements are worth double. Override to customize.
+        /// <see cref="Rarity"/>: 10 (common), 25 (rare), 50 (epic), 100 (legendary), multiplied by
+        /// <see cref="PointsMultiplier"/>. The menu shows <see cref="BasePoints"/> with an "xN" badge.
         /// </summary>
-        public virtual int Points => (Rarity switch { 1 => 25, 2 => 50, 3 => 100, _ => 10 }) * (Hidden ? 2 : 1);
+        public virtual int Points => BasePoints * PointsMultiplier;
+        /// <summary>
+        /// Points before any multiplier. Override to customize per achievement.
+        /// </summary>
+        public virtual int BasePoints => Rarity switch { 1 => 25, 2 => 50, 3 => 100, _ => 10 };
+        /// <summary>
+        /// Multiplier applied to <see cref="BasePoints"/>; <see cref="Hidden"/> achievements are worth double.
+        /// </summary>
+        public virtual int PointsMultiplier => Hidden ? 2 : 1;
         /// <summary>
         /// Whether the achievement is hidden or not (hidden achievements get the default icon and have their name and description set to "Hidden Achievement" until unlocked)
         /// </summary>
@@ -156,7 +164,7 @@
             Unlocked = false;
             AchievementStorage.AchievementDataReset(this, false, save);
         }
-        public BaseAchievement(string name, string description, string iconPath, int rarity = 0, bool hidden = false, bool hideRarity = true, Assembly? assembly = null)
+        public BaseAchievement(string name, string description, string iconPath, int rarity = 0, bool hidden = false, bool hideRarity = false, Assembly? assembly = null)
         {
             Name = name;
             Description = description;
@@ -168,7 +176,7 @@
             Hidden = hidden;
             HideRarity = hideRarity;
         }
-        public BaseAchievement(string name, string description, Sprite icon, int rarity = 0, bool hidden = false, bool hideRarity = true, Assembly? assembly = null)
+        public BaseAchievement(string name, string description, Sprite icon, int rarity = 0, bool hidden = false, bool hideRarity = false, Assembly? assembly = null)
         {
             Name = name;
             Description = description;
@@ -179,7 +187,7 @@
             Hidden = hidden;
             HideRarity = hideRarity;
         }
-        public BaseAchievement(string name, string description, int rarity = 0, bool hidden = false, bool hideRarity = true, Assembly? assembly = null)
+        public BaseAchievement(string name, string description, int rarity = 0, bool hidden = false, bool hideRarity = false, Assembly? assembly = null)
         {
             Name = name;
             Description = description;
