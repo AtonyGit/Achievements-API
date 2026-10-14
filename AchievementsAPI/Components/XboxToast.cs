@@ -99,11 +99,7 @@ public static class XboxToast
                 _canvasObject.AddComponent<GraphicRaycaster>();
             }
 
-            if (EventSystem.current == null && _canvasObject.GetComponent<EventSystem>() == null)
-            {
-                _canvasObject.AddComponent<EventSystem>();
-                _canvasObject.AddComponent<StandaloneInputModule>();
-            }
+            MenuUi.EnsureEventSystem(_canvasObject);
 
             _canvasObject.DontDestroyOnLoad();
         }
@@ -116,7 +112,7 @@ public static class XboxToast
         var go = new GameObject(name);
         go.transform.SetParent(parent, false);
         var img = go.AddComponent<Image>();
-        if (sprite != null) img.sprite = sprite;
+        if (sprite != null) img.sprite = SpriteTools.PreserveSprite(sprite);
         img.color = color;
         img.raycastTarget = raycast;
         return img;
@@ -127,8 +123,7 @@ public static class XboxToast
         var go = new GameObject(name);
         go.transform.SetParent(parent, false);
         var tmp = go.AddComponent<TextMeshProUGUI>();
-        var font = AchievementToast.ResolveFont();
-        if (font != null) tmp.font = font;
+        MenuUi.ApplyGameFont(tmp);
         tmp.text = text;
         tmp.fontSize = size;
         tmp.fontStyle = style;
@@ -249,6 +244,7 @@ public static class XboxToast
         instance.TextGroup.alpha = 0f;
 
         var title = CreateText(instance.TextRect, "Title", request.Title, 22f, MenuUi.ValueColor);
+        title.overflowMode = TextOverflowModes.Overflow;
         instance.Title = title;
         var titleRect = title.rectTransform;
         titleRect.anchorMin = titleRect.anchorMax = new Vector2(0f, 0.5f);
@@ -261,6 +257,7 @@ public static class XboxToast
         var hint = CreateText(instance.TextRect, "Hint",
             HasController() ? "Hold Y to view" : "Middle-click to view",
             22f, MenuUi.ValueColor);
+        hint.overflowMode = TextOverflowModes.Overflow;
         instance.Hint = hint;
         hint.alpha = 0f;
         var hintRect = hint.rectTransform;
@@ -270,6 +267,7 @@ public static class XboxToast
         hintRect.sizeDelta = new Vector2(PillWidth, 26f);
 
         var subtitle = CreateText(instance.TextRect, "Subtitle", request.Subtitle, 30f, Color.white, FontStyles.Bold);
+        subtitle.overflowMode = TextOverflowModes.Overflow;
         var subtitleRect = subtitle.rectTransform;
         subtitleRect.anchorMin = subtitleRect.anchorMax = new Vector2(0f, 0.5f);
         subtitleRect.pivot = new Vector2(0f, 0.5f);

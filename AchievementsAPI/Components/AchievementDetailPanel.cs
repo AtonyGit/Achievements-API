@@ -46,7 +46,7 @@ public static class AchievementDetailPanel
         // Right column: name, rarity, description, progress, status
         var name = CreateText(rect, "Name", revealed ? achievement.Name : "Hidden Achievement",
             36f, Color.white, FontStyles.Bold);
-        Outline(name);
+        name.overflowMode = TextOverflowModes.Overflow;
         var nameRect = name.rectTransform;
         StretchRight(nameRect, -48f, 44f);
 
@@ -59,6 +59,11 @@ public static class AchievementDetailPanel
             nextY -= 34f;
         }
 
+        var points = CreateText(rect, "Points", $"Skeld Score: {achievement.Points}",
+            22f, Color.white, FontStyles.Bold);
+        StretchRight(points.rectTransform, nextY, 30f);
+        nextY -= 34f;
+
         var desc = CreateText(rect, "Description", revealed ? achievement.Description : "Hidden Achievement",
             24f, ValueColor);
         desc.enableWordWrapping = true;
@@ -68,16 +73,18 @@ public static class AchievementDetailPanel
 
         if (achievement is CountAchievement count && count.RequiredValue > 0 && !(count.HideProgress && count.Hidden))
         {
-            var progress = CreateText(rect, "Progress", $"{count.CurrentValue} / {count.RequiredValue}",
+            var progress = CreateText(rect, "Progress",
+                $"{count.CurrentValue} / {count.RequiredValue} ({Percent(count.CurrentValue, count.RequiredValue)}%)",
                 22f, ValueColor, FontStyles.Normal, TextAlignmentOptions.MidlineRight);
             StretchRight(progress.rectTransform, nextY, 28f);
 
-            var bar = CreateProgressBar(rect, RarityColor(achievement.Rarity), out var fill);
+            // Sits fully below the 28px-tall progress text it belongs to
+            var bar = CreateProgressBar(rect, ProgressColor(achievement.Rarity), out var fill);
             bar.anchorMin = new Vector2(0f, 1f);
             bar.anchorMax = new Vector2(1f, 1f);
             bar.pivot = new Vector2(0f, 1f);
-            bar.offsetMin = new Vector2(290f, nextY - 8f - 12f);
-            bar.offsetMax = new Vector2(-60f, nextY - 8f);
+            bar.offsetMin = new Vector2(290f, nextY - 34f - 14f);
+            bar.offsetMax = new Vector2(-60f, nextY - 34f);
             SetProgress(fill, (float) count.CurrentValue / count.RequiredValue);
         }
 
@@ -98,6 +105,7 @@ public static class AchievementDetailPanel
         backRect.pivot = new Vector2(1f, 0.5f);
         backRect.anchoredPosition = new Vector2(-60f, 60f);
         back.onClick.AddListener((UnityAction)(() => onBack()));
+        AttachGameSounds(back.gameObject);
 
         return panel;
     }

@@ -3,6 +3,7 @@ using AchievementsAPI.API;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace AchievementsAPI;
@@ -14,12 +15,11 @@ namespace AchievementsAPI;
 /// </summary>
 public static class MenuUi
 {
-    internal static readonly Color32 StripColor = new(71, 72, 71, 255);      // row strip, from the game's settings rows
     internal static readonly Color32 AccentColor = new(74, 127, 121, 255);   // AU teal
     internal static readonly Color32 AccentHover = new(126, 203, 195, 255);
     internal static readonly Color32 PressedColor = new(56, 96, 92, 255);
     internal static readonly Color32 TrackOffColor = new(112, 112, 112, 255);
-    internal static readonly Color32 ValueColor = new(200, 200, 200, 255);
+    internal static readonly Color32 ValueColor = new(190, 190, 190, 255);
     internal static readonly Color32 RimColor = new(112, 114, 118, 255);     // neutral ring for common/no-rarity
 
     internal static Image CreateImage(Transform parent, string name, Sprite? sprite, Color color)
@@ -28,9 +28,41 @@ public static class MenuUi
         var rect = go.AddComponent<RectTransform>();
         rect.SetParent(parent, false);
         var img = go.AddComponent<Image>();
-        if (sprite != null) img.sprite = sprite;
+        if (sprite != null) img.sprite = SpriteTools.PreserveSprite(sprite);
         img.color = color;
         return img;
+    }
+
+    internal static void ApplyGameFont(TextMeshProUGUI tmp)
+    {
+        if (DisconnectPopup.Instance && DisconnectPopup.Instance._textArea)
+        {
+            var source = DisconnectPopup.Instance._textArea;
+            tmp.font = source.font;
+            tmp.fontMaterial = source.fontMaterial;
+            return;
+        }
+
+        if (HudManager.InstanceExists && HudManager.Instance.TaskPanel && HudManager.Instance.TaskPanel.taskText)
+        {
+            var source = HudManager.Instance.TaskPanel.taskText;
+            tmp.font = source.font;
+            tmp.fontMaterial = source.fontMaterial;
+            return;
+        }
+
+        var prefabText = Assets.achievementToastPrefab != null
+            ? Assets.achievementToastPrefab.transform.Find("AchievementName")?.GetComponent<TextMeshProUGUI>()
+            : null;
+        if (prefabText != null && prefabText.font != null)
+        {
+            tmp.font = prefabText.font;
+            tmp.fontMaterial = prefabText.fontMaterial;
+            return;
+        }
+
+        var font = AchievementToast.ResolveFont();
+        if (font != null) tmp.font = font;
     }
 
     internal static TextMeshProUGUI CreateText(Transform parent, string name, string text, float size,
@@ -40,8 +72,7 @@ public static class MenuUi
         var rect = go.AddComponent<RectTransform>();
         rect.SetParent(parent, false);
         var tmp = go.AddComponent<TextMeshProUGUI>();
-        var font = AchievementToast.ResolveFont();
-        if (font != null) tmp.font = font;
+        ApplyGameFont(tmp);
         tmp.text = text;
         tmp.fontSize = size;
         tmp.fontStyle = style;
@@ -104,9 +135,168 @@ public static class MenuUi
         tmp.outlineColor = Color.black;
     }
 
+    private static Sprite _trophy;
+
+    internal static Sprite AchievementIcon
+    {
+        get
+        {
+            if (_trophy == null)
+            {
+                _trophy = SpriteTools.LoadSpriteFromPath("AchievementsAPI.Resources.AchievementsIcon.png",
+                    typeof(MenuUi).Assembly, 100);
+            }
+            return ToastSprites.TrimTransparent(_trophy);
+        }
+    }
+
+    // Skeld Score emblem: the achievements trophy icon (same sprite as the
+    // in-game settings tab), untinted.
+    internal static RectTransform CreateScoreEmblem(Transform parent, float size)
+    {
+        var icon = CreateImage(parent, "ScoreEmblem", AchievementIcon, Color.white);
+        icon.preserveAspect = true;
+        icon.raycastTarget = false;
+        var rect = icon.rectTransform;
+        rect.sizeDelta = new Vector2(size, size);
+        return rect;
+    }
+
+    private static AudioClip _clickSound;
+    private static AudioClip _hoverSound;
+    private static Sprite _closeButtonSprite;
+
+    /// <summary>
+    /// The game's own close-button sprite (the options menu's Close button),
+    /// scraped at runtime so it matches the shipped UI exactly. Null when no
+    /// options menu exists in the scene yet or none could be found.
+    /// </summary>
+    internal static Sprite CloseButtonSprite
+    {
+        get
+        {
+            if (_closeButtonSprite == null) ResolveCloseButtonSprite();
+            return _closeButtonSprite;
+        }
+    }
+
+    // Scans the first options menu's buttons for a SpriteRenderer whose own,
+    // parent's or grandparent's name contains "close" (the back button's
+    // renderers live under activeSprites and their parents are unnamed).
+    private static void ResolveCloseButtonSprite()
+    {
+        bool IsCloseName(string n) => n != null && n.IndexOf("close", StringComparison.OrdinalIgnoreCase) >= 0;
+
+        var menus = UnityEngine.Object.FindObjectsByType<OptionsMenuBehaviour>(
+            FindObjectsInactive.Include, FindObjectsSortMode.None);
+        if (menus == null || menus.Length == 0) return;
+
+        foreach (var button in menus[0].GetComponentsInChildren<PassiveButton>(true))
+        {
+            foreach (var renderer in button.GetComponentsInChildren<SpriteRenderer>(true))
+            {
+                if (renderer.sprite == null) continue;
+                var t = renderer.transform;
+                if (IsCloseName(t.name) || (t.parent != null && (IsCloseName(t.parent.name)
+                    || (t.parent.parent != null && IsCloseName(t.parent.parent.name)))))
+                {
+                    _closeButtonSprite = renderer.sprite;
+                    return;
+                }
+            }
+        }
+    }
+
+    // Lazily resolved game UI clips; cached, but `== null` is a Unity null
+    // check so a destroyed clip is re-resolved.
+    internal static AudioClip ClickSound
+    {
+        get
+        {
+            if (_clickSound == null) ResolveUiSounds();
+            return _clickSound;
+        }
+    }
+
+    internal static AudioClip HoverSound
+    {
+        get
+        {
+            if (_hoverSound == null) ResolveUiSounds();
+            return _hoverSound;
+        }
+    }
+
+    // HudManager does not exist at the main menu, so prefer its clips when the
+    // instance is up and fall back to any button in the scene (options menus
+    // have no hover clip, but the main menu's own buttons do).
+    private static void ResolveUiSounds()
+    {
+        if (HudManager.InstanceExists && HudManager.Instance.MapButton)
+        {
+            _clickSound = HudManager.Instance.MapButton.ClickSound;
+            _hoverSound = HudManager.Instance.MapButton.HoverSound;
+        }
+
+        if (_clickSound && _hoverSound) return;
+
+        foreach (var button in UnityEngine.Object.FindObjectsByType<PassiveButton>(
+                     FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            if (_clickSound == null && button.ClickSound) _clickSound = button.ClickSound;
+            if (_hoverSound == null && button.HoverSound) _hoverSound = button.HoverSound;
+            if (_clickSound && _hoverSound) break;
+        }
+    }
+
+    private static void PlayUiSound(bool click)
+    {
+        var clip = click ? ClickSound : HoverSound;
+        if (clip && Constants.ShouldPlaySfx() && SoundManager.Instance)
+        {
+            SoundManager.Instance.PlaySound(clip, false);
+        }
+    }
+
+    /// <summary>
+    /// Adds an <see cref="EventTrigger"/> that plays the game's click sound on
+    /// pointer down and its hover sound on pointer enter (unless
+    /// <paramref name="hoverSound"/> is false). Silently does nothing when no
+    /// game clips could be found.
+    /// </summary>
+    internal static void AttachGameSounds(GameObject go, bool hoverSound = true)
+    {
+        var trigger = go.GetComponent<EventTrigger>();
+        if (trigger == null) trigger = go.AddComponent<EventTrigger>();
+
+        var press = new EventTrigger.Entry { eventID = EventTriggerType.PointerDown };
+        press.callback.AddListener((UnityAction<BaseEventData>)(_ => PlayUiSound(true)));
+        trigger.triggers.Add(press);
+
+        // EventTrigger implements IScrollHandler, so event propagation stops at
+        // the button and the mouse wheel never reaches the ScrollRect while
+        // hovering it; forward the scroll explicitly
+        var scroll = new EventTrigger.Entry { eventID = EventTriggerType.Scroll };
+        scroll.callback.AddListener((UnityAction<BaseEventData>)(data =>
+        {
+            var pointer = data.TryCast<PointerEventData>();
+            var scrollRect = go.GetComponentInParent<ScrollRect>();
+            if (pointer != null && scrollRect != null) scrollRect.OnScroll(pointer);
+        }));
+        trigger.triggers.Add(scroll);
+
+        if (hoverSound)
+        {
+            var enter = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+            enter.callback.AddListener((UnityAction<BaseEventData>)(_ => PlayUiSound(false)));
+            trigger.triggers.Add(enter);
+        }
+    }
+
+    // Charcoal, white-outline pill button in the game's settings style (back/preview).
     internal static Button CreateButton(Transform panel, string label, Vector2 position)
     {
-        var bg = CreateImage(panel, $"{label}Button", ToastSprites.RoundedRectSmall, Color.white);
+        var bg = CreateImage(panel, $"{label}Button", ToastSprites.ButtonBox, Color.white);
         bg.type = Image.Type.Sliced;
         var rect = bg.rectTransform;
         rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0f);
@@ -115,7 +305,6 @@ public static class MenuUi
         rect.sizeDelta = new Vector2(180f, 48f);
 
         var text = CreateText(rect, "Label", label, 22f, Color.white, FontStyles.Bold, TextAlignmentOptions.Center);
-        Outline(text);
         var textRect = text.rectTransform;
         textRect.anchorMin = Vector2.zero;
         textRect.anchorMax = Vector2.one;
@@ -125,14 +314,36 @@ public static class MenuUi
         var button = bg.gameObject.AddComponent<Button>();
         button.transition = Selectable.Transition.ColorTint;
         var colors = button.colors;
-        colors.normalColor = AccentColor;
-        colors.highlightedColor = AccentHover;
-        colors.pressedColor = PressedColor;
-        colors.selectedColor = AccentColor;
+        colors.normalColor = Color.white;
+        colors.highlightedColor = new Color32(200, 200, 200, 255);
+        colors.pressedColor = new Color32(150, 150, 150, 255);
+        colors.selectedColor = Color.white;
         colors.colorMultiplier = 1f;
         colors.fadeDuration = 0.1f;
         button.colors = colors;
         return button;
+    }
+
+    // Il2CppInterop's Transform enumerator yields Il2CppSystem.Object wrappers
+    // (foreach + cast throws); detach so layout groups don't draw pending-destroy
+    // children for a frame.
+    internal static void ClearChildren(Transform parent)
+    {
+        for (var i = parent.childCount - 1; i >= 0; i--)
+        {
+            var child = parent.GetChild(i);
+            child.SetParent(null, false);
+            UnityEngine.Object.Destroy(child.gameObject);
+        }
+    }
+
+    internal static void EnsureEventSystem(GameObject host)
+    {
+        if (EventSystem.current == null && host.GetComponent<EventSystem>() == null)
+        {
+            host.AddComponent<EventSystem>();
+            host.AddComponent<StandaloneInputModule>();
+        }
     }
 
     // Thin horizontal progress bar; returns the fill rect so callers can set its anchorMax.x.
@@ -180,9 +391,17 @@ public static class MenuUi
             1 => new Color32(104, 172, 212, 255),
             2 => new Color32(158, 112, 214, 255),
             3 => new Color32(214, 184, 92, 255),
-            _ => new Color32(16, 124, 16, 255)
+            _ => RimColor
         };
     }
+
+    // Progress-bar fills: the rarity color, but the teal AccentHover for
+    // common so the fill does not sit gray-on-gray against the ring/track.
+    internal static Color ProgressColor(int rarity) => rarity > 0 ? RarityColor(rarity) : (Color) AccentHover;
+
+    // 0-100 completion percentage for a countable progress pair.
+    internal static int Percent(int current, int required)
+        => required > 0 ? Mathf.Clamp(Mathf.RoundToInt(100f * current / required), 0, 100) : 100;
 
     internal static string RarityName(int rarity)
     {

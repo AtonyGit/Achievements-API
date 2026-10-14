@@ -59,7 +59,9 @@ public class AchievementToast
     /// </summary>
     public static void Show(ToastRequest request)
     {
-        XboxToast.Enqueue(request);
+        var icon = SpriteTools.PreserveSprite(request.Icon);
+        var background = SpriteTools.PreserveSprite(request.BgSprite);
+        XboxToast.Enqueue(request with { Icon = icon, BgSprite = background });
     }
 
     /// <summary>

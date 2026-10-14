@@ -112,6 +112,13 @@
         /// </summary>
         public int Rarity;
         /// <summary>
+        /// Points awarded when this achievement is unlocked, shown as "Skeld Score"
+        /// (with the ringed S emblem) in the achievements menu. Defaults from
+        /// <see cref="Rarity"/>: 10 (common), 25 (rare), 50 (epic), 100 (legendary).
+        /// Override to customize.
+        /// </summary>
+        public virtual int Points => Rarity switch { 1 => 25, 2 => 50, 3 => 100, _ => 10 };
+        /// <summary>
         /// Whether the achievement is hidden or not (hidden achievements get the default icon and have their name and description set to "Hidden Achievement" until unlocked)
         /// </summary>
         public bool Hidden;

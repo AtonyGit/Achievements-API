@@ -32,8 +32,11 @@ tab.RegisterAchievement(myAchievement);
 ```
 Use `AchievementsManager.GetTab(name)` to look up a tab, and `tab.GetAchievements()` to enumerate all achievements (property-declared + soft-registered).
 
+## Skeld Score
+Each achievement is worth Skeld Score based on rarity (10 common / 25 rare / 50 epic / 100 legendary); override `Points` to customize. The menu shows your earned/total Skeld Score next to a Gamerscore-style emblem, plus per-rarity completion, and each row shows the achievement's Skeld Score in a pill.
+
 ## Configuration
-Toast settings live in the "Toasts" section of the plugin config (`ToastsEnabled`, `ToastDuration`, `ToastSoundEnabled`, `ToastVolume`) and can also be changed in-game via the gear button in the top-right of the achievements menu.
+Toast settings live in the "Toasts" section of the plugin config (`ToastsEnabled`, `ToastDuration`, `ToastSoundEnabled`, `ToastVolume`) and can also be changed in-game via the Settings button in the achievements menu.
 
 For support, or just chatting, join the [discord](https://discord.gg/RJyNm9UaT7)!
 

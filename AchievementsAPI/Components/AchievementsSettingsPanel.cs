@@ -19,23 +19,25 @@ public static class AchievementsSettingsPanel
     /// Creates the settings panel (hidden until toggled by the caller).
     /// </summary>
     /// <param name="parent">The menu root transform.</param>
+    /// <param name="onBack">Invoked by the Back button.</param>
     /// <returns>The created settings panel.</returns>
-    public static GameObject Create(Transform parent)
+    public static GameObject Create(Transform parent, System.Action onBack)
     {
-        var panel = CreatePanel(parent);
+        var panel = CreatePanel(parent, onBack);
         panel.SetActive(false);
         return panel;
     }
 
-    private static GameObject CreatePanel(Transform parent)
+    private static GameObject CreatePanel(Transform parent, System.Action onBack)
     {
-        var bg = CreateCard(parent, "ToastSettingsPanel");
-        var panel = bg.gameObject;
-        // The menu positions the card (MenuUi.MatchRect); rows stretch with it
-        var rect = bg.rectTransform;
+        // Plain container: the rows are the same charcoal boxes as the menu's
+        // buttons, so no card behind them. The menu positions it (MenuUi.MatchRect).
+        var panel = new GameObject("ToastSettingsPanel");
+        var rect = panel.AddComponent<RectTransform>();
+        rect.SetParent(parent, false);
 
         // Full-width row strips, 76px pitch, first strip below the frame edge
-        const float rowsTop = -40f;
+        const float rowsTop = -4f;
         CreateToggleRow(CreateRowStrip(rect, rowsTop), "Show toasts", AchievementsConfig.ToastsEnabled);
         CreateToggleRow(CreateRowStrip(rect, rowsTop - 76f), "Play sound", AchievementsConfig.ToastSoundEnabled);
         CreateSliderRow(CreateRowStrip(rect, rowsTop - 152f), "Volume", AchievementsConfig.ToastVolume, 0f, 1f,
@@ -50,29 +52,37 @@ public static class AchievementsSettingsPanel
         var previewRect = preview.GetComponent<RectTransform>();
         previewRect.anchorMin = previewRect.anchorMax = new Vector2(1f, 0f);
         previewRect.pivot = new Vector2(1f, 0.5f);
-        previewRect.anchoredPosition = new Vector2(-60f, 60f);
+        previewRect.anchoredPosition = new Vector2(-256f, 40f);
         preview.onClick.AddListener((UnityAction)(() => AchievementToast.ShowPreview()));
+        AttachGameSounds(preview.gameObject);
+
+        var back = CreateButton(rect, "Back", Vector2.zero);
+        var backRect = back.GetComponent<RectTransform>();
+        backRect.anchorMin = backRect.anchorMax = new Vector2(1f, 0f);
+        backRect.pivot = new Vector2(1f, 0.5f);
+        backRect.anchoredPosition = new Vector2(-60f, 40f);
+        back.onClick.AddListener((UnityAction)(() => onBack()));
+        AttachGameSounds(back.gameObject);
 
         return panel;
     }
 
     private static RectTransform CreateRowStrip(Transform panel, float topY)
     {
-        var strip = CreateImage(panel, "Row", ToastSprites.RoundedRectSmall, StripColor);
+        var strip = CreateImage(panel, "Row", ToastSprites.ButtonBox, Color.white);
         strip.type = Image.Type.Sliced;
         var rect = strip.rectTransform;
         rect.anchorMin = new Vector2(0f, 1f);
         rect.anchorMax = new Vector2(1f, 1f);
         rect.pivot = new Vector2(0.5f, 1f);
         rect.anchoredPosition = new Vector2(0f, topY);
-        rect.sizeDelta = new Vector2(-80f, 64f);
+        rect.sizeDelta = new Vector2(0f, 64f);
         return rect;
     }
 
     private static void CreateRowLabel(Transform strip, string text)
     {
         var label = CreateText(strip, "Label", text, 24f, Color.white);
-        Outline(label);
         var rect = label.rectTransform;
         rect.anchorMin = rect.anchorMax = new Vector2(0f, 0.5f);
         rect.pivot = new Vector2(0f, 0.5f);
@@ -125,6 +135,7 @@ public static class AchievementsSettingsPanel
             entry.Value = v;
             ApplySwitchState(knobRect, track, v);
         }));
+        AttachGameSounds(track.gameObject);
     }
 
     private static void CreateCycleRow<T>(Transform strip, string label, ConfigEntry<T> entry) where T : struct, System.Enum
@@ -157,6 +168,7 @@ public static class AchievementsSettingsPanel
             colors.colorMultiplier = 1f;
             colors.fadeDuration = 0.1f;
             button.colors = colors;
+            AttachGameSounds(bg.gameObject);
             return button;
         }
 
@@ -170,7 +182,6 @@ public static class AchievementsSettingsPanel
 
         var valueText = CreateText(boxRect, "Value", EnumDisplayName(entry.Value), 20f, Color.white,
             FontStyles.Normal, TextAlignmentOptions.Center);
-        Outline(valueText);
         var valueRect = valueText.rectTransform;
         valueRect.anchorMin = Vector2.zero;
         valueRect.anchorMax = Vector2.one;

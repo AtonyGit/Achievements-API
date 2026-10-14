@@ -81,8 +81,8 @@ public static class AchievementLifecycle
         ResetProgressPersistence(achievement => achievement.ProgressPersists != AchPersistence.ThroughoutSessions);
     }
 
-    [HarmonyPatch(typeof(AchievementManager), nameof(AchievementManager.OnMeetingCalled))]
-    [HarmonyPrefix]
+    [HarmonyPatch(typeof(MeetingHud), nameof(MeetingHud.Start))]
+    [HarmonyPostfix]
     public static void OnMeetingCalledPatch()
     {
         OnMeetingStart();

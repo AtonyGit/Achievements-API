@@ -11,6 +11,18 @@ namespace AchievementsAPI;
 public static class SpriteTools
 {
     /// <summary>
+    /// Keeps a dynamically supplied sprite and its texture alive across scene
+    /// transitions and Resources.UnloadUnusedAssets. Returns the same sprite.
+    /// </summary>
+    public static Sprite? PreserveSprite(Sprite? sprite)
+    {
+        if (sprite == null) return null;
+        sprite.DontUnload();
+        if (sprite.texture != null) sprite.texture.DontUnload();
+        return sprite;
+    }
+
+    /// <summary>
     /// Loads and returns a texture from a resource path using the specified assembly.
     /// </summary>
     /// <param name="resourcePath">The path to the resource within the assembly.</param>
@@ -19,15 +31,19 @@ public static class SpriteTools
     /// <exception cref="ArgumentException">Thrown when the resource cannot be found in the specified assembly.</exception>
     public static Texture2D LoadTextureFromResourcePath(string resourcePath, Assembly assembly)
     {
-        var tex = new Texture2D(1, 1, TextureFormat.ARGB32, false)
+        // Mipmaps + trilinear so icons stay smooth when drawn smaller than
+        // their source size
+        var tex = new Texture2D(1, 1, TextureFormat.ARGB32, true)
         {
             wrapMode = TextureWrapMode.Clamp,
+            filterMode = FilterMode.Trilinear,
         };
         var myStream = assembly.GetManifestResourceStream(resourcePath);
         if (myStream != null)
         {
             var buttonTexture = myStream.ReadFully();
             tex.LoadImage(buttonTexture, false);
+            tex.Apply(true, false);
         }
         else
         {
@@ -48,8 +64,12 @@ public static class SpriteTools
     public static Sprite LoadSpriteFromPath(string resourcePath, Assembly assembly, float pixelsPerUnit)
     {
         var tex = LoadTextureFromResourcePath(resourcePath, assembly);
+        // Keep the texture alive across Resources.UnloadUnusedAssets or icons
+        // load as white squares after scene loads
+        tex.DontUnload();
         var sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), pixelsPerUnit);
         sprite.name = resourcePath;
+        PreserveSprite(sprite);
         return sprite;
     }
 }

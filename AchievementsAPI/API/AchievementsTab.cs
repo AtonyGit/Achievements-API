@@ -58,6 +58,7 @@ public abstract class AchievementsTab
 
     /// <summary>
     /// A method which gets the color of the Achievements Menu background when switching to this tab.
+    /// No longer used by the menu; kept for compatibility.
     /// </summary>
     public virtual Color GetTabColor()
     {

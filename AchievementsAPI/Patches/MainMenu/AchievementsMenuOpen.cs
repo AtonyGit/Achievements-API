@@ -1,10 +1,23 @@
-﻿namespace AchievementsAPI.Patches.MainMenu;
+using UnityEngine;
+using UnityEngine.UI;
+
+namespace AchievementsAPI.Patches.MainMenu;
 
 public static class AchievementsMenuOpen
 {
     private static AchievementsMenu Create()
     {
-        return UnityEngine.Object.Instantiate(Assets.achievementPrefab).GetComponent<AchievementsMenu>();
+        var go = new GameObject("AchievementsMenu");
+        var canvas = go.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder = 31000; // below the toast canvas (32000)
+        var scaler = go.AddComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1920f, 1080f);
+        scaler.matchWidthOrHeight = 0.5f;
+        go.AddComponent<GraphicRaycaster>();
+        MenuUi.EnsureEventSystem(go);
+        return go.AddComponent<AchievementsMenu>();
     }
 
     public static void OpenMenu(MainMenuManager mainMenuManager)
@@ -21,6 +34,13 @@ public static class AchievementsMenuOpen
     }
     public static void OpenMenu(string focusAchievementId)
     {
+        var existing = UnityEngine.Object.FindObjectOfType<AchievementsMenu>();
+        if (existing)
+        {
+            existing.FocusAchievement(focusAchievementId);
+            return;
+        }
+
         var menu = Create();
         var mainMenu = UnityEngine.Object.FindObjectOfType<MainMenuManager>();
         if (mainMenu)

@@ -26,9 +26,19 @@ public static class ToastSprites
     private static Sprite? _gear;
     private static Sprite? _card;
     private static Sprite? _cardRim;
+    private static Sprite? _outlineBox;
+    private static Sprite? _panelBox;
+    // Plain Sprite (no `?`): the project has no nullable annotations context,
+    // and a null here is a true null before first use anyway
+    private static Sprite _wikiPanel;
+    private static Sprite? _outlineBoxSmall;
+    private static Sprite? _buttonBox;
+    private static Sprite? _panelBoxSmall;
+    private static Sprite? _closeX;
 
     /// <summary>
-    /// A 128x128 anti-aliased filled circle.
+    /// A 512x512 (ppu 400) anti-aliased filled circle. Rendered at 4x like the
+    /// card sprites so rings/discs stay crisp; the UI size is unchanged.
     /// </summary>
     public static Sprite Circle => _circle ??= CreateCircle();
 
@@ -73,6 +83,45 @@ public static class ToastSprites
     /// </summary>
     public static Sprite CardRim => _cardRim ??= CreateCard(true, "AchToastCardRim");
 
+    /// <summary>
+    /// Transparent fill with a 3px white ring inset ~3px, edged by thin black
+    /// rings on both sides, like the game's settings boxes (radius 22).
+    /// </summary>
+    public static Sprite OutlineBox => _outlineBox ??= CreateOutlineBox(22f, new Color(0f, 0f, 0f, 0f), new Color(0f, 0f, 0f, 0f), "AchMenuOutlineBox");
+
+    /// <summary>
+    /// <see cref="OutlineBox"/> with an opaque black fill inside the ring.
+    /// </summary>
+    public static Sprite PanelBox => _panelBox ??= CreateOutlineBox(22f, new Color32(0, 0, 0, 255), new Color32(0, 0, 0, 255), "AchMenuPanelBox");
+
+    /// <summary>
+    /// A 976x631 framed background loaded from <c>AchievementsAPI.Resources.Menu.png</c>.
+    /// It is 9-sliced with a 48px border so the corners and frame retain their
+    /// proportions when stretched, for the menu window.
+    /// </summary>
+    public static Sprite WikiPanel => _wikiPanel ??= CreateWikiPanel();
+
+    /// <summary>
+    /// <see cref="OutlineBox"/> with corner radius 14, for pill tabs and buttons.
+    /// </summary>
+    public static Sprite OutlineBoxSmall => _outlineBoxSmall ??= CreateOutlineBox(14f, new Color(0f, 0f, 0f, 0f), new Color(0f, 0f, 0f, 0f), "AchMenuOutlineBoxSmall", 20f);
+
+    /// <summary>
+    /// A solid #3D4040 rounded box with no outline, for buttons, pills and stat boxes.
+    /// </summary>
+    public static Sprite ButtonBox => _buttonBox ??= CreateSolidRoundedBox(14f, new Color32(61, 64, 64, 255), "AchMenuButtonBox");
+
+    /// <summary>
+    /// <see cref="PanelBox"/> with corner radius 14.
+    /// </summary>
+    public static Sprite PanelBoxSmall => _panelBoxSmall ??= CreateOutlineBox(14f, new Color32(0, 0, 0, 255), new Color32(0, 0, 0, 255), "AchMenuPanelBoxSmall", 20f);
+
+    /// <summary>
+    /// White disc with a black ring and a bold black X, matching the game's
+    /// close button.
+    /// </summary>
+    public static Sprite CloseX => _closeX ??= CreateCloseX();
+
     private static readonly Dictionary<int, Sprite> _trimmed = new();
 
     /// <summary>
@@ -82,11 +131,15 @@ public static class ToastSprites
     /// </summary>
     public static Sprite TrimTransparent(Sprite sprite)
     {
+        SpriteTools.PreserveSprite(sprite);
         if (_trimmed.TryGetValue(sprite.GetInstanceID(), out var cached)) return cached;
 
         var result = sprite;
         try
         {
+            // The trimmed sprite shares the source texture; keep it alive
+            // across Resources.UnloadUnusedAssets on both paths
+            sprite.texture.DontUnload();
             var pixels = sprite.texture.GetPixels32();
             var texW = sprite.texture.width;
             var x0 = Mathf.RoundToInt(sprite.rect.x);
@@ -115,7 +168,7 @@ public static class ToastSprites
                     new Rect(minX, minY, maxX - minX + 1, maxY - minY + 1),
                     new Vector2(0.5f, 0.5f), sprite.pixelsPerUnit);
                 trimmed.name = $"{sprite.name}_trimmed";
-                trimmed.DontUnload();
+                SpriteTools.PreserveSprite(trimmed);
                 result = trimmed;
             }
         }
@@ -130,14 +183,19 @@ public static class ToastSprites
 
     private static Sprite CreateCircle()
     {
+        // Rendered at CardScale like CreateCard; pixelsPerUnit scales with it,
+        // so the visual size is unchanged
+        var size = Size * CardScale;
+        var s = (float) CardScale;
+        var center = (size - 1) / 2f;
         var tex = CreateTexture((x, y) =>
         {
-            var d = Mathf.Sqrt((x - 63.5f) * (x - 63.5f) + (y - 63.5f) * (y - 63.5f));
-            return Mathf.Clamp01(64f - d);
-        }, "AchToastCircle");
+            var d = Mathf.Sqrt((x - center) * (x - center) + (y - center) * (y - center));
+            return Mathf.Clamp01(size / 2f - d);
+        }, "AchToastCircle", size, mipmaps: true);
 
         tex.DontUnload();
-        var sprite = Sprite.Create(tex, new Rect(0, 0, Size, Size), new Vector2(0.5f, 0.5f), 100f);
+        var sprite = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f * s);
         sprite.DontUnload();
         return sprite;
     }
@@ -177,6 +235,81 @@ public static class ToastSprites
         return sprite;
     }
 
+    private static Sprite CreateWikiPanel()
+    {
+        var tex = SpriteTools.LoadTextureFromResourcePath(
+            "AchievementsAPI.Resources.Menu.png", typeof(ToastSprites).Assembly);
+        tex.DontUnload();
+
+        var sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height),
+            new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect,
+            new Vector4(48f, 48f, 48f, 48f));
+        sprite.name = "AchMenuWikiPanel";
+        sprite.DontUnload();
+        return sprite;
+    }
+
+    // White 3px stroke inset ~3px with 1.5px black rings on either side;
+    // rendered at CardScale so the rings stay crisp. The interior band
+    // (inset >= 7.5px) is filled with a vertical lerp from `bottom` at y 0 to
+    // `top` at the texture top (y grows upward in the texture); transparent
+    // colors give the outline-only variant.
+    private static Sprite CreateOutlineBox(float radius, Color top, Color bottom, string name, float border = 32f)
+    {
+        var size = Size * CardScale;
+        var s = (float) CardScale;
+        var r = radius * s;
+        var maxY = size - 1f;
+        var tex = CreateTexture((x, y) =>
+        {
+            var px = Mathf.Clamp(x, r, size - r);
+            var py = Mathf.Clamp(y, r, size - r);
+            var d = Mathf.Sqrt((x - px) * (x - px) + (y - py) * (y - py));
+            var inset = r - d;
+            var alpha = Mathf.Clamp01(inset / s);
+            Color color;
+            if (inset < 3f * s) color = new Color32(0, 0, 0, 255);
+            else if (inset < 6f * s) color = Color.white;
+            else if (inset < 7.5f * s) color = new Color32(0, 0, 0, 255);
+            else color = Color.Lerp(bottom, top, y / maxY);
+            color.a *= alpha;
+            return color;
+        }, name, size);
+
+        tex.DontUnload();
+        var sprite = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f * s,
+            0, SpriteMeshType.FullRect, Vector4.one * border * s);
+        sprite.DontUnload();
+        return sprite;
+    }
+
+    private static Sprite CreateCloseX()
+    {
+        var tex = CreateTexture((x, y) =>
+        {
+            var dx = x - 63.5f;
+            var dy = y - 63.5f;
+            var d = Mathf.Sqrt(dx * dx + dy * dy);
+            var alpha = Mathf.Clamp01(62f - d);
+            var black = Mathf.Clamp01(d - 56f);
+            // Two diagonal bars, halfwidth 7px, halflength 32px
+            var u = Mathf.Abs(dx + dy) / 1.4142135f;
+            var v = Mathf.Abs(dx - dy) / 1.4142135f;
+            var bar = Mathf.Max(
+                Mathf.Clamp01(7f - u) * Mathf.Clamp01(32f - v),
+                Mathf.Clamp01(7f - v) * Mathf.Clamp01(32f - u));
+            black = Mathf.Max(black, bar);
+            var c = Color.Lerp(Color.white, Color.black, black);
+            c.a = alpha;
+            return c;
+        }, "AchMenuCloseX", mipmaps: true);
+
+        tex.DontUnload();
+        var sprite = Sprite.Create(tex, new Rect(0, 0, Size, Size), new Vector2(0.5f, 0.5f), 100f);
+        sprite.DontUnload();
+        return sprite;
+    }
+
     private static Sprite CreateGear()
     {
         var tex = CreateTexture((x, y) =>
@@ -188,7 +321,7 @@ public static class ToastSprites
             var tooth = 0.5f + 0.5f * Mathf.Cos(angle * 8f);
             var outer = Mathf.Lerp(44f, 56f, Mathf.Clamp01((tooth - 0.5f) * 6f));
             return Mathf.Clamp01(outer - d) * Mathf.Clamp01(d - 18f);
-        }, "AchToastGear");
+        }, "AchToastGear", mipmaps: true);
 
         tex.DontUnload();
         var sprite = Sprite.Create(tex, new Rect(0, 0, Size, Size), new Vector2(0.5f, 0.5f), 100f);
@@ -215,15 +348,36 @@ public static class ToastSprites
         return sprite;
     }
 
-    private static Texture2D CreateTexture(System.Func<int, int, float> alphaAt, string name)
-        => CreateTexture((x, y) => new Color(1f, 1f, 1f, alphaAt(x, y)), name);
-
-    private static Texture2D CreateTexture(System.Func<int, int, Color> colorAt, string name, int size = Size)
+    private static Sprite CreateSolidRoundedBox(float radius, Color color, string name)
     {
-        var tex = new Texture2D(size, size, TextureFormat.ARGB32, false)
+        var tex = CreateTexture((x, y) =>
+        {
+            var px = Mathf.Clamp(x, radius, Size - radius);
+            var py = Mathf.Clamp(y, radius, Size - radius);
+            var d = Mathf.Sqrt((x - px) * (x - px) + (y - py) * (y - py));
+            var result = color;
+            result.a *= Mathf.Clamp01(radius - d);
+            return result;
+        }, name);
+        tex.DontUnload();
+        var sprite = Sprite.Create(tex, new Rect(0, 0, Size, Size), new Vector2(0.5f, 0.5f), 100f,
+            0, SpriteMeshType.FullRect, new Vector4(radius, radius, radius, radius));
+        sprite.DontUnload();
+        return sprite;
+    }
+
+    private static Texture2D CreateTexture(System.Func<int, int, float> alphaAt, string name, int size = Size, bool mipmaps = false)
+        => CreateTexture((x, y) => new Color(1f, 1f, 1f, alphaAt(x, y)), name, size, mipmaps);
+
+    private static Texture2D CreateTexture(System.Func<int, int, Color> colorAt, string name, int size = Size, bool mipmaps = false)
+    {
+        // Mipmaps are only used for non-sliced sprites; sliced sprites are
+        // stretched anisotropically and trilinear minification bleeds the ring
+        // into the side slices.
+        var tex = new Texture2D(size, size, TextureFormat.ARGB32, mipmaps)
         {
             wrapMode = TextureWrapMode.Clamp,
-            filterMode = FilterMode.Bilinear,
+            filterMode = mipmaps ? FilterMode.Trilinear : FilterMode.Bilinear,
             name = name
         };
 
