@@ -109,10 +109,6 @@ Toast settings live in the "Toasts" section of the plugin config and can also be
 
 Progress is saved to `AchievementsAPIData/achievements.json` in the game's persistent data folder, encrypted and signed so it cannot be edited by hand. Unlocks are written immediately; progress updates are batched so frequent increments do not cause stutter.
 
-# Among Developers
-
-Playing a full match with one of the API's developers unlocks the hidden "Among Developers" achievement. Developers announce themselves through a small companion plugin (`AchievementsAPI.Developer`); the achievement is granted when the match ends, not on joining the lobby.
-
 # Building
 
 The solution targets .NET 6 and builds with `dotnet build AchievementsAPI.sln`. CI runs `build.cake` and uploads `AchievementsAPI.dll` as an artifact.
