@@ -6,7 +6,8 @@ using UnityEngine;
 
 namespace AchievementsAPI.Patches;
 
-// Announces the local player as a developer (if registered via DeveloperPresence.RegisterLocalDeveloper).
+// Announces the local player as a developer (if registered via DeveloperPresence.RegisterLocalDeveloper)
+// and tracks the match-played unlock for DeveloperTab.PlayedWithDeveloper.
 
 [HarmonyPatch]
 public static class DeveloperPresencePatches
@@ -16,7 +17,15 @@ public static class DeveloperPresencePatches
     [HarmonyPostfix]
     public static void OnLobbyStartPatch()
     {
+        DeveloperPresence.ResetMatch();
         DeveloperPresence.Announce();
+    }
+
+    [HarmonyPatch(typeof(EndGameManager), nameof(EndGameManager.Start))]
+    [HarmonyPostfix]
+    public static void OnEndGamePatch()
+    {
+        DeveloperPresence.OnMatchEnded();
     }
 
     // Someone else joined: give them time to spawn our PlayerControl before the

@@ -13,6 +13,8 @@ public static class DeveloperPresence
 {
     public static string? LocalDeveloperName { get; private set; }
 
+    private static bool _developerInMatch;
+
     /// <summary>
     /// Call once from a developer-only plugin's Load(). The API then announces it to every lobby/game automatically.
     /// </summary>
@@ -29,7 +31,16 @@ public static class DeveloperPresence
     {
         if (sender == null || sender.AmOwner) return;
         AchievementsAPIPlugin.Instance.Log.LogInfo($"Developer '{name}' is in this game.");
+        _developerInMatch = true;
+    }
+
+    internal static void ResetMatch() => _developerInMatch = false;
+
+    internal static void OnMatchEnded()
+    {
+        if (!_developerInMatch) return;
         AchievementsManager.Tabs.OfType<DeveloperTab>().FirstOrDefault()?.PlayedWithDeveloper.Unlock();
+        _developerInMatch = false;
     }
 }
 

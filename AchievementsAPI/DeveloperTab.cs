@@ -17,5 +17,5 @@ public class DeveloperTab : AchievementsTab
     public override string IconPath => TrophyIcon;
 
     public BaseAchievement PlayedWithDeveloper { get; set; } = new BaseAchievement(
-        "Among Legends", "Play a game with a developer.", TrophyIcon, rarity: 3, hidden: true);
+        "Among Developers", "Play a game with a developer.", TrophyIcon, rarity: 3, hidden: true);
 }
