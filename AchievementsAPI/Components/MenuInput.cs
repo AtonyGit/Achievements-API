@@ -51,6 +51,19 @@ internal static class MenuInput
         return _player;
     }
 
+    private static bool MouseDriven(Rewired.Player player)
+    {
+        try
+        {
+            var last = player.controllers.GetLastActiveController();
+            return last != null && last.type == Rewired.ControllerType.Mouse;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     private static readonly float[] _heldSince = { -1f, -1f, -1f, -1f };
     private static readonly float[] _lastFire = { 0f, 0f, 0f, 0f };
 
@@ -92,7 +105,7 @@ internal static class MenuInput
         var nextFilter = false;
 
         var player = GetPlayer();
-        if (player != null)
+        if (player != null && !MouseDriven(player))
         {
             vert = player.GetAxis(MenuVertical);
             horz = player.GetAxis(MenuHorizontal);
