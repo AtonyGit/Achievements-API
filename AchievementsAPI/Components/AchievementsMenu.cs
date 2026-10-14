@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using AchievementsAPI.API;
 using Il2CppInterop.Runtime.Attributes;
+using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Reactor.Utilities;
 using Reactor.Utilities.Attributes;
 using Reactor.Utilities.Extensions;
@@ -63,10 +64,11 @@ namespace AchievementsAPI
         private bool _restoreNavigationEvents;
         private Image _focusRing;
         private BaseAchievement _detailAchievement;
+        private GameObject _lastSelected;
         private Vector3 _lastMousePos;
         private bool _mousePrimed;
-        private readonly Vector3[] _itemCorners = new Vector3[4];
-        private readonly Vector3[] _viewCorners = new Vector3[4];
+        private readonly Il2CppStructArray<Vector3> _itemCorners = new(4);
+        private readonly Il2CppStructArray<Vector3> _viewCorners = new(4);
 
         private sealed class ListRow
         {
@@ -1290,14 +1292,19 @@ namespace AchievementsAPI
                  || Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1) || Input.GetMouseButtonDown(2)))
             {
                 _controllerMode = false;
+                _lastSelected = CurrentSelectable()?.gameObject;
             }
             _lastMousePos = mouse;
             _mousePrimed = true;
 
+            if (!_controllerMode && CurrentSelectable() != null) EventSystem.current.SetSelectedGameObject(null);
+
             if (MenuInput.AnyNavigation && !_controllerMode)
             {
                 _controllerMode = true;
-                EnsureSelection();
+                var last = _lastSelected != null && _lastSelected.activeInHierarchy ? _lastSelected.GetComponent<Selectable>() : null;
+                if (last != null && last.interactable && (ActivePage() == null || last.transform.IsChildOf(ActivePage().transform))) Select(last);
+                else EnsureSelection();
             }
 
             if (MenuInput.Cancel)
@@ -1367,7 +1374,7 @@ namespace AchievementsAPI
             var selectables = page.GetComponentsInChildren<Selectable>(false);
             foreach (var s in selectables)
             {
-                if (s.interactable && s is Button
+                if (s.interactable && s.TryCast<Button>() != null
                     && s.name.IndexOf("Back", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     return s;
@@ -1415,7 +1422,8 @@ namespace AchievementsAPI
                 return;
             }
 
-            if (sel is Slider slider && (direction == NavDirection.Left || direction == NavDirection.Right))
+            var slider = sel.TryCast<Slider>();
+            if (slider != null && (direction == NavDirection.Left || direction == NavDirection.Right))
             {
                 var step = (slider.maxValue - slider.minValue) / 20f;
                 slider.value += direction == NavDirection.Right ? step : -step;
@@ -1437,18 +1445,19 @@ namespace AchievementsAPI
         private void ConfirmSelection()
         {
             var sel = CurrentSelectable();
-            switch (sel)
+            if (sel == null) return;
+            var button = sel.TryCast<Button>();
+            if (button != null)
             {
-                case null:
-                    return;
-                case Button button:
-                    PlayUiSound(true);
-                    button.onClick.Invoke();
-                    break;
-                case Toggle toggle:
-                    toggle.isOn = !toggle.isOn;
-                    PlayUiSound(true);
-                    break;
+                PlayUiSound(true);
+                button.onClick.Invoke();
+                return;
+            }
+            var toggle = sel.TryCast<Toggle>();
+            if (toggle != null)
+            {
+                toggle.isOn = !toggle.isOn;
+                PlayUiSound(true);
             }
         }
 
