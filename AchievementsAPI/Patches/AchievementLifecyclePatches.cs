@@ -102,11 +102,4 @@ public static class AchievementLifecycle
     {
         OnRoundStart();
     }
-
-    [HarmonyPatch(typeof(IntroCutscene), nameof(IntroCutscene.OnDestroy))]
-    [HarmonyPostfix]
-    public static void CheckForDevelopersPatch()
-    {
-        DeveloperTab.CheckForDevelopers();
-    }
 }
