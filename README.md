@@ -157,8 +157,8 @@ The solution targets .NET 6 and builds with `dotnet build AchievementsAPI.sln`. 
 
 ## Credits
 
-- **satire (rewalo)**: UI design, UI code, toast design, toast code and animations, optimizations and much more. The mod would not look or feel the way it does without him.
-- **atony**: UI design and achievements system improvements.
+- **satire ([rewalo](https://github.com/rewalo))**: UI design, UI code, toast design, toast code and animations, optimizations and much more. The mod would not look or feel the way it does without him.
+- **[atony](https://github.com/AtonyGit)**: UI design and achievements system improvements.
 - **[pix](https://github.com/wanderingpix)**: for the help along the way.
 
 ## Support
