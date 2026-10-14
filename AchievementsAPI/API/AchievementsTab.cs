@@ -52,9 +52,29 @@ public abstract class AchievementsTab
     public abstract string Name { get; }
 
     /// <summary>
-    /// Whether the tab should be selectable in the Achievements Menu. Handy for custom UI's or internal achievements.
+    /// Whether the tab's achievements are shown in the Achievements Menu. Handy for custom UI's or internal achievements.
     /// </summary>
     public virtual bool IsSelectable => true;
+
+    /// <summary>
+    /// The shared category this tab's achievements are listed under by default
+    /// (see <see cref="AchievementCategories"/>). Individual achievements can override it with
+    /// <see cref="BaseAchievement.Category"/>.
+    /// </summary>
+    public virtual string CategoryId => AchievementCategories.General;
+
+    /// <summary>
+    /// The mod this tab belongs to, shown as a group header when a category contains achievements
+    /// from more than one mod. Defaults to the owning BepInEx plugin's name, falling back to <see cref="Name"/>.
+    /// Tabs from the same mod should return the same value so they're grouped together.
+    /// </summary>
+    public virtual string ModName => _modName ??= AchievementsManager.GetPluginName(GetType().Assembly) ?? Name;
+    private string? _modName;
+
+    /// <summary>
+    /// The icon shown next to <see cref="ModName"/> in group headers. Defaults to <see cref="GetIcon"/>.
+    /// </summary>
+    public virtual Sprite ModIcon => GetIcon();
 
     /// <summary>
     /// A method which gets the color of the Achievements Menu background when switching to this tab.

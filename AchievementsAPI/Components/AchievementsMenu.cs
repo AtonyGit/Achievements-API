@@ -45,19 +45,28 @@ namespace AchievementsAPI
         private GameObject _settingsPanel;
         private GameObject _detailPanel;
         private List<AchievementsTab> _selectableTabs = new();
-        private AchievementsTab _currentTab;   // null = All Mods
+        private List<AchievementCategory> _categories = new();
+        private AchievementCategory _currentCategory;   // null = All
         private int _filter;                    // 0 All, 1 Completed, 2 In Progress, 3 Locked
         private readonly List<(Button button, TextMeshProUGUI label)> _filterTabs = new();
-        private readonly List<(AchievementsTab tab, Button button)> _categoryRows = new();
+        private readonly List<(AchievementCategory category, Button button)> _categoryRows = new();
 
         private void Start()
         {
             _selectableTabs = AchievementsManager.Tabs.Where(t => t.IsSelectable).ToList();
             foreach (var tab in _selectableTabs) AchievementStorage.AchievementStorageGet(tab);
 
+            // Only categories that actually contain something, in declared order.
+            _categories = _selectableTabs
+                .SelectMany(tab => tab.GetAchievements().Select(a => AchievementsManager.ResolveCategory(tab, a)))
+                .Distinct()
+                .OrderBy(c => c.Order)
+                .ThenBy(c => AchievementsManager.Categories.IndexOf(c))
+                .ToList();
+
             var focused = FocusAchievementId != null ? AchievementsManager.FindAchievement(FocusAchievementId) : null;
-            _currentTab = _selectableTabs.Count == 1 ? _selectableTabs[0]
-                : focused is { } f && f.Tab.IsSelectable ? f.Tab : null;
+            _currentCategory = _categories.Count == 1 ? _categories[0]
+                : focused is { } f && f.Tab.IsSelectable ? AchievementsManager.ResolveCategory(f.Tab, f.Achievement) : null;
 
             BuildChrome();
             _settingsPanel = AchievementsSettingsPanel.Create(_panel, BackToList);
@@ -199,7 +208,7 @@ namespace AchievementsAPI
             _statsCard.offsetMin = new Vector2(0f, -220f);
             _statsCard.offsetMax = new Vector2(0f, 0f);
 
-            if (_selectableTabs.Count >= 2)
+            if (_categories.Count >= 2)
             {
                 var catGo = new GameObject("CategoryScroll");
                 _categoryViewport = catGo.AddComponent<RectTransform>();
@@ -422,14 +431,13 @@ namespace AchievementsAPI
         [HideFromIl2Cpp]
         private IEnumerable<(AchievementsTab Tab, BaseAchievement Achievement)> EnumerateAchievements()
         {
-            if (_currentTab != null)
-            {
-                foreach (var a in _currentTab.GetAchievements()) yield return (_currentTab, a);
-                yield break;
-            }
             foreach (var tab in _selectableTabs)
             {
-                foreach (var a in tab.GetAchievements()) yield return (tab, a);
+                foreach (var a in tab.GetAchievements())
+                {
+                    if (_currentCategory == null || AchievementsManager.ResolveCategory(tab, a) == _currentCategory)
+                        yield return (tab, a);
+                }
             }
         }
 
@@ -555,7 +563,7 @@ namespace AchievementsAPI
             ClearChildren(_categoryContent);
             _categoryRows.Clear();
 
-            var totalEntries = _selectableTabs.Count + 1;
+            var totalEntries = _categories.Count + 1;
             var pageCount = Mathf.Max(1, Mathf.CeilToInt(totalEntries / (float)CategoryPageSize));
             _categoryPage = Mathf.Clamp(_categoryPage, 0, pageCount - 1);
 
@@ -570,8 +578,7 @@ namespace AchievementsAPI
             var endIndex = Mathf.Min(startIndex + CategoryPageSize, totalEntries);
             for (var i = startIndex; i < endIndex; i++)
             {
-                var tab = i == 0 ? null : _selectableTabs[i - 1];
-                AddCategoryRow(tab);
+                AddCategoryRow(i == 0 ? null : _categories[i - 1]);
             }
 
             if (_categoryPageLabel != null) _categoryPageLabel.text = $"{_categoryPage + 1} / {pageCount}";
@@ -587,25 +594,26 @@ namespace AchievementsAPI
             RebuildCategories();
         }
 
-        private void ShowCategoryPage(AchievementsTab tab)
+        [HideFromIl2Cpp]
+        private void ShowCategoryPage(AchievementCategory category)
         {
-            var index = tab == null ? 0 : _selectableTabs.IndexOf(tab) + 1;
+            var index = category == null ? 0 : _categories.IndexOf(category) + 1;
             if (index < 0) return;
             _categoryPage = index / CategoryPageSize;
             RebuildCategories();
         }
 
         [HideFromIl2Cpp]
-        private void AddCategoryRow(AchievementsTab tab)
+        private void AddCategoryRow(AchievementCategory category)
         {
-            var img = CreateImage(_categoryContent!, tab?.Name ?? "All Mods", ToastSprites.ButtonBox, Color.white);
+            var name = category?.Name ?? "All";
+            var img = CreateImage(_categoryContent!, name, ToastSprites.ButtonBox, Color.white);
             img.type = Image.Type.Sliced;
             var le = img.gameObject.AddComponent<LayoutElement>();
             le.preferredHeight = 52f;
             var rect = img.rectTransform;
 
-            var tabIcon = tab?.GetIcon() ?? AchievementIcon;
-            var icon = CreateImage(rect, "Icon", tabIcon, Color.white);
+            var icon = CreateImage(rect, "Icon", category?.GetIcon() ?? AchievementIcon, Color.white);
             icon.preserveAspect = true;
             icon.raycastTarget = false;
             var iconRect = icon.rectTransform;
@@ -615,7 +623,7 @@ namespace AchievementsAPI
             iconRect.sizeDelta = new Vector2(32f, 32f);
             var textX = 56f;
 
-            var label = CreateText(rect, "Label", tab?.Name ?? "All Mods", 20f, Color.white, FontStyles.Bold);
+            var label = CreateText(rect, "Label", name, 20f, Color.white, FontStyles.Bold);
             var labelRect = label.rectTransform;
             labelRect.anchorMin = Vector2.zero;
             labelRect.anchorMax = Vector2.one;
@@ -631,23 +639,23 @@ namespace AchievementsAPI
             colors.selectedColor = Color.white;
             colors.disabledColor = SelectedColor;
             button.colors = colors;
-            button.onClick.AddListener((UnityAction)(() => SelectCategory(tab)));
+            button.onClick.AddListener((UnityAction)(() => SelectCategory(category)));
             AttachGameSounds(img.gameObject);
-            _categoryRows.Add((tab, button));
+            _categoryRows.Add((category, button));
         }
 
         private void UpdateCategorySelection()
         {
-            foreach (var (tab, button) in _categoryRows)
+            foreach (var (category, button) in _categoryRows)
             {
-                button.interactable = tab != _currentTab;
+                button.interactable = category != _currentCategory;
             }
         }
 
         [HideFromIl2Cpp]
-        private void SelectCategory(AchievementsTab tab)
+        private void SelectCategory(AchievementCategory category)
         {
-            _currentTab = tab;
+            _currentCategory = category;
             BackToList();
             UpdateCategorySelection();
             RebuildStatsCard();
@@ -656,7 +664,7 @@ namespace AchievementsAPI
 
         private void SetInitialTitle()
         {
-            SetTitle(_currentTab?.Name ?? "Achievements", _currentTab?.GetIcon() ?? AchievementIcon);
+            SetTitle(_currentCategory?.Name ?? "Achievements", _currentCategory?.GetIcon() ?? AchievementIcon);
         }
 
         private void SetFilter(int filter)
@@ -690,16 +698,20 @@ namespace AchievementsAPI
             }
 
             var filter = _filter;
-            var groups = EnumerateAchievements()
-                .GroupBy(x => x.Tab)
-                .Select(g => (tab: g.Key, items: g.Where(x => PassesFilter(x.Achievement, filter))
+            // Grouped by the mod that owns each achievement; headers only when the
+            // current view mixes several mods.
+            var allGroups = EnumerateAchievements()
+                .GroupBy(x => x.Tab.ModName)
+                .ToList();
+            var groups = allGroups
+                .Select(g => (tab: g.First().Tab, items: g.Where(x => PassesFilter(x.Achievement, filter))
                     .Select(x => x.Achievement).ToList()))
                 .Where(g => g.items.Count > 0)
                 .ToList();
 
             var index = 0;
             var any = false;
-            var showHeaders = _currentTab == null && _selectableTabs.Count >= 2;
+            var showHeaders = allGroups.Count >= 2;
             foreach (var (tab, items) in groups)
             {
                 items.Sort(CompareRows);
@@ -748,13 +760,13 @@ namespace AchievementsAPI
         [HideFromIl2Cpp]
         private void AddGroupHeader(AchievementsTab tab)
         {
-            var go = new GameObject($"Header_{tab.Name}");
+            var go = new GameObject($"Header_{tab.ModName}");
             var rect = go.AddComponent<RectTransform>();
             rect.SetParent(_listContent, false);
             var le = go.AddComponent<LayoutElement>();
             le.preferredHeight = 36f;
 
-            var icon = CreateImage(rect, "Icon", tab.GetIcon(), Color.white);
+            var icon = CreateImage(rect, "Icon", tab.ModIcon, Color.white);
             icon.preserveAspect = true;
             icon.raycastTarget = false;
             var iconRect = icon.rectTransform;
@@ -763,7 +775,7 @@ namespace AchievementsAPI
             iconRect.anchoredPosition = new Vector2(12f, 0f);
             iconRect.sizeDelta = new Vector2(24f, 24f);
 
-            var name = CreateText(rect, "Name", tab.Name, 20f, ValueColor, FontStyles.Bold);
+            var name = CreateText(rect, "Name", tab.ModName, 20f, ValueColor, FontStyles.Bold);
             var nameRect = name.rectTransform;
             nameRect.anchorMin = Vector2.zero;
             nameRect.anchorMax = Vector2.one;
@@ -961,7 +973,7 @@ namespace AchievementsAPI
                 _detailPanel.Destroy();
                 _detailPanel = null;
             }
-            SetTitle(_currentTab?.Name ?? "Achievements", _currentTab?.GetIcon() ?? AchievementIcon);
+            SetTitle(_currentCategory?.Name ?? "Achievements", _currentCategory?.GetIcon() ?? AchievementIcon);
             ShowPage(null);
         }
 
@@ -983,10 +995,11 @@ namespace AchievementsAPI
             if (found == null) return;
 
             var (tab, achievement) = found.Value;
-            if (tab.IsSelectable)
+            var category = AchievementsManager.ResolveCategory(tab, achievement);
+            if (tab.IsSelectable && _categories.Contains(category))
             {
-                _currentTab = tab;
-                ShowCategoryPage(tab);
+                _currentCategory = category;
+                ShowCategoryPage(category);
                 RebuildStatsCard();
                 RebuildList();
             }

@@ -59,8 +59,9 @@ public static class AchievementDetailPanel
             nextY -= 34f;
         }
 
-        var points = CreateText(rect, "Points", $"Skeld Score: {achievement.Points}",
-            22f, Color.white, FontStyles.Bold);
+        var pointsLabel = $"Skeld Score: {achievement.Points}";
+        if (achievement.Hidden) pointsLabel += " <color=#BEBEBE>(Hidden x2)</color>";
+        var points = CreateText(rect, "Points", pointsLabel, 22f, Color.white, FontStyles.Bold);
         StretchRight(points.rectTransform, nextY, 30f);
         nextY -= 34f;
 
