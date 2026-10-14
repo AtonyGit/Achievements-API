@@ -18,6 +18,9 @@ namespace AchievementsAPI
     [RegisterInIl2Cpp]
     public class AchievementsMenu(IntPtr ptr) : MonoBehaviour(ptr)
     {
+        public static AchievementsMenu? Instance { get; private set; }
+        internal static bool IsOpen => Instance != null;
+
         public MainMenuManager mainMenuManager;
         public OptionsMenuBehaviour OptionsMenuBehaviour;
         public string FocusAchievementId;
@@ -50,6 +53,13 @@ namespace AchievementsAPI
         private int _filter;                    // 0 All, 1 Completed, 2 In Progress, 3 Locked
         private readonly List<(Button button, TextMeshProUGUI label)> _filterTabs = new();
         private readonly List<(AchievementCategory category, Button button)> _categoryRows = new();
+
+        private void Awake() => Instance = this;
+
+        private void OnDestroy()
+        {
+            if (Instance == this) Instance = null;
+        }
 
         private void Start()
         {

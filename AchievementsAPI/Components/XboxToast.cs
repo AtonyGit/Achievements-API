@@ -35,6 +35,10 @@ public static class XboxToast
     private static GameObject? _canvasObject;
     private static Canvas? _canvas;
     private static bool _running;
+    private static int _hoverCount;
+    private static bool _dragging;
+
+    internal static bool PointerOverToast => _hoverCount > 0 || _dragging;
 
     /// <summary>
     /// Enqueues a toast for display. An unlock request drops a pending progress
@@ -66,6 +70,9 @@ public static class XboxToast
             var instance = CreateToast(request);
             yield return CoPlay(instance, request);
             instance.Root.gameObject.Destroy();
+            // Destroyed objects get no PointerExit/PointerUp, so drop their hover/drag state
+            _hoverCount = 0;
+            _dragging = false;
             yield return new WaitForSecondsRealtime(0.2f);
         }
 
@@ -325,6 +332,7 @@ public static class XboxToast
         down.callback.AddListener((UnityAction<BaseEventData>)(_ =>
         {
             instance.Dragging = true;
+            _dragging = true;
             instance.DragDistance = 0f;
             instance.Velocity = 0f;
             instance.SpringT = 1f;
@@ -349,6 +357,7 @@ public static class XboxToast
         up.callback.AddListener((UnityAction<BaseEventData>)(_ =>
         {
             instance.Dragging = false;
+            _dragging = false;
             if (Mathf.Abs(instance.OffsetX) > DismissThreshold || Mathf.Abs(instance.Velocity) > DismissVelocity)
             {
                 instance.Dismissed = true;
@@ -361,6 +370,14 @@ public static class XboxToast
             }
         }));
         trigger.triggers.Add(up);
+
+        var enter = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+        enter.callback.AddListener((UnityAction<BaseEventData>)(_ => _hoverCount++));
+        trigger.triggers.Add(enter);
+
+        var exit = new EventTrigger.Entry { eventID = EventTriggerType.PointerExit };
+        exit.callback.AddListener((UnityAction<BaseEventData>)(_ => _hoverCount = Mathf.Max(0, _hoverCount - 1)));
+        trigger.triggers.Add(exit);
 
         var click = new EventTrigger.Entry { eventID = EventTriggerType.PointerClick };
         click.callback.AddListener((UnityAction<BaseEventData>)(data =>
