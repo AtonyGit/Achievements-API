@@ -1298,7 +1298,7 @@ namespace AchievementsAPI
 
             if (!_controllerMode && CurrentSelectable() != null) EventSystem.current.SetSelectedGameObject(null);
 
-            if (MenuInput.AnyNavigation && !_controllerMode)
+            if (MenuInput.AnyDirection && !_controllerMode)
             {
                 _controllerMode = true;
                 var last = _lastSelected != null && _lastSelected.activeInHierarchy ? _lastSelected.GetComponent<Selectable>() : null;

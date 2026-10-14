@@ -34,8 +34,7 @@ internal static class MenuInput
     internal static bool PrevFilter { get; private set; }
     internal static bool NextFilter { get; private set; }
 
-    internal static bool AnyNavigation => Up || Down || Left || Right || Confirm || Cancel
-        || PrevCategory || NextCategory || PrevFilter || NextFilter;
+    internal static bool AnyDirection => Up || Down || Left || Right;
 
     private static Rewired.Player _player;
     private static bool _rewiredFailed;
