@@ -38,18 +38,18 @@ public static class AchievementsSettingsPanel
 
         // Full-width row strips, 76px pitch, first strip below the frame edge
         const float rowsTop = -4f;
-        CreateToggleRow(CreateRowStrip(rect, rowsTop), "Show toasts", AchievementsConfig.ToastsEnabled);
-        CreateToggleRow(CreateRowStrip(rect, rowsTop - 76f), "Play sound", AchievementsConfig.ToastSoundEnabled);
-        CreateSliderRow(CreateRowStrip(rect, rowsTop - 152f), "Volume", AchievementsConfig.ToastVolume, 0f, 1f,
+        CreateToggleRow(CreateRowStrip(rect, rowsTop), AchievementsStrings.GetText(AchievementsStrings.SettingToasts), AchievementsConfig.ToastsEnabled);
+        CreateToggleRow(CreateRowStrip(rect, rowsTop - 76f), AchievementsStrings.GetText(AchievementsStrings.SettingSound), AchievementsConfig.ToastSoundEnabled);
+        CreateSliderRow(CreateRowStrip(rect, rowsTop - 152f), AchievementsStrings.GetText(AchievementsStrings.SettingVolume), AchievementsConfig.ToastVolume, 0f, 1f,
             v => $"{Mathf.RoundToInt(v * 100f)}%");
-        CreateSliderRow(CreateRowStrip(rect, rowsTop - 228f), "Toast duration", AchievementsConfig.ToastDuration, 1f, 10f,
+        CreateSliderRow(CreateRowStrip(rect, rowsTop - 228f), AchievementsStrings.GetText(AchievementsStrings.SettingDuration), AchievementsConfig.ToastDuration, 1f, 10f,
             v => $"{v:0.0}s");
-        CreateSliderRow(CreateRowStrip(rect, rowsTop - 304f), "Rare duration", AchievementsConfig.RareToastDuration, 1f, 10f,
+        CreateSliderRow(CreateRowStrip(rect, rowsTop - 304f), AchievementsStrings.GetText(AchievementsStrings.SettingRareDuration), AchievementsConfig.RareToastDuration, 1f, 10f,
             v => $"{v:0.0}s");
-        CreateCycleRow(CreateRowStrip(rect, rowsTop - 380f), "Position", AchievementsConfig.Position);
-        CreateToggleRow(CreateRowStrip(rect, rowsTop - 456f), "Trackpad mode", AchievementsConfig.TrackpadMode);
+        CreateCycleRow(CreateRowStrip(rect, rowsTop - 380f), AchievementsStrings.GetText(AchievementsStrings.SettingPosition), AchievementsConfig.Position);
+        CreateToggleRow(CreateRowStrip(rect, rowsTop - 456f), AchievementsStrings.GetText(AchievementsStrings.SettingTrackpadMode), AchievementsConfig.TrackpadMode);
 
-        var preview = CreateButton(rect, "Preview", Vector2.zero);
+        var preview = CreateButton(rect, AchievementsStrings.GetText(AchievementsStrings.Preview), Vector2.zero, "Preview");
         var previewRect = preview.GetComponent<RectTransform>();
         previewRect.anchorMin = previewRect.anchorMax = new Vector2(1f, 0f);
         previewRect.pivot = new Vector2(1f, 0.5f);
@@ -57,7 +57,7 @@ public static class AchievementsSettingsPanel
         preview.onClick.AddListener((UnityAction)(() => AchievementToast.ShowPreview()));
         AttachGameSounds(preview.gameObject);
 
-        var back = CreateButton(rect, "Back", Vector2.zero);
+        var back = CreateButton(rect, AchievementsStrings.GetText(AchievementsStrings.Back), Vector2.zero, "Back");
         var backRect = back.GetComponent<RectTransform>();
         backRect.anchorMin = backRect.anchorMax = new Vector2(1f, 0f);
         backRect.pivot = new Vector2(1f, 0.5f);

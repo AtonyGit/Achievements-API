@@ -1,5 +1,6 @@
     using System;
     using System.Reflection;
+    using Reactor.Localization.Utilities;
     using UnityEngine;
 
     namespace AchievementsAPI.API;
@@ -10,13 +11,15 @@
     public class BaseAchievement
     {
         /// <summary>
-        /// The achievement's name
+        /// The achievement's name, as a translatable <see cref="StringNames"/>.
+        /// Resolve it in the current language with <see cref="GetName"/>.
         /// </summary>
-        public string Name;
+        public StringNames Name { get; }
         /// <summary>
-        /// The achievement's description
+        /// The achievement's description, as a translatable <see cref="StringNames"/>.
+        /// Resolve it in the current language with <see cref="GetDescription"/>.
         /// </summary>
-        public string Description;
+        public StringNames Description { get; }
         /// <summary>
         /// The achievement's icon's path
         /// </summary>
@@ -164,37 +167,87 @@
             Unlocked = false;
             AchievementStorage.AchievementDataReset(this, false, save);
         }
-        public BaseAchievement(string name, string description, string iconPath, int rarity = 0, bool hidden = false, bool hideRarity = false, Assembly? assembly = null)
+        /// <summary>
+        /// Resolves the achievement's <see cref="Name"/> in the current language
+        /// (see <see cref="AchievementsStrings.GetText"/>).
+        /// </summary>
+        public string GetName() => AchievementsStrings.GetText(Name);
+        /// <summary>
+        /// Resolves the achievement's <see cref="Description"/> in the current language
+        /// (see <see cref="AchievementsStrings.GetText"/>).
+        /// </summary>
+        public string GetDescription() => AchievementsStrings.GetText(Description);
+        public BaseAchievement(StringNames name, StringNames description, string iconPath, int rarity = 0, bool hidden = false, bool hideRarity = false, Assembly? assembly = null)
         {
             Name = name;
             Description = description;
             IconPath = iconPath;
             Assembly = assembly ?? Assembly.GetCallingAssembly();
             _sprite = SpriteTools.LoadSpriteFromPath(IconPath, Assembly, 100);
-            Id = Assembly.GetName().Name + "_" + Name;
+            Id = BuildId(Assembly, name);
+            Rarity = rarity;
+            Hidden = hidden;
+            HideRarity = hideRarity;
+        }
+        public BaseAchievement(StringNames name, StringNames description, Sprite icon, int rarity = 0, bool hidden = false, bool hideRarity = false, Assembly? assembly = null)
+        {
+            Name = name;
+            Description = description;
+            Assembly = assembly ?? Assembly.GetCallingAssembly();
+            _sprite = icon;
+            Id = BuildId(Assembly, name);
+            Rarity = rarity;
+            Hidden = hidden;
+            HideRarity = hideRarity;
+        }
+        public BaseAchievement(StringNames name, StringNames description, int rarity = 0, bool hidden = false, bool hideRarity = false, Assembly? assembly = null)
+        {
+            Name = name;
+            Description = description;
+            Assembly = assembly ?? Assembly.GetCallingAssembly();
+            Id = BuildId(Assembly, name);
+            Rarity = rarity;
+            Hidden = hidden;
+            HideRarity = hideRarity;
+        }
+        public BaseAchievement(string name, string description, string iconPath, int rarity = 0, bool hidden = false, bool hideRarity = false, Assembly? assembly = null)
+        {
+            Name = CustomStringName.CreateAndRegister(name);
+            Description = CustomStringName.CreateAndRegister(description);
+            IconPath = iconPath;
+            Assembly = assembly ?? Assembly.GetCallingAssembly();
+            _sprite = SpriteTools.LoadSpriteFromPath(IconPath, Assembly, 100);
+            Id = BuildId(Assembly, name);
             Rarity = rarity;
             Hidden = hidden;
             HideRarity = hideRarity;
         }
         public BaseAchievement(string name, string description, Sprite icon, int rarity = 0, bool hidden = false, bool hideRarity = false, Assembly? assembly = null)
         {
-            Name = name;
-            Description = description;
+            Name = CustomStringName.CreateAndRegister(name);
+            Description = CustomStringName.CreateAndRegister(description);
             Assembly = assembly ?? Assembly.GetCallingAssembly();
             _sprite = icon;
-            Id = Assembly.GetName().Name + "_" + Name;
+            Id = BuildId(Assembly, name);
             Rarity = rarity;
             Hidden = hidden;
             HideRarity = hideRarity;
         }
         public BaseAchievement(string name, string description, int rarity = 0, bool hidden = false, bool hideRarity = false, Assembly? assembly = null)
         {
-            Name = name;
-            Description = description;
+            Name = CustomStringName.CreateAndRegister(name);
+            Description = CustomStringName.CreateAndRegister(description);
             Assembly = assembly ?? Assembly.GetCallingAssembly();
-            Id = Assembly.GetName().Name + "_" + Name;
+            Id = BuildId(Assembly, name);
             Rarity = rarity;
             Hidden = hidden;
             HideRarity = hideRarity;
         }
+
+        // The Id is the stable identity used for storage lookups, so it must not change
+        // with the display language. String constructors keep the raw name (so existing
+        // save files keep matching); StringNames constructors use the enum value, so
+        // register your StringNames deterministically (all at plugin load).
+        private static string BuildId(Assembly assembly, string name) => $"{assembly.GetName().Name}_{name}";
+        private static string BuildId(Assembly assembly, StringNames name) => $"{assembly.GetName().Name}_{name.ToString()}";
     }

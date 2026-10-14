@@ -12,7 +12,7 @@ public class DeveloperTab : AchievementsTab
 {
     private const string TrophyIcon = "AchievementsAPI.Resources.AchievementsIcon.png";
 
-    public override string Name => "Developer Tab";
+    public override StringNames Name => AchievementsStrings.DeveloperTabName;
     public override bool IsSelectable => PlayedWithDeveloper.Unlocked;
     public override string IconPath => TrophyIcon;
 

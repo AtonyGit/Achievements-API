@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using BepInEx.Unity.IL2CPP;
+using Reactor.Localization.Utilities;
 
 namespace AchievementsAPI.API;
 
@@ -16,10 +17,10 @@ public static class AchievementsManager
     /// </summary>
     public static List<AchievementCategory> Categories = new()
     {
-        new AchievementCategory(AchievementCategories.General, "General", order: 0),
-        new AchievementCategory(AchievementCategories.Crewmate, "Crewmate", order: 10),
-        new AchievementCategory(AchievementCategories.Impostor, "Impostor", order: 20),
-        new AchievementCategory(AchievementCategories.Neutral, "Neutral", order: 30),
+        new AchievementCategory(AchievementCategories.General, AchievementsStrings.CategoryGeneral, order: 0),
+        new AchievementCategory(AchievementCategories.Crewmate, AchievementsStrings.CategoryCrewmate, order: 10),
+        new AchievementCategory(AchievementCategories.Impostor, AchievementsStrings.CategoryImpostor, order: 20),
+        new AchievementCategory(AchievementCategories.Neutral, AchievementsStrings.CategoryNeutral, order: 30),
     };
 
     /// <summary>
@@ -34,13 +35,23 @@ public static class AchievementsManager
     /// Gets the category with the given id, creating it if needed. If it already exists the existing
     /// entry is returned untouched, so several mods can declare the same category safely.
     /// </summary>
-    public static AchievementCategory GetOrCreateCategory(string id, string name, Func<UnityEngine.Sprite?>? icon = null, int order = 100)
+    public static AchievementCategory GetOrCreateCategory(string id, StringNames name, Func<UnityEngine.Sprite?>? icon = null, int order = 100)
     {
         var existing = GetCategory(id);
         if (existing != null) return existing;
         var category = new AchievementCategory(id, name, icon, order);
         Categories.Add(category);
         return category;
+    }
+
+    /// <summary>
+    /// Gets the category with the given id, creating it from plain text (registered as a
+    /// hard-coded English string) if needed. If it already exists the existing entry is
+    /// returned untouched, so several mods can declare the same category safely.
+    /// </summary>
+    public static AchievementCategory GetOrCreateCategory(string id, string name, Func<UnityEngine.Sprite?>? icon = null, int order = 100)
+    {
+        return GetOrCreateCategory(id, CustomStringName.CreateAndRegister(name), icon, order);
     }
 
     /// <summary>
@@ -77,11 +88,11 @@ public static class AchievementsManager
     }
 
     /// <summary>
-    /// Gets a registered tab by its display name.
+    /// Gets a registered tab by its name.
     /// </summary>
     /// <param name="name">The <see cref="AchievementsTab.Name"/> of the tab.</param>
     /// <returns>The tab, or null if no tab with that name is registered.</returns>
-    public static AchievementsTab? GetTab(string name)
+    public static AchievementsTab? GetTab(StringNames name)
     {
         return Tabs.FirstOrDefault(x => x.Name == name);
     }

@@ -44,7 +44,8 @@ public static class AchievementDetailPanel
         iconRect.sizeDelta = new Vector2(136f, 136f);
 
         // Right column: name, rarity, description, progress, status
-        var name = CreateText(rect, "Name", revealed ? achievement.Name : "Hidden Achievement",
+        var name = CreateText(rect, "Name",
+            revealed ? achievement.GetName() : AchievementsStrings.GetText(AchievementsStrings.HiddenAchievement),
             36f, Color.white, FontStyles.Bold);
         name.overflowMode = TextOverflowModes.Overflow;
         var nameRect = name.rectTransform;
@@ -59,7 +60,7 @@ public static class AchievementDetailPanel
             nextY -= 34f;
         }
 
-        var points = CreateText(rect, "Points", $"Skeld Score: {achievement.BasePoints}", 22f, Color.white, FontStyles.Bold);
+        var points = CreateText(rect, "Points", $"{AchievementsStrings.GetText(AchievementsStrings.SkeldScore)}: {achievement.BasePoints}", 22f, Color.white, FontStyles.Bold);
         StretchRight(points.rectTransform, nextY, 30f);
         if (achievement.PointsMultiplier > 1)
         {
@@ -73,7 +74,8 @@ public static class AchievementDetailPanel
         }
         nextY -= 34f;
 
-        var desc = CreateText(rect, "Description", revealed ? achievement.Description : "Hidden Achievement",
+        var desc = CreateText(rect, "Description",
+            revealed ? achievement.GetDescription() : AchievementsStrings.GetText(AchievementsStrings.HiddenAchievement),
             24f, ValueColor);
         desc.enableWordWrapping = true;
         var descRect = desc.rectTransform;
@@ -97,9 +99,10 @@ public static class AchievementDetailPanel
             SetProgress(fill, (float) count.CurrentValue / count.RequiredValue);
         }
 
+        var unlockedText = AchievementsStrings.GetText(AchievementsStrings.StatusUnlocked);
         var statusText = achievement.Unlocked && achievement.UnlockedAt is { } at
-            ? $"Unlocked  {FormatUnlockTime(at)}"
-            : achievement.Unlocked ? "Unlocked" : "Locked";
+            ? $"{unlockedText}  {FormatUnlockTime(at)}"
+            : achievement.Unlocked ? unlockedText : AchievementsStrings.GetText(AchievementsStrings.StatusLocked);
         var status = CreateText(rect, "Status", statusText,
             24f, achievement.Unlocked ? (Color) AccentHover : ValueColor, FontStyles.Bold);
         var statusRect = status.rectTransform;
@@ -108,7 +111,7 @@ public static class AchievementDetailPanel
         statusRect.anchoredPosition = new Vector2(290f, 52f);
         statusRect.sizeDelta = new Vector2(600f, 30f);
 
-        var back = CreateButton(rect, "Back", Vector2.zero);
+        var back = CreateButton(rect, AchievementsStrings.GetText(AchievementsStrings.Back), Vector2.zero, "Back");
         var backRect = back.GetComponent<RectTransform>();
         backRect.anchorMin = backRect.anchorMax = new Vector2(1f, 0f);
         backRect.pivot = new Vector2(1f, 0.5f);

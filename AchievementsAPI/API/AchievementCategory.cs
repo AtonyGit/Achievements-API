@@ -1,5 +1,6 @@
 using System;
 using System.Reflection;
+using Reactor.Localization.Utilities;
 using UnityEngine;
 
 namespace AchievementsAPI.API;
@@ -27,14 +28,14 @@ public sealed class AchievementCategory
     private Sprite? _icon;
 
     /// <summary>
-    /// Creates a category. Prefer <see cref="AchievementsManager.GetOrCreateCategory"/> so two mods declaring
+    /// Creates a category. Prefer <see cref="AchievementsManager.GetOrCreateCategory(string, StringNames, Func{Sprite?}, int)"/> so two mods declaring
     /// the same id share one entry.
     /// </summary>
     /// <param name="id">Stable, lower-case id (e.g. "crewmate"). Never shown to players.</param>
-    /// <param name="name">Display name.</param>
+    /// <param name="name">Display name, as a translatable <see cref="StringNames"/>.</param>
     /// <param name="icon">Lazy icon provider; null falls back to the API trophy.</param>
     /// <param name="order">Sort order in the left column; built-ins use 0-30.</param>
-    public AchievementCategory(string id, string name, Func<Sprite?>? icon = null, int order = 100)
+    public AchievementCategory(string id, StringNames name, Func<Sprite?>? icon = null, int order = 100)
     {
         Id = id;
         Name = name;
@@ -42,8 +43,26 @@ public sealed class AchievementCategory
         _iconProvider = icon;
     }
 
+    /// <summary>
+    /// Creates a category from plain text, registered as a hard-coded English string.
+    /// Prefer <see cref="AchievementsManager.GetOrCreateCategory(string, StringNames, Func{Sprite?}, int)"/> so two mods declaring
+    /// the same id share one entry.
+    /// </summary>
+    /// <param name="id">Stable, lower-case id (e.g. "crewmate"). Never shown to players.</param>
+    /// <param name="name">Display name.</param>
+    /// <param name="icon">Lazy icon provider; null falls back to the API trophy.</param>
+    /// <param name="order">Sort order in the left column; built-ins use 0-30.</param>
+    public AchievementCategory(string id, string name, Func<Sprite?>? icon = null, int order = 100)
+        : this(id, CustomStringName.CreateAndRegister(name), icon, order)
+    {
+    }
+
     public string Id { get; }
-    public string Name { get; set; }
+
+    /// <summary>
+    /// The display name, as a translatable <see cref="StringNames"/> (see <see cref="AchievementsStrings.GetText"/>).
+    /// </summary>
+    public StringNames Name { get; set; }
     public int Order { get; set; }
 
     /// <summary>

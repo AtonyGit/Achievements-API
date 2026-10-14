@@ -43,19 +43,27 @@ An Among Us modding API that lets any mod register custom achievements, with a f
 
 ## Getting started
 
-Create a class that extends `AchievementsTab` and declare your achievements as properties. Tabs are picked up automatically when your plugin loads.
+Create a class that extends `AchievementsTab` and declare your achievements as properties. Tabs are picked up automatically when your plugin loads. Names and descriptions are Reactor `StringNames` (see [Localization](#localization)):
 
 ```csharp
+using Reactor.Localization.Utilities;
+
 public class MyTab : AchievementsTab
 {
-    public override string Name => "My Mod";
+    private static readonly StringNames tabName = CustomStringName.CreateAndRegister("My Mod");
+    private static readonly StringNames firstWin = CustomStringName.CreateAndRegister("First Win");
+    private static readonly StringNames firstWinDesc = CustomStringName.CreateAndRegister("Win a game.");
+    private static readonly StringNames busyBee = CustomStringName.CreateAndRegister("Busy Bee");
+    private static readonly StringNames busyBeeDesc = CustomStringName.CreateAndRegister("Complete 10 tasks.");
+
+    public override StringNames Name => tabName;
     public override string IconPath => "MyMod.Resources.Icon.png";
 
     public BaseAchievement FirstWin { get; set; } =
-        new("First Win", "Win a game.", "MyMod.Resources.FirstWin.png", rarity: 1);
+        new(firstWin, firstWinDesc, "MyMod.Resources.FirstWin.png", rarity: 1);
 
     public CountAchievement TenTasks { get; set; } =
-        new("Busy Bee", "Complete 10 tasks.", "MyMod.Resources.Tasks.png", 0, 10);
+        new(busyBee, busyBeeDesc, "MyMod.Resources.Tasks.png", 0, 10);
 }
 ```
 
@@ -63,17 +71,31 @@ Unlock an achievement with `achievement.Unlock()`. For a `CountAchievement`, use
 
 The icon can be an embedded resource path or a `Sprite`. Constructor options cover rarity (0 common, 1 rare, 2 epic, 3 legendary), `hidden`, `hideRarity`, and for count achievements `hideProgress` and how progress persists (`AchPersistence`).
 
+## Localization
+
+Tab names, achievement names and descriptions, and category names are stored as Reactor `StringNames`, not raw strings. The menu and toasts resolve them through the game's translation system (patched by Reactor's `LocalizationManager`) every time they render, so translations kick in automatically — no need to modify achievements at runtime.
+
+Pass any `StringNames` you like:
+
+- a built-in game one, e.g. `StringNames.Crewmate`;
+- one made with `CustomStringName.CreateAndRegister("...")`, which registers the given text as the hard-coded English fallback;
+- or one backed by a `Reactor.Localization.LocalizationProvider` (your own, or one from an API like MiraAPI) for real translations.
+
+Plain `string` constructors are still available and register the text as a hard-coded English string the same way. `AchievementsStrings` holds the API's own labels (toast titles, filters, categories, ...) as `StringNames` you can translate too.
+
+Resolve text in code with `AchievementsStrings.GetText(stringName)` or the `GetName()`/`GetDescription()` helpers on achievements. The `Id` used for save files never depends on the language: for string-based achievements it contains the raw text, for `StringNames`-based ones the enum value — so create your `StringNames` deterministically (e.g. all at plugin load) to keep saves stable.
+
 ### Soft-registered achievements
 
 Register achievements at runtime without declaring properties on a tab:
 
 ```csharp
-var tab = new SoftAchievementsTab("My Tab");
+var tab = new SoftAchievementsTab(CustomStringName.CreateAndRegister("My Tab"));
 AchievementsManager.RegisterTab(tab);
 tab.RegisterAchievement(myAchievement);
 ```
 
-Use `AchievementsManager.GetTab(name)` to look up a tab and `tab.GetAchievements()` to enumerate everything on it.
+Use `AchievementsManager.GetTab(stringName)` to look up a tab and `tab.GetAchievements()` to enumerate everything on it.
 
 ### Categories
 

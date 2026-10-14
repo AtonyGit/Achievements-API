@@ -208,8 +208,8 @@ namespace AchievementsAPI
             iconRect.anchoredPosition = new Vector2(108f, -70f);
             iconRect.sizeDelta = new Vector2(38f, 38f);
 
-            _title = CreateText(_panel, "Title", "Achievements", 38f, Color.white,
-                FontStyles.Bold, TextAlignmentOptions.Left);
+            _title = CreateText(_panel, "Title", AchievementsStrings.GetText(AchievementsStrings.MenuTitle),
+                38f, Color.white, FontStyles.Bold, TextAlignmentOptions.Left);
             _title.overflowMode = TextOverflowModes.Overflow;
             var titleRect = _title.rectTransform;
             titleRect.anchorMin = titleRect.anchorMax = new Vector2(0f, 1f);
@@ -225,7 +225,7 @@ namespace AchievementsAPI
             _filterRow.pivot = new Vector2(0.5f, 0.5f);
             _filterRow.anchoredPosition = new Vector2(183f, -70f);
             _filterRow.sizeDelta = new Vector2(836f, 50f);
-            var names = new[] { "All", "Completed", "In Progress", "Locked" };
+            var names = FilterNames();
             for (var i = 0; i < names.Length; i++)
             {
                 var pill = CreateImage(_filterRow, names[i], ToastSprites.ButtonBox, Color.white);
@@ -352,8 +352,8 @@ namespace AchievementsAPI
             gearRect.pivot = new Vector2(0.5f, 0.5f);
             gearRect.anchoredPosition = new Vector2(36f, 0f);
             gearRect.sizeDelta = new Vector2(28f, 28f);
-            var settingsLabel = CreateText(settingsRect, "Label", "Settings", 22f, Color.white,
-                FontStyles.Bold, TextAlignmentOptions.Center);
+            var settingsLabel = CreateText(settingsRect, "Label", AchievementsStrings.GetText(AchievementsStrings.Settings),
+                22f, Color.white, FontStyles.Bold, TextAlignmentOptions.Center);
             settingsLabel.rectTransform.anchorMin = Vector2.zero;
             settingsLabel.rectTransform.anchorMax = Vector2.one;
             settingsLabel.rectTransform.offsetMin = new Vector2(34f, 0f);
@@ -533,6 +533,15 @@ namespace AchievementsAPI
             => a is CountAchievement c && c.RequiredValue > 0
                 ? Mathf.Clamp01((float) c.CurrentValue / c.RequiredValue) : 0f;
 
+        // The list filter labels ("All", "Completed", ...) in the current language.
+        private static string[] FilterNames() => new[]
+        {
+            AchievementsStrings.FilterAll,
+            AchievementsStrings.FilterCompleted,
+            AchievementsStrings.FilterInProgress,
+            AchievementsStrings.FilterLocked
+        }.Select(AchievementsStrings.GetText).ToArray();
+
         private void RebuildStatsCard()
         {
             ClearChildren(_statsCard);
@@ -547,7 +556,7 @@ namespace AchievementsAPI
             emblem.pivot = new Vector2(0f, 1f);
             emblem.anchoredPosition = new Vector2(16f, -28f);
 
-            var cap = CreateText(_statsCard, "PointsLabel", "Skeld Score", 17f, ValueColor, FontStyles.Bold);
+            var cap = CreateText(_statsCard, "PointsLabel", AchievementsStrings.GetText(AchievementsStrings.SkeldScore), 17f, ValueColor, FontStyles.Bold);
             cap.overflowMode = TextOverflowModes.Overflow;
             var capRect = cap.rectTransform;
             capRect.anchorMin = new Vector2(0f, 1f);
@@ -582,7 +591,7 @@ namespace AchievementsAPI
             totalText.margin = new Vector4(0f, 0f, 0f, 6f);
 
             // Row 2: completed count with an animated bar
-            var completed = CreateText(_statsCard, "Completed", "Completed", 20f, Color.white);
+            var completed = CreateText(_statsCard, "Completed", AchievementsStrings.GetText(AchievementsStrings.FilterCompleted), 20f, Color.white);
             var completedRect = completed.rectTransform;
             completedRect.anchorMin = new Vector2(0f, 1f);
             completedRect.anchorMax = new Vector2(1f, 1f);
@@ -681,7 +690,9 @@ namespace AchievementsAPI
         [HideFromIl2Cpp]
         private void AddCategoryRow(AchievementCategory category)
         {
-            var name = category?.Name ?? "All";
+            var name = category != null
+                ? AchievementsStrings.GetText(category.Name)
+                : AchievementsStrings.GetText(AchievementsStrings.FilterAll);
             var img = CreateImage(_categoryContent!, name, ToastSprites.ButtonBox, Color.white);
             img.type = Image.Type.Sliced;
             var le = img.gameObject.AddComponent<LayoutElement>();
@@ -739,8 +750,13 @@ namespace AchievementsAPI
 
         private void SetInitialTitle()
         {
-            SetTitle(_currentCategory?.Name ?? "Achievements", _currentCategory?.GetIcon() ?? AchievementIcon);
+            SetTitle(CurrentTitleText(), _currentCategory?.GetIcon() ?? AchievementIcon);
         }
+
+        // The menu title for the current category, or the generic menu title when "All" is shown.
+        private string CurrentTitleText() => _currentCategory != null
+            ? AchievementsStrings.GetText(_currentCategory.Name)
+            : AchievementsStrings.GetText(AchievementsStrings.MenuTitle);
 
         private void SetFilter(int filter)
         {
@@ -762,7 +778,7 @@ namespace AchievementsAPI
                 counts.Count(InProgress),
                 counts.Count(a => !a.Unlocked)
             };
-            var names = new[] { "All", "Completed", "In Progress", "Locked" };
+            var names = FilterNames();
             for (var i = 0; i < _filterTabs.Count; i++)
             {
                 _filterTabs[i].label.text =
@@ -796,7 +812,8 @@ namespace AchievementsAPI
 
             _rebuildGen++;
             Coroutines.Start(CoRebuildList(plan,
-                _filter == 3 ? "Everything unlocked!" : "Nothing here yet", _rebuildGen));
+                AchievementsStrings.GetText(_filter == 3 ? AchievementsStrings.EmptyAllUnlocked : AchievementsStrings.EmptyNothingHere),
+                _rebuildGen));
         }
 
         [HideFromIl2Cpp]
@@ -1106,10 +1123,10 @@ namespace AchievementsAPI
                 row.SubIcon.rectTransform.localScale = achievement.MenuSubIconScale;
             }
 
-            row.NameText.text = revealed ? achievement.Name : "Hidden Achievement";
+            row.NameText.text = revealed ? achievement.GetName() : AchievementsStrings.GetText(AchievementsStrings.HiddenAchievement);
             row.NameText.color = achievement.Unlocked ? Color.white : new Color(0.56f, 0.56f, 0.56f);
 
-            row.DescText.text = revealed ? achievement.Description : "Hidden Achievement";
+            row.DescText.text = revealed ? achievement.GetDescription() : AchievementsStrings.GetText(AchievementsStrings.HiddenAchievement);
             row.DescText.color = achievement.Unlocked ? (Color) ValueColor : new Color(0.42f, 0.42f, 0.42f);
 
             row.Fill.color = showRarity ? ProgressColor(achievement.Rarity) : RimColor;
@@ -1208,7 +1225,7 @@ namespace AchievementsAPI
                 _detailPanel.Destroy();
                 _detailPanel = null;
             }
-            SetTitle(_currentCategory?.Name ?? "Achievements", _currentCategory?.GetIcon() ?? AchievementIcon);
+            SetTitle(CurrentTitleText(), _currentCategory?.GetIcon() ?? AchievementIcon);
             DeselectIfInside(_settingsPanel);
             ShowPage(null);
 
@@ -1231,7 +1248,7 @@ namespace AchievementsAPI
                 _detailPanel.Destroy();
                 _detailPanel = null;
             }
-            SetTitle("Settings", ToastSprites.Gear);
+            SetTitle(AchievementsStrings.GetText(AchievementsStrings.Settings), ToastSprites.Gear);
             ShowPage(_settingsPanel);
             if (_controllerMode) EnsureSelection();
         }
@@ -1263,7 +1280,7 @@ namespace AchievementsAPI
                 _detailPanel.Destroy();
             }
             var revealed = !achievement.Hidden || achievement.Unlocked;
-            SetTitle(revealed ? achievement.Name : "Hidden Achievement",
+            SetTitle(revealed ? achievement.GetName() : AchievementsStrings.GetText(AchievementsStrings.HiddenAchievement),
                 revealed ? achievement.Icon : null);
             _detailPanel = AchievementDetailPanel.Create(_panel, achievement, BackToList);
             ShowPage(_detailPanel);

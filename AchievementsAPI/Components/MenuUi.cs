@@ -320,9 +320,11 @@ public static class MenuUi
     }
 
     // Charcoal, white-outline pill button in the game's settings style (back/preview).
-    internal static Button CreateButton(Transform panel, string label, Vector2 position)
+    // `name` keeps the object name stable (used for controller focus lookups) while
+    // the visible label is translated.
+    internal static Button CreateButton(Transform panel, string label, Vector2 position, string? name = null)
     {
-        var bg = CreateImage(panel, $"{label}Button", ToastSprites.ButtonBox, Color.white);
+        var bg = CreateImage(panel, $"{name ?? label}Button", ToastSprites.ButtonBox, Color.white);
         bg.type = Image.Type.Sliced;
         var rect = bg.rectTransform;
         rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0f);
@@ -438,13 +440,5 @@ public static class MenuUi
         => required > 0 ? Mathf.Clamp(Mathf.RoundToInt(100f * current / required), 0, 100) : 100;
 
     internal static string RarityName(int rarity)
-    {
-        return rarity switch
-        {
-            1 => "Rare",
-            2 => "Epic",
-            3 => "Legendary",
-            _ => "Common"
-        };
-    }
+        => AchievementsStrings.GetText(AchievementsStrings.RarityName(rarity));
 }

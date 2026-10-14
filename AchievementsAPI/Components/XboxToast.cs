@@ -92,7 +92,7 @@ public static class XboxToast
         MenuUi.Prewarm();
 
         var warm = CreateText(_canvas!.transform, "Prewarm",
-            "Achievement Unlocked! 0123456789/%() x", 22f, Color.white);
+            AchievementsStrings.GetText(AchievementsStrings.ToastUnlocked) + " 0123456789/%() x", 22f, Color.white);
         warm.ForceMeshUpdate();
         yield return null;
         warm.gameObject.Destroy();
@@ -281,9 +281,11 @@ public static class XboxToast
 
         // Alternates with the title while the toast is held, prompting how to
         // open the achievement in the menu
+        var hintText = HasController() ? AchievementsStrings.ToastHintController
+            : AchievementsConfig.TrackpadMode.Value ? AchievementsStrings.ToastHintClick
+            : AchievementsStrings.ToastHintMiddleClick;
         var hint = CreateText(instance.TextRect, "Hint",
-            HasController() ? "Hold Y to view"
-                : AchievementsConfig.TrackpadMode.Value ? "Click to view" : "Middle-click to view",
+            AchievementsStrings.GetText(hintText),
             22f, MenuUi.ValueColor);
         hint.overflowMode = TextOverflowModes.Overflow;
         instance.Hint = hint;

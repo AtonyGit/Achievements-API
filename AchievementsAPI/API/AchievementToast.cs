@@ -19,7 +19,8 @@ public class AchievementToast
 
     public static void ShowAndDeleteToast(BaseAchievement achievement)
     {
-        Show(new ToastRequest("Achievement Unlocked!", achievement.Name, achievement.Icon,
+        Show(new ToastRequest(AchievementsStrings.GetText(AchievementsStrings.ToastUnlocked),
+            achievement.GetName(), achievement.Icon,
             achievement.Rarity, true, achievement.ToastBgSprite, achievement.Id));
     }
 
@@ -29,13 +30,13 @@ public class AchievementToast
         string subtitle;
         if (achievement.Hidden && achievement.HideProgress && !unlocked)
         {
-            title = "Achievement Progressed!";
-            subtitle = "Hidden Achievement";
+            title = AchievementsStrings.GetText(AchievementsStrings.ToastProgressed);
+            subtitle = AchievementsStrings.GetText(AchievementsStrings.HiddenAchievement);
         }
         else
         {
-            title = unlocked ? "Achievement Unlocked!" : "Achievement Progressed!";
-            subtitle = $"{achievement.Name} ({achievement.CurrentValue}/{achievement.RequiredValue})";
+            title = AchievementsStrings.GetText(unlocked ? AchievementsStrings.ToastUnlocked : AchievementsStrings.ToastProgressed);
+            subtitle = $"{achievement.GetName()} ({achievement.CurrentValue}/{achievement.RequiredValue})";
         }
 
         Show(new ToastRequest(title, subtitle, achievement.Icon,
@@ -70,14 +71,16 @@ public class AchievementToast
     /// </summary>
     public static void ShowPreview()
     {
-        var achievement = AchievementsManager.GetTab("Example Tab")?.GetAchievements().FirstOrDefault();
+        var achievement = AchievementsManager.Tabs.OfType<ExampleTab>().FirstOrDefault()
+            ?.GetAchievements().FirstOrDefault();
         if (achievement != null)
         {
             ShowAndDeleteToast(achievement);
             return;
         }
 
-        Show(new ToastRequest("Achievement Unlocked!", "Preview Achievement",
+        Show(new ToastRequest(AchievementsStrings.GetText(AchievementsStrings.ToastUnlocked),
+            AchievementsStrings.GetText(AchievementsStrings.PreviewAchievement),
             SpriteTools.LoadSpriteFromPath("AchievementsAPI.Resources.ExampleIcon.png", typeof(AchievementToast).Assembly, 100),
             0, true, null, "preview"));
     }

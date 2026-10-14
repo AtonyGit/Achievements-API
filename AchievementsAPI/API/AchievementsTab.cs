@@ -47,9 +47,10 @@ public abstract class AchievementsTab
     }
 
     /// <summary>
-    /// The name of the Achievements Tab, displayed in UI.
+    /// The name of the Achievements Tab, displayed in UI, as a translatable <see cref="StringNames"/>.
+    /// Resolved in the current language with <see cref="AchievementsStrings.GetText"/>.
     /// </summary>
-    public abstract string Name { get; }
+    public abstract StringNames Name { get; }
 
     /// <summary>
     /// Whether the tab's achievements are shown in the Achievements Menu. Handy for custom UI's or internal achievements.
@@ -68,7 +69,7 @@ public abstract class AchievementsTab
     /// from more than one mod. Defaults to the owning BepInEx plugin's name, falling back to <see cref="Name"/>.
     /// Tabs from the same mod should return the same value so they're grouped together.
     /// </summary>
-    public virtual string ModName => _modName ??= AchievementsManager.GetPluginName(GetType().Assembly) ?? Name;
+    public virtual string ModName => _modName ??= AchievementsManager.GetPluginName(GetType().Assembly) ?? AchievementsStrings.GetText(Name);
     private string? _modName;
 
     /// <summary>

@@ -13,6 +13,11 @@ namespace AchievementsAPI.API;
 [Serializable]
 public class AchievementData
 {
+    /// <summary>
+    /// The achievement's name as it was last displayed. Informational only (kept for save file
+    /// compatibility); achievements are identified by <see cref="Id"/>, which never changes
+    /// with the display language.
+    /// </summary>
     public string Name { get; set; }
     public bool Unlocked { get; set; }
     public int Progress { get; set; }
@@ -28,26 +33,24 @@ public class AchievementStorage
     private static readonly Dictionary<string, AchievementData> _index = new();
     private static bool _saveScheduled;
 
-    private static string Key(string id, string name) => id + "\u001f" + name;
-
     private static void EnsureIndex()
     {
         if (_index.Count == BaseAchievements.Count) return;
         _index.Clear();
-        foreach (var data in BaseAchievements) _index[Key(data.Id, data.Name)] = data;
+        foreach (var data in BaseAchievements) _index[data.Id] = data;
     }
 
-    private static AchievementData FindData(string id, string name)
+    private static AchievementData FindData(string id)
     {
         EnsureIndex();
-        return _index.TryGetValue(Key(id, name), out var data) ? data : null;
+        return _index.TryGetValue(id, out var data) ? data : null;
     }
 
     private static void AddData(AchievementData data)
     {
         BaseAchievements.Add(data);
         EnsureIndex();
-        _index[Key(data.Id, data.Name)] = data;
+        _index[data.Id] = data;
     }
 
     private static void RequestSave()
@@ -65,7 +68,7 @@ public class AchievementStorage
         Save();
     }
     public static string JsonPath => OperatingSystem.IsAndroid() ? Path.Combine(Environment.GetEnvironmentVariable("STAR_DATA_PATH"), "AchievementsAPIData/achievements.json") : Path.Combine(Application.persistentDataPath, "AchievementsAPIData/achievements.json");
-    
+
     public static void AchievementStorageUpdate(BaseAchievement achievement, bool unlocked)
     {
         var data = GetData(achievement);
@@ -137,10 +140,10 @@ public class AchievementStorage
 
     public static AchievementData GetData(BaseAchievement achievement)
     {
-        var data = FindData(achievement.Id, achievement.Name);
+        var data = FindData(achievement.Id);
         if (data == null)
         {
-            data = new AchievementData { Id = achievement.Assembly.GetName().Name + "_" + achievement.Name, Name = achievement.Name, Unlocked = false };
+            data = new AchievementData { Id = achievement.Id, Name = achievement.GetName(), Unlocked = false };
             AddData(data);
         }
         return data;
@@ -148,14 +151,14 @@ public class AchievementStorage
 
     public static AchievementData GetData(CountAchievement achievement)
     {
-        var data = FindData(achievement.Id, achievement.Name);
+        var data = FindData(achievement.Id);
         if (data == null)
         {
             // Bug 1 fixed: Id was missing, causing Find() to never match on reload
             data = new AchievementData
             {
-                Id = achievement.Assembly.GetName().Name + "_" + achievement.Name,
-                Name = achievement.Name,
+                Id = achievement.Id,
+                Name = achievement.GetName(),
                 Unlocked = false,
                 Progress = achievement.CurrentValue
             };
@@ -174,7 +177,7 @@ public class AchievementStorage
 
     public static void AchievementStorageGet(BaseAchievement achievement)
     {
-        var data = FindData(achievement.Id, achievement.Name);
+        var data = FindData(achievement.Id);
         if (data == null) return;
         achievement.Unlocked = data.Unlocked;
         if (achievement is CountAchievement countAchievement)
