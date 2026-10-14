@@ -148,8 +148,7 @@ namespace AchievementsAPI
 
             try
             {
-                if ((ControllerManager.Instance != null && ControllerManager.Instance.IsUiControllerActive)
-                    || Input.GetJoystickNames().Any(n => !string.IsNullOrEmpty(n)))
+                if (ControllerManager.Instance != null && ControllerManager.Instance.IsUiControllerActive)
                 {
                     _controllerMode = true;
                     EnsureSelection();
