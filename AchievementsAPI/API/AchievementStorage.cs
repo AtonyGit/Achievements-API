@@ -46,7 +46,9 @@ public class AchievementStorage
         var data = GetData(achievement);
         var newProgress = Math.Clamp(progress, 0, achievement.RequiredValue);
         SetUnlocked(data, unlocked);
-        if (achievement.ProgressPersists is AchPersistence.ThroughoutSessions || data.Unlocked) data.Progress = newProgress;
+        // Runtime storage always tracks progress; Save() filters transient
+        // progress for disk based on ProgressPersists.
+        data.Progress = newProgress;
 
         Save();
     }
@@ -147,10 +149,28 @@ public class AchievementStorage
 
         if (!Directory.Exists(directory))
             Directory.CreateDirectory(directory);
+        var persisted = BaseAchievements.Select(data =>
+        {
+            var achievement = AchievementsManager.FindAchievement(data.Id)?.Achievement;
+            var progress = achievement is CountAchievement count &&
+                           count.ProgressPersists != AchPersistence.ThroughoutSessions &&
+                           !data.Unlocked
+                ? 0
+                : data.Progress;
+            return new AchievementData
+            {
+                Name = data.Name,
+                Id = data.Id,
+                Unlocked = data.Unlocked,
+                Progress = progress,
+                UnlockedAt = data.UnlockedAt
+            };
+        }).ToList();
+
         File.WriteAllText(
             JsonPath,
             JsonSerializer.Serialize(
-                BaseAchievements,
+                persisted,
                 new JsonSerializerOptions { WriteIndented = true }));
     }
 
