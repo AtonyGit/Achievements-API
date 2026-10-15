@@ -14,7 +14,7 @@ An Among Us modding API that lets any mod register custom achievements, with a f
 
 - Easy implementation: declare achievements as properties on a tab and they are picked up automatically
 - Progressable achievements with persistent counters
-- Hidden achievements, rarities and Skeld Score
+- Hidden achievements, rarities and Skeld Points
 - An in-game menu with categories, details pages and toast settings
 - Xbox-style toast notifications with sound, animations and swipe-away support
 - Full mouse, keyboard and controller support
@@ -23,9 +23,9 @@ An Among Us modding API that lets any mod register custom achievements, with a f
 ## Screenshots
 
 <div align="center">
-  <img width="80%" alt="The achievements menu, with the Skeld Score card, categories and achievement rows" src="Images/Menu.png" />
+  <img width="80%" alt="The achievements menu, with the Skeld Points card, categories and achievement rows" src="Images/Menu.png" />
   <br />
-  <sub>The main achievements menu, with categories, progress bars and the Skeld Score card.</sub>
+  <sub>The main achievements menu, with categories, progress bars and the Skeld Points card.</sub>
   <br /><br />
   <table>
     <tr>
@@ -103,11 +103,11 @@ Every tab belongs to a category (`CategoryId`, defaulting to General). Crewmate,
 
 ### Hidden achievements
 
-Hidden achievements show as "Hidden Achievement" in the menu and in progress toasts until they are unlocked. Set `HideRarity` to also hide the rarity tint and `HideProgress` to hide the progress bar. Hidden achievements are worth double Skeld Score.
+Hidden achievements show as "Hidden Achievement" in the menu and in progress toasts until they are unlocked. Set `HideRarity` to also hide the rarity tint and `HideProgress` to hide the progress bar. Hidden achievements are worth double Skeld Points.
 
-### Skeld Score
+### Skeld Points
 
-Each achievement is worth Skeld Score based on rarity (10 common / 25 rare / 50 epic / 100 legendary); override `BasePoints` or `PointsMultiplier` to customize. The menu shows earned and total score next to a Gamerscore-style emblem, plus per-rarity completion, and each row shows its value in a pill.
+Each achievement is worth Skeld Points based on rarity (10 common / 25 rare / 50 epic / 100 legendary); override `BasePoints` or `PointsMultiplier` to customize. The menu shows earned and total score next to a Gamerscore-style emblem, plus per-rarity completion, and each row shows its value in a pill.
 
 ### Reset triggers
 
@@ -133,7 +133,7 @@ The achievements button on the main menu opens a full-screen menu that lists eve
 - A category column with paging for mods that register many categories
 - A details page for each achievement with its unlock time
 - A settings page for toasts
-- A stats card with Skeld Score and per-rarity completion
+- A stats card with Skeld Points and per-rarity completion
 
 While the menu or a toast has the pointer, clicks do not reach the game UI behind it.
 

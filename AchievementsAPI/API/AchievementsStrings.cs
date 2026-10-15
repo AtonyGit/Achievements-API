@@ -13,7 +13,7 @@ public static class AchievementsStrings
 {
     public static readonly StringNames MenuTitle = Create("Achievements");
     public static readonly StringNames Settings = Create("Settings");
-    public static readonly StringNames SkeldScore = Create("Skeld Score");
+    public static readonly StringNames SkeldPoints = Create("Skeld Points");
     public static readonly StringNames Back = Create("Back");
     public static readonly StringNames Preview = Create("Preview");
 

@@ -198,7 +198,7 @@ public static class MenuUi
         return sprite;
     }
 
-    // Skeld Score emblem: the achievements trophy icon (same sprite as the
+    // Skeld Points emblem: the achievements trophy icon (same sprite as the
     // in-game settings tab), untinted.
     internal static RectTransform CreateScoreEmblem(Transform parent, float size)
     {

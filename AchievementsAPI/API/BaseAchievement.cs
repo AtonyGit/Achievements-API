@@ -115,7 +115,7 @@
         /// </summary>
         public int Rarity;
         /// <summary>
-        /// Points awarded when this achievement is unlocked, shown as "Skeld Score"
+        /// Points awarded when this achievement is unlocked, shown as "Skeld Points"
         /// (with the ringed S emblem) in the achievements menu. Defaults from
         /// <see cref="Rarity"/>: 10 (common), 25 (rare), 50 (epic), 100 (legendary), multiplied by
         /// <see cref="PointsMultiplier"/>. The menu shows <see cref="BasePoints"/> with an "xN" badge.

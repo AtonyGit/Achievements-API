@@ -121,7 +121,7 @@ public static class AchievementDetailPanel
         tilesLayout.childForceExpandWidth = true;
         tilesLayout.childForceExpandHeight = true;
 
-        var scoreTile = CreateTile(tiles, AchievementsStrings.GetText(AchievementsStrings.SkeldScore), out _);
+        var scoreTile = CreateTile(tiles, AchievementsStrings.GetText(AchievementsStrings.SkeldPoints), out _);
         // Base points with the xN badge, same as the list rows
         var scoreValue = AddTileValue(scoreTile.transform, $"{achievement.BasePoints}", Color.white);
         if (achievement.PointsMultiplier > 1)

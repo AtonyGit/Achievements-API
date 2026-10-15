@@ -759,13 +759,13 @@ namespace AchievementsAPI
             var total = all.Sum(a => a.Points);
             var done = all.Count(a => a.Unlocked);
 
-            // Row 1: gold star, "Skeld Score" caption over the big earned/total
+            // Row 1: gold star, "Skeld Points" caption over the big earned/total
             var emblem = CreateScoreEmblem(_statsCard, 64f);
             emblem.anchorMin = emblem.anchorMax = new Vector2(0f, 1f);
             emblem.pivot = new Vector2(0f, 1f);
             emblem.anchoredPosition = new Vector2(16f, -28f);
 
-            var cap = CreateText(_statsCard, "PointsLabel", AchievementsStrings.GetText(AchievementsStrings.SkeldScore), 17f, ValueColor, FontStyles.Bold);
+            var cap = CreateText(_statsCard, "PointsLabel", AchievementsStrings.GetText(AchievementsStrings.SkeldPoints), 17f, ValueColor, FontStyles.Bold);
             cap.overflowMode = TextOverflowModes.Overflow;
             var capRect = cap.rectTransform;
             capRect.anchorMin = new Vector2(0f, 1f);
