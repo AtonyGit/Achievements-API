@@ -48,6 +48,7 @@ namespace AchievementsAPI
         private TextMeshProUGUI _categoryPageLabel;
         private int _categoryPage;
         private GameObject _settingsPanel;
+        private Button _settingsButton;
         private GameObject _detailPanel;
         private RectTransform _toolbar;
         private TMP_InputField _searchField;
@@ -141,7 +142,7 @@ namespace AchievementsAPI
                 : focused is { } f && f.Tab.IsSelectable ? AchievementsManager.ResolveCategory(f.Tab, f.Achievement) : null;
 
             BuildChrome();
-            _settingsPanel = AchievementsSettingsPanel.Create(_panel, BackToList);
+            _settingsPanel = AchievementsSettingsPanel.Create(_panel);
             RebuildStatsCard();
             RebuildCategories();
             RebuildList();
@@ -563,15 +564,17 @@ namespace AchievementsAPI
             settingsLabel.rectTransform.anchorMax = Vector2.one;
             settingsLabel.rectTransform.offsetMin = new Vector2(34f, 0f);
             settingsLabel.rectTransform.offsetMax = Vector2.zero;
-            var settingsButton = settingsImg.gameObject.AddComponent<Button>();
-            settingsButton.transition = Selectable.Transition.ColorTint;
-            var settingsColors = settingsButton.colors;
+            // Behaves like a category row: disabled (teal) while its page is open
+            _settingsButton = settingsImg.gameObject.AddComponent<Button>();
+            _settingsButton.transition = Selectable.Transition.ColorTint;
+            var settingsColors = _settingsButton.colors;
             settingsColors.normalColor = Color.white;
             settingsColors.highlightedColor = HoverColor;
             settingsColors.pressedColor = PressedTint;
             settingsColors.selectedColor = Color.white;
-            settingsButton.colors = settingsColors;
-            settingsButton.onClick.AddListener((UnityAction)ShowSettingsPage);
+            settingsColors.disabledColor = SelectedColor;
+            _settingsButton.colors = settingsColors;
+            _settingsButton.onClick.AddListener((UnityAction)ShowSettingsPage);
             AttachGameSounds(settingsImg.gameObject);
 
             var scrollGo = new GameObject("ListScroll");
@@ -936,12 +939,16 @@ namespace AchievementsAPI
             _categoryRows.Add((category, button));
         }
 
+        // The settings tab is the "selected" entry while its page is open, so
+        // no category row is marked then.
         private void UpdateCategorySelection()
         {
+            var settingsOpen = _settingsPanel != null && _settingsPanel.activeSelf;
             foreach (var (category, button) in _categoryRows)
             {
-                button.interactable = category != _currentCategory;
+                button.interactable = settingsOpen || category != _currentCategory;
             }
+            if (_settingsButton != null) _settingsButton.interactable = !settingsOpen;
         }
 
         [HideFromIl2Cpp]
@@ -1578,6 +1585,7 @@ namespace AchievementsAPI
             SetTitle(CurrentTitleText(), _currentCategory?.GetIcon() ?? AchievementIcon);
             DeselectIfInside(_settingsPanel);
             ShowPage(null);
+            UpdateCategorySelection();
 
             if (_controllerMode)
             {
@@ -1600,6 +1608,7 @@ namespace AchievementsAPI
             }
             SetTitle(AchievementsStrings.GetText(AchievementsStrings.Settings), ToastSprites.Gear);
             ShowPage(_settingsPanel);
+            UpdateCategorySelection();
             if (_controllerMode) EnsureSelection();
         }
 
@@ -1861,8 +1870,14 @@ namespace AchievementsAPI
                 CloseModPopover();
                 return;
             }
-            if ((_detailPanel != null && _detailPanel.activeSelf) ||
-                (_settingsPanel != null && _settingsPanel.activeSelf))
+            if (_settingsPanel != null && _settingsPanel.activeSelf)
+            {
+                // Settings is a sibling tab, not a page over the list: cancel
+                // closes the whole menu like anywhere else.
+                Close();
+                return;
+            }
+            if (_detailPanel != null && _detailPanel.activeSelf)
             {
                 BackToList();
                 return;

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using AchievementsAPI.API;
 using BepInEx.Configuration;
 using TMPro;
@@ -19,16 +20,15 @@ public static class AchievementsSettingsPanel
     /// Creates the settings panel (hidden until toggled by the caller).
     /// </summary>
     /// <param name="parent">The menu root transform.</param>
-    /// <param name="onBack">Invoked by the Back button.</param>
     /// <returns>The created settings panel.</returns>
-    public static GameObject Create(Transform parent, System.Action onBack)
+    public static GameObject Create(Transform parent)
     {
-        var panel = CreatePanel(parent, onBack);
+        var panel = CreatePanel(parent);
         panel.SetActive(false);
         return panel;
     }
 
-    private static GameObject CreatePanel(Transform parent, System.Action onBack)
+    private static GameObject CreatePanel(Transform parent)
     {
         // Plain container: the rows are the same charcoal boxes as the menu's
         // buttons, so no card behind them. The menu positions it (MenuUi.MatchRect).
@@ -53,17 +53,9 @@ public static class AchievementsSettingsPanel
         var previewRect = preview.GetComponent<RectTransform>();
         previewRect.anchorMin = previewRect.anchorMax = new Vector2(1f, 0f);
         previewRect.pivot = new Vector2(1f, 0.5f);
-        previewRect.anchoredPosition = new Vector2(-256f, 40f);
+        previewRect.anchoredPosition = new Vector2(0f, 40f);
         preview.onClick.AddListener((UnityAction)(() => AchievementToast.ShowPreview()));
         AttachGameSounds(preview.gameObject);
-
-        var back = CreateButton(rect, AchievementsStrings.GetText(AchievementsStrings.Back), Vector2.zero, "Back");
-        var backRect = back.GetComponent<RectTransform>();
-        backRect.anchorMin = backRect.anchorMax = new Vector2(1f, 0f);
-        backRect.pivot = new Vector2(1f, 0.5f);
-        backRect.anchoredPosition = new Vector2(-60f, 40f);
-        back.onClick.AddListener((UnityAction)(() => onBack()));
-        AttachGameSounds(back.gameObject);
 
         return panel;
     }
@@ -141,6 +133,17 @@ public static class AchievementsSettingsPanel
 
     private static void CreateCycleRow<T>(Transform strip, string label, ConfigEntry<T> entry) where T : struct, System.Enum
     {
+        var values = System.Enum.GetValues(typeof(T));
+        var names = new List<string>();
+        foreach (var v in values) names.Add(EnumDisplayName((T) v));
+        var initial = System.Array.IndexOf(values, entry.Value);
+        CreateListCycleRow(strip, label, names, initial, i => entry.Value = (T) values.GetValue(i));
+    }
+
+    // Shared "< value >" chrome for a row that steps through a list of names.
+    private static void CreateListCycleRow(Transform strip, string label, List<string> names,
+        int initial, System.Action<int> onChanged)
+    {
         CreateRowLabel(strip, label);
 
         Button Arrow(string name, string text, float x)
@@ -181,7 +184,8 @@ public static class AchievementsSettingsPanel
         boxRect.anchoredPosition = new Vector2(-152f, 0f);
         boxRect.sizeDelta = new Vector2(200f, 36f);
 
-        var valueText = CreateText(boxRect, "Value", EnumDisplayName(entry.Value), 20f, Color.white,
+        var index = Mathf.Clamp(initial, 0, Mathf.Max(0, names.Count - 1));
+        var valueText = CreateText(boxRect, "Value", names.Count > 0 ? names[index] : "", 20f, Color.white,
             FontStyles.Normal, TextAlignmentOptions.Center);
         var valueRect = valueText.rectTransform;
         valueRect.anchorMin = Vector2.zero;
@@ -189,12 +193,12 @@ public static class AchievementsSettingsPanel
         valueRect.offsetMin = Vector2.zero;
         valueRect.offsetMax = Vector2.zero;
 
-        var values = System.Enum.GetValues(typeof(T));
         void Step(int dir)
         {
-            var i = System.Array.IndexOf(values, entry.Value);
-            entry.Value = (T) values.GetValue((i + dir + values.Length) % values.Length);
-            valueText.text = EnumDisplayName(entry.Value);
+            if (names.Count == 0) return;
+            index = (index + dir + names.Count) % names.Count;
+            valueText.text = names[index];
+            onChanged(index);
         }
 
         Arrow($"{label}Left", "<", -278f).onClick.AddListener((UnityAction)(() => Step(-1)));

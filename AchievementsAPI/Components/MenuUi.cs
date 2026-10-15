@@ -1,5 +1,7 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using AchievementsAPI.API;
 using Reactor.Utilities.Extensions;
 using TMPro;
@@ -312,12 +314,19 @@ public static class MenuUi
 
         if (_clickSound && _hoverSound) return;
 
+        // Prefer the game's standard UI_Select click over whatever button
+        // happens to come first.
         foreach (var button in UnityEngine.Object.FindObjectsByType<PassiveButton>(
                      FindObjectsInactive.Include, FindObjectsSortMode.None))
         {
+            if (button.ClickSound && button.ClickSound.name == "UI_Select")
+            {
+                _clickSound = button.ClickSound;
+                if (button.HoverSound) _hoverSound = button.HoverSound;
+                break;
+            }
             if (_clickSound == null && button.ClickSound) _clickSound = button.ClickSound;
             if (_hoverSound == null && button.HoverSound) _hoverSound = button.HoverSound;
-            if (_clickSound && _hoverSound) break;
         }
     }
 
