@@ -308,36 +308,27 @@ namespace AchievementsAPI
             fieldRect.offsetMin = new Vector2(58f, 0f);
             fieldRect.offsetMax = new Vector2(modFilterShown ? -268f : 0f, 0f);
 
-            var viewportGo = new GameObject("Viewport");
-            var viewportRect = viewportGo.AddComponent<RectTransform>();
-            viewportRect.SetParent(fieldRect, false);
-            viewportRect.anchorMin = Vector2.zero;
-            viewportRect.anchorMax = Vector2.one;
-            viewportRect.offsetMin = new Vector2(16f, 0f);
-            viewportRect.offsetMax = new Vector2(-16f, 0f);
-            viewportGo.AddComponent<RectMask2D>();
-
-            var searchText = CreateText(viewportRect, "Text", "", 22f, new Color(0.85f, 0.85f, 0.85f));
+            var searchText = CreateText(fieldRect, "Text", "", 22f, new Color(0.85f, 0.85f, 0.85f));
             searchText.overflowMode = TextOverflowModes.Overflow;
             searchText.enableWordWrapping = false;
             searchText.richText = false;
             var searchTextRect = searchText.rectTransform;
             searchTextRect.anchorMin = Vector2.zero;
             searchTextRect.anchorMax = Vector2.one;
-            searchTextRect.offsetMin = Vector2.zero;
-            searchTextRect.offsetMax = Vector2.zero;
+            searchTextRect.offsetMin = new Vector2(16f, 0f);
+            searchTextRect.offsetMax = new Vector2(-16f, 0f);
 
-            var placeholder = CreateText(viewportRect, "Placeholder",
+            var placeholder = CreateText(fieldRect, "Placeholder",
                 AchievementsStrings.GetText(AchievementsStrings.SearchPlaceholder),
                 22f, new Color(0.55f, 0.55f, 0.55f), FontStyles.Italic);
             var placeholderRect = placeholder.rectTransform;
             placeholderRect.anchorMin = Vector2.zero;
             placeholderRect.anchorMax = Vector2.one;
-            placeholderRect.offsetMin = Vector2.zero;
-            placeholderRect.offsetMax = Vector2.zero;
+            placeholderRect.offsetMin = new Vector2(16f, 0f);
+            placeholderRect.offsetMax = new Vector2(-16f, 0f);
 
             _searchField = fieldBg.gameObject.AddComponent<TMP_InputField>();
-            _searchField.textViewport = viewportRect;
+            _searchField.textViewport = fieldRect;
             _searchField.textComponent = searchText;
             _searchField.placeholder = placeholder;
             _searchField.lineType = TMP_InputField.LineType.SingleLine;
@@ -401,7 +392,7 @@ namespace AchievementsAPI
                 AttachGameSounds(modFilter.gameObject);
                 UpdateModFilterButton();
 
-                var pop = CreateImage(_panel, "ModPopover", ToastSprites.PanelBoxSmall, Color.white);
+                var pop = CreateImage(_panel, "ModPopover", ToastSprites.ButtonBox, Color.white);
                 pop.type = Image.Type.Sliced;
                 _modPopoverRect = pop.rectTransform;
                 _modPopoverRect.anchorMin = _modPopoverRect.anchorMax = new Vector2(1f, 1f);
@@ -1640,7 +1631,24 @@ namespace AchievementsAPI
             }
 
             if (!_controllerMode && !fieldSelected && CurrentSelectable() != null) EventSystem.current.SetSelectedGameObject(null);
-            if (typing) return;
+            if (typing)
+            {
+                if (MenuInput.Cancel)
+                {
+                    _searchField.DeactivateInputField();
+                    return;
+                }
+
+                if (MenuInput.AnyDirection)
+                {
+                    _searchField.DeactivateInputField();
+                }
+                else if (MenuInput.Confirm || MenuInput.PrevCategory || MenuInput.NextCategory
+                         || MenuInput.PrevFilter || MenuInput.NextFilter)
+                {
+                    return;
+                }
+            }
 
             if (MenuInput.AnyDirection && !_controllerMode && Time.unscaledTime >= _navUnlockTime)
             {

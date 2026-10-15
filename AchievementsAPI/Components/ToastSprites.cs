@@ -36,6 +36,10 @@ public static class ToastSprites
     private static Sprite? _buttonBox;
     private static Sprite? _panelBoxSmall;
     private static Sprite? _closeX;
+    private static Sprite? _searchIcon;
+    private static Sprite? _searchIconHover;
+    private static Sprite? _searchClear;
+    private static Sprite? _searchClearHover;
 
     /// <summary>
     /// A 512x512 (ppu 400) anti-aliased filled circle. Rendered at 4x like the
@@ -123,6 +127,11 @@ public static class ToastSprites
     /// </summary>
     public static Sprite CloseX => _closeX ??= CreateCloseX();
 
+    public static Sprite SearchIcon => _searchIcon ??= CreateSearchIcon(false, false);
+    public static Sprite SearchIconHover => _searchIconHover ??= CreateSearchIcon(true, false);
+    public static Sprite SearchClear => _searchClear ??= CreateSearchIcon(false, true);
+    public static Sprite SearchClearHover => _searchClearHover ??= CreateSearchIcon(true, true);
+
     /// <summary>
     /// Builds every lazily created sprite, one per yielded frame, so the first
     /// toast or menu open does not pay the generation cost mid-game.
@@ -142,6 +151,10 @@ public static class ToastSprites
         _ = Squircle; yield return null;
         _ = Gear; yield return null;
         _ = CloseX; yield return null;
+        _ = SearchIcon; yield return null;
+        _ = SearchIconHover; yield return null;
+        _ = SearchClear; yield return null;
+        _ = SearchClearHover; yield return null;
         _ = WikiPanel; yield return null;
         _ = MenuUi.AchievementIcon;
         _ = SpriteTools.LoadSpriteFromPath("AchievementsAPI.Resources.ExampleIcon.png",
@@ -351,6 +364,51 @@ public static class ToastSprites
 
         tex.DontUnload();
         var sprite = Sprite.Create(tex, new Rect(0, 0, Size, Size), new Vector2(0.5f, 0.5f), 100f);
+        sprite.DontUnload();
+        return sprite;
+    }
+
+    private static Sprite CreateSearchIcon(bool hover, bool clear)
+    {
+        Color bg = hover ? MenuUi.AccentHover : new Color32(0x55, 0x55, 0x55, 255);
+        var tex = CreateTexture((x, y) =>
+        {
+            var dx = x - 63.5f;
+            var dy = y - 63.5f;
+            var d = Mathf.Sqrt(dx * dx + dy * dy);
+            var alpha = Mathf.Clamp01((60f - d) / 2f);
+            var color = bg;
+            color.a *= alpha;
+
+            var ringDx = x - 50f;
+            var ringDy = y - 58f;
+            var ringD = Mathf.Sqrt(ringDx * ringDx + ringDy * ringDy);
+            var ring = Mathf.Clamp01((5f - Mathf.Abs(ringD - 18f)) / 2f);
+            color = Color.Lerp(color, Color.white, ring);
+
+            var handleT = Mathf.Clamp01(((x - 63f) * (88f - 63f) + (y - 45f) * (22f - 45f))
+                / ((88f - 63f) * (88f - 63f) + (22f - 45f) * (22f - 45f)));
+            var projX = 63f + handleT * (88f - 63f);
+            var projY = 45f + handleT * (22f - 45f);
+            var handleD = Mathf.Sqrt((x - projX) * (x - projX) + (y - projY) * (y - projY));
+            var handle = Mathf.Clamp01((5f - handleD) / 2f);
+            color = Color.Lerp(color, Color.white, handle);
+
+            if (clear)
+            {
+                var u = Mathf.Abs(dx + dy) / 1.4142135f;
+                var v = Mathf.Abs(dx - dy) / 1.4142135f;
+                var bar = Mathf.Max(
+                    Mathf.Clamp01((4f - u) / 2f) * Mathf.Clamp01((60f - v) / 2f),
+                    Mathf.Clamp01((4f - v) / 2f) * Mathf.Clamp01((60f - u) / 2f));
+                color = Color.Lerp(color, Color.white, bar);
+            }
+
+            return color;
+        }, $"AchMenuSearchIcon{(hover ? "Hover" : "")}{(clear ? "Clear" : "")}", mipmaps: true);
+
+        tex.DontUnload();
+        var sprite = Sprite.Create(tex, new Rect(0, 0, Size, Size), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
         sprite.DontUnload();
         return sprite;
     }
