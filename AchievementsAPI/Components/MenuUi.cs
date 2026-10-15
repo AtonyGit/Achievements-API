@@ -1,5 +1,6 @@
 using System;
 using AchievementsAPI.API;
+using Reactor.Utilities.Extensions;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
@@ -150,10 +151,49 @@ public static class MenuUi
         }
     }
 
-    internal static Sprite SearchIcon => ToastSprites.SearchIcon;
-    internal static Sprite SearchIconHover => ToastSprites.SearchIconHover;
-    internal static Sprite SearchClear => ToastSprites.SearchClear;
-    internal static Sprite SearchClearHover => ToastSprites.SearchClearHover;
+    private static Sprite _searchIcon;
+    private static Sprite _searchIconHover;
+    private static Sprite _searchClear;
+    private static Sprite _searchClearHover;
+
+    internal static Sprite SearchIcon => _searchIcon ??= SpriteTools.LoadSpriteFromPath(
+        "AchievementsAPI.Resources.SearchIconIdle.png", typeof(MenuUi).Assembly, 100);
+
+    internal static Sprite SearchIconHover => _searchIconHover ??= SpriteTools.LoadSpriteFromPath(
+        "AchievementsAPI.Resources.SearchIconHover.png", typeof(MenuUi).Assembly, 100);
+
+    internal static Sprite SearchClear => _searchClear ??= SpriteTools.LoadSpriteFromPath(
+        "AchievementsAPI.Resources.SearchClearIdle.png", typeof(MenuUi).Assembly, 100);
+
+    internal static Sprite SearchClearHover => _searchClearHover ??= SpriteTools.LoadSpriteFromPath(
+        "AchievementsAPI.Resources.SearchClearHover.png", typeof(MenuUi).Assembly, 100);
+
+    private static Sprite _searchGlyph;
+    private static Sprite _searchClearGlyph;
+
+    // Shared crop rect (bottom-up texture coords) over both 104x104 search PNGs:
+    // glyph bbox union x:12..87 y:13..81 (top-down) + 3px margin, clamped inside
+    // the flat-grey box interior x:6..95 y:6..87 so no outline/shadow/transparent
+    // pixels are included.
+    private const int SearchGlyphX = 9;
+    private const int SearchGlyphY = 19;
+    private const int SearchGlyphW = 82;
+    private const int SearchGlyphH = 75;
+
+    internal static Sprite SearchGlyph => _searchGlyph ??= CropSprite(SearchIcon,
+        SearchGlyphX, SearchGlyphY, SearchGlyphW, SearchGlyphH, "SearchGlyph");
+
+    internal static Sprite SearchClearGlyph => _searchClearGlyph ??= CropSprite(SearchClear,
+        SearchGlyphX, SearchGlyphY, SearchGlyphW, SearchGlyphH, "SearchClearGlyph");
+
+    private static Sprite CropSprite(Sprite src, int x, int y, int w, int h, string name)
+    {
+        var sprite = Sprite.Create(src.texture, new Rect(x, y, w, h), new Vector2(0.5f, 0.5f),
+            100f, 0, SpriteMeshType.FullRect);
+        sprite.name = name;
+        sprite.DontUnload();
+        return sprite;
+    }
 
     // Skeld Score emblem: the achievements trophy icon (same sprite as the
     // in-game settings tab), untinted.
@@ -173,7 +213,7 @@ public static class MenuUi
     /// </summary>
     internal static RectTransform CreateMultiplierBadge(Transform parent, int multiplier, Vector2 overhang)
     {
-        var badge = CreateImage(parent, "MultiplierBadge", ToastSprites.ButtonBox, AccentHover);
+        var badge = CreateImage(parent, "MultiplierBadge", ToastSprites.RoundedRectTiny, AccentHover);
         badge.type = Image.Type.Sliced;
         badge.raycastTarget = false;
         var rect = badge.rectTransform;
@@ -403,10 +443,12 @@ public static class MenuUi
     internal static void Prewarm()
     {
         _ = AchievementIcon;
-        _ = ToastSprites.SearchIcon;
-        _ = ToastSprites.SearchIconHover;
-        _ = ToastSprites.SearchClear;
-        _ = ToastSprites.SearchClearHover;
+        _ = SearchIcon;
+        _ = SearchIconHover;
+        _ = SearchClear;
+        _ = SearchClearHover;
+        _ = SearchGlyph;
+        _ = SearchClearGlyph;
         _ = CloseButtonSprite;
         _ = ClickSound;
         _ = HoverSound;

@@ -52,7 +52,7 @@ namespace AchievementsAPI
         private RectTransform _toolbar;
         private TMP_InputField _searchField;
         private Image _searchIcon;
-        private Button _searchIconButton;
+        private Image _searchBox;
         private Image _modFilterIcon;
         private TextMeshProUGUI _modFilterLabel;
         private RectTransform _modFilterRect;
@@ -283,22 +283,40 @@ namespace AchievementsAPI
             _toolbar.offsetMin = new Vector2(450f, -186f);
             _toolbar.offsetMax = new Vector2(-84f, -136f);
 
-            _searchIcon = CreateImage(_toolbar, "SearchIcon", SearchIcon, Color.white);
+            _searchBox = CreateImage(_toolbar, "SearchIconBox", ToastSprites.ButtonBox, Color.white);
+            _searchBox.type = Image.Type.Sliced;
+            var searchBoxRect = _searchBox.rectTransform;
+            searchBoxRect.anchorMin = searchBoxRect.anchorMax = new Vector2(0f, 0.5f);
+            searchBoxRect.pivot = new Vector2(0f, 0.5f);
+            searchBoxRect.anchoredPosition = Vector2.zero;
+            searchBoxRect.sizeDelta = new Vector2(50f, 50f);
+
+            _searchIcon = CreateImage(searchBoxRect, "SearchIcon", SearchGlyph, Color.white);
             _searchIcon.preserveAspect = true;
+            _searchIcon.raycastTarget = false;
+            // Tints the PNG's flat grey box to exactly the ButtonBox colour so its
+            // square edges vanish into the rounded box beneath.
+            _searchIcon.color = new Color(61f / 79f, 64f / 82f, 64f / 82f, 1f);
             var searchIconRect = _searchIcon.rectTransform;
-            searchIconRect.anchorMin = searchIconRect.anchorMax = new Vector2(0f, 0.5f);
-            searchIconRect.pivot = new Vector2(0f, 0.5f);
+            searchIconRect.anchorMin = searchIconRect.anchorMax = new Vector2(0.5f, 0.5f);
+            searchIconRect.pivot = new Vector2(0.5f, 0.5f);
             searchIconRect.anchoredPosition = Vector2.zero;
-            searchIconRect.sizeDelta = new Vector2(50f, 50f);
-            _searchIconButton = _searchIcon.gameObject.AddComponent<Button>();
-            _searchIconButton.transition = Selectable.Transition.SpriteSwap;
+            searchIconRect.sizeDelta = new Vector2(40f, 40f);
+            var searchButton = searchBoxRect.gameObject.AddComponent<Button>();
+            searchButton.transition = Selectable.Transition.ColorTint;
+            var searchColors = searchButton.colors;
+            searchColors.normalColor = Color.white;
+            searchColors.highlightedColor = HoverColor;
+            searchColors.pressedColor = PressedTint;
+            searchColors.selectedColor = Color.white;
+            searchButton.colors = searchColors;
             UpdateSearchIcon();
-            _searchIconButton.onClick.AddListener((UnityAction)(() =>
+            searchButton.onClick.AddListener((UnityAction)(() =>
             {
                 if (SearchText.Length > 0) ClearSearch();
                 else _searchField.ActivateInputField();
             }));
-            AttachGameSounds(_searchIcon.gameObject);
+            AttachGameSounds(_searchBox.gameObject);
 
             var fieldBg = CreateImage(_toolbar, "SearchField", ToastSprites.ButtonBox, Color.white);
             fieldBg.type = Image.Type.Sliced;
@@ -308,27 +326,48 @@ namespace AchievementsAPI
             fieldRect.offsetMin = new Vector2(58f, 0f);
             fieldRect.offsetMax = new Vector2(modFilterShown ? -268f : 0f, 0f);
 
-            var searchText = CreateText(fieldRect, "Text", "", 22f, new Color(0.85f, 0.85f, 0.85f));
+            var viewportGo = new GameObject("Viewport");
+            var viewportRect = viewportGo.AddComponent<RectTransform>();
+            viewportRect.SetParent(fieldRect, false);
+            viewportRect.anchorMin = Vector2.zero;
+            viewportRect.anchorMax = Vector2.one;
+            viewportRect.offsetMin = new Vector2(16f, 0f);
+            viewportRect.offsetMax = new Vector2(-16f, 0f);
+            viewportGo.AddComponent<RectMask2D>();
+
+            var searchText = CreateText(viewportRect, "Text", "", 22f, new Color(0.85f, 0.85f, 0.85f),
+                FontStyles.Normal, TextAlignmentOptions.Left);
             searchText.overflowMode = TextOverflowModes.Overflow;
             searchText.enableWordWrapping = false;
             searchText.richText = false;
+            searchText.enableAutoSizing = false;
+            searchText.fontSizeMin = 22f;
+            searchText.fontSizeMax = 22f;
+            searchText.autoSizeTextContainer = false;
             var searchTextRect = searchText.rectTransform;
-            searchTextRect.anchorMin = Vector2.zero;
-            searchTextRect.anchorMax = Vector2.one;
-            searchTextRect.offsetMin = new Vector2(16f, 0f);
-            searchTextRect.offsetMax = new Vector2(-16f, 0f);
+            searchTextRect.anchorMin = searchTextRect.anchorMax = new Vector2(0f, 0.5f);
+            searchTextRect.pivot = new Vector2(0f, 0.5f);
+            searchTextRect.anchoredPosition = Vector2.zero;
+            searchTextRect.sizeDelta = new Vector2(2000f, 50f);
 
-            var placeholder = CreateText(fieldRect, "Placeholder",
+            var placeholder = CreateText(viewportRect, "Placeholder",
                 AchievementsStrings.GetText(AchievementsStrings.SearchPlaceholder),
-                22f, new Color(0.55f, 0.55f, 0.55f), FontStyles.Italic);
+                22f, new Color(0.55f, 0.55f, 0.55f), FontStyles.Italic, TextAlignmentOptions.Left);
+            placeholder.overflowMode = TextOverflowModes.Overflow;
+            placeholder.enableWordWrapping = false;
+            placeholder.enableAutoSizing = false;
+            placeholder.autoSizeTextContainer = false;
             var placeholderRect = placeholder.rectTransform;
-            placeholderRect.anchorMin = Vector2.zero;
-            placeholderRect.anchorMax = Vector2.one;
-            placeholderRect.offsetMin = new Vector2(16f, 0f);
-            placeholderRect.offsetMax = new Vector2(-16f, 0f);
+            placeholderRect.anchorMin = placeholderRect.anchorMax = new Vector2(0f, 0.5f);
+            placeholderRect.pivot = new Vector2(0f, 0.5f);
+            placeholderRect.anchoredPosition = Vector2.zero;
+            placeholderRect.sizeDelta = new Vector2(2000f, 50f);
 
+            // Deactivate so TMP_InputField.OnEnable runs only after textComponent is assigned below —
+            // the caret renderer is only created in OnEnable when m_TextComponent is already set.
+            fieldBg.gameObject.SetActive(false);
             _searchField = fieldBg.gameObject.AddComponent<TMP_InputField>();
-            _searchField.textViewport = fieldRect;
+            _searchField.textViewport = viewportRect;
             _searchField.textComponent = searchText;
             _searchField.placeholder = placeholder;
             _searchField.lineType = TMP_InputField.LineType.SingleLine;
@@ -342,6 +381,7 @@ namespace AchievementsAPI
             _searchField.restoreOriginalTextOnEscape = false;
             _searchField.transition = Selectable.Transition.None;
             _searchField.onValueChanged.AddListener((UnityAction<string>)(_ => QueueSearchRefresh()));
+            fieldBg.gameObject.SetActive(true);
             AttachGameSounds(fieldBg.gameObject, hoverSound: false);
 
             if (modFilterShown)
@@ -1007,13 +1047,7 @@ namespace AchievementsAPI
         // The icon doubles as the clear button once there is text.
         private void UpdateSearchIcon()
         {
-            var hasText = SearchText.Length > 0;
-            _searchIcon.sprite = hasText ? SearchClear : SearchIcon;
-            var state = _searchIconButton.spriteState;
-            state.highlightedSprite = hasText ? SearchClearHover : SearchIconHover;
-            state.pressedSprite = state.highlightedSprite;
-            state.selectedSprite = _searchIcon.sprite;
-            _searchIconButton.spriteState = state;
+            _searchIcon.sprite = SearchText.Length > 0 ? SearchClearGlyph : SearchGlyph;
         }
 
         private void QueueSearchRefresh()
@@ -1678,6 +1712,8 @@ namespace AchievementsAPI
 
         private void LateUpdate()
         {
+            if (_searchBox != null && _searchIcon != null)
+                _searchIcon.canvasRenderer.SetColor(_searchBox.canvasRenderer.GetColor());
             if (_focusRing == null) return;
             var selected = _controllerMode ? CurrentSelectable() : null;
             _focusRing.gameObject.SetActive(selected != null);

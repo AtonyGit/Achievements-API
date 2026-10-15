@@ -31,6 +31,9 @@ public static class AchievementsStrings
 
     public static readonly StringNames StatusUnlocked = Create("Unlocked");
     public static readonly StringNames StatusLocked = Create("Locked");
+    public static readonly StringNames DetailRarity = Create("Rarity");
+    public static readonly StringNames DetailStatus = Create("Status");
+    public static readonly StringNames DetailProgress = Create("Progress");
     public static readonly StringNames HiddenAchievement = Create("Hidden Achievement");
 
     public static readonly StringNames RarityCommon = Create("Common");
