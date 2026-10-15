@@ -22,6 +22,10 @@ public static class AchievementsStrings
     public static readonly StringNames FilterInProgress = Create("In Progress");
     public static readonly StringNames FilterLocked = Create("Locked");
 
+    public static readonly StringNames SearchPlaceholder = Create("Search achievements...");
+    public static readonly StringNames EmptyNoResults = Create("No achievements match your search");
+    public static readonly StringNames FilterAllMods = Create("All mods");
+
     public static readonly StringNames EmptyAllUnlocked = Create("Everything unlocked!");
     public static readonly StringNames EmptyNothingHere = Create("Nothing here yet");
 

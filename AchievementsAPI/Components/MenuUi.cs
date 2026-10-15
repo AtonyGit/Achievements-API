@@ -150,6 +150,27 @@ public static class MenuUi
         }
     }
 
+    private static Sprite _searchIcon;
+    private static Sprite _searchIconHover;
+    private static Sprite _searchClear;
+    private static Sprite _searchClearHover;
+
+    internal static Sprite SearchIcon
+        => _searchIcon ??= SpriteTools.LoadSpriteFromPath(
+            "AchievementsAPI.Resources.SearchIconIdle.png", typeof(MenuUi).Assembly, 100);
+
+    internal static Sprite SearchIconHover
+        => _searchIconHover ??= SpriteTools.LoadSpriteFromPath(
+            "AchievementsAPI.Resources.SearchIconHover.png", typeof(MenuUi).Assembly, 100);
+
+    internal static Sprite SearchClear
+        => _searchClear ??= SpriteTools.LoadSpriteFromPath(
+            "AchievementsAPI.Resources.SearchClearIdle.png", typeof(MenuUi).Assembly, 100);
+
+    internal static Sprite SearchClearHover
+        => _searchClearHover ??= SpriteTools.LoadSpriteFromPath(
+            "AchievementsAPI.Resources.SearchClearHover.png", typeof(MenuUi).Assembly, 100);
+
     // Skeld Score emblem: the achievements trophy icon (same sprite as the
     // in-game settings tab), untinted.
     internal static RectTransform CreateScoreEmblem(Transform parent, float size)
@@ -398,6 +419,10 @@ public static class MenuUi
     internal static void Prewarm()
     {
         _ = AchievementIcon;
+        _ = SearchIcon;
+        _ = SearchIconHover;
+        _ = SearchClear;
+        _ = SearchClearHover;
         _ = CloseButtonSprite;
         _ = ClickSound;
         _ = HoverSound;

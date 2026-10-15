@@ -49,7 +49,21 @@ namespace AchievementsAPI
         private int _categoryPage;
         private GameObject _settingsPanel;
         private GameObject _detailPanel;
+        private RectTransform _toolbar;
+        private TMP_InputField _searchField;
+        private Image _searchIcon;
+        private Button _searchIconButton;
+        private Image _modFilterIcon;
+        private TextMeshProUGUI _modFilterLabel;
+        private RectTransform _modFilterRect;
+        private GameObject _modPopover;
+        private RectTransform _modPopoverRect;
+        private readonly List<(string mod, Button button)> _modRows = new();
         private List<AchievementsTab> _selectableTabs = new();
+        private List<AchievementsTab> _mods = new();
+        private string _currentMod;             // null = all mods
+        private string _appliedSearch = string.Empty;
+        private IEnumerator _searchDebounce;
         private List<AchievementCategory> _categories = new();
         private AchievementCategory _currentCategory;   // null = All
         private int _filter;                    // 0 All, 1 Completed, 2 In Progress, 3 Locked
@@ -111,6 +125,7 @@ namespace AchievementsAPI
         private void Start()
         {
             _selectableTabs = AchievementsManager.Tabs.Where(t => t.IsSelectable).ToList();
+            _mods = _selectableTabs.GroupBy(t => t.ModName).Select(g => g.First()).ToList();
             foreach (var tab in _selectableTabs) AchievementStorage.AchievementStorageGet(tab);
 
             // Only categories that actually contain something, in declared order.
@@ -256,6 +271,165 @@ namespace AchievementsAPI
                 _filterTabs.Add((button, label));
             }
 
+            // Toolbar row under the pills: search field on the left, mod
+            // filter dropdown on the right (only when 2+ mods contribute)
+            var modFilterShown = _mods.Count >= 2;
+            var toolbarGo = new GameObject("Toolbar");
+            _toolbar = toolbarGo.AddComponent<RectTransform>();
+            _toolbar.SetParent(_panel, false);
+            _toolbar.anchorMin = new Vector2(0f, 1f);
+            _toolbar.anchorMax = new Vector2(1f, 1f);
+            _toolbar.pivot = new Vector2(0.5f, 1f);
+            _toolbar.offsetMin = new Vector2(450f, -186f);
+            _toolbar.offsetMax = new Vector2(-84f, -136f);
+
+            _searchIcon = CreateImage(_toolbar, "SearchIcon", SearchIcon, Color.white);
+            _searchIcon.preserveAspect = true;
+            var searchIconRect = _searchIcon.rectTransform;
+            searchIconRect.anchorMin = searchIconRect.anchorMax = new Vector2(0f, 0.5f);
+            searchIconRect.pivot = new Vector2(0f, 0.5f);
+            searchIconRect.anchoredPosition = Vector2.zero;
+            searchIconRect.sizeDelta = new Vector2(50f, 50f);
+            _searchIconButton = _searchIcon.gameObject.AddComponent<Button>();
+            _searchIconButton.transition = Selectable.Transition.SpriteSwap;
+            UpdateSearchIcon();
+            _searchIconButton.onClick.AddListener((UnityAction)(() =>
+            {
+                if (SearchText.Length > 0) ClearSearch();
+                else _searchField.ActivateInputField();
+            }));
+            AttachGameSounds(_searchIcon.gameObject);
+
+            var fieldBg = CreateImage(_toolbar, "SearchField", ToastSprites.ButtonBox, Color.white);
+            fieldBg.type = Image.Type.Sliced;
+            var fieldRect = fieldBg.rectTransform;
+            fieldRect.anchorMin = new Vector2(0f, 0f);
+            fieldRect.anchorMax = new Vector2(1f, 1f);
+            fieldRect.offsetMin = new Vector2(58f, 0f);
+            fieldRect.offsetMax = new Vector2(modFilterShown ? -268f : 0f, 0f);
+
+            var viewportGo = new GameObject("Viewport");
+            var viewportRect = viewportGo.AddComponent<RectTransform>();
+            viewportRect.SetParent(fieldRect, false);
+            viewportRect.anchorMin = Vector2.zero;
+            viewportRect.anchorMax = Vector2.one;
+            viewportRect.offsetMin = new Vector2(16f, 0f);
+            viewportRect.offsetMax = new Vector2(-16f, 0f);
+            viewportGo.AddComponent<RectMask2D>();
+
+            var searchText = CreateText(viewportRect, "Text", "", 22f, new Color(0.85f, 0.85f, 0.85f));
+            searchText.overflowMode = TextOverflowModes.Overflow;
+            searchText.enableWordWrapping = false;
+            searchText.richText = false;
+            var searchTextRect = searchText.rectTransform;
+            searchTextRect.anchorMin = Vector2.zero;
+            searchTextRect.anchorMax = Vector2.one;
+            searchTextRect.offsetMin = Vector2.zero;
+            searchTextRect.offsetMax = Vector2.zero;
+
+            var placeholder = CreateText(viewportRect, "Placeholder",
+                AchievementsStrings.GetText(AchievementsStrings.SearchPlaceholder),
+                22f, new Color(0.55f, 0.55f, 0.55f), FontStyles.Italic);
+            var placeholderRect = placeholder.rectTransform;
+            placeholderRect.anchorMin = Vector2.zero;
+            placeholderRect.anchorMax = Vector2.one;
+            placeholderRect.offsetMin = Vector2.zero;
+            placeholderRect.offsetMax = Vector2.zero;
+
+            _searchField = fieldBg.gameObject.AddComponent<TMP_InputField>();
+            _searchField.textViewport = viewportRect;
+            _searchField.textComponent = searchText;
+            _searchField.placeholder = placeholder;
+            _searchField.lineType = TMP_InputField.LineType.SingleLine;
+            _searchField.characterLimit = 40;
+            _searchField.richText = false;
+            _searchField.customCaretColor = true;
+            _searchField.caretColor = Color.white;
+            _searchField.selectionColor = new Color(
+                AccentHover.r / 255f, AccentHover.g / 255f, AccentHover.b / 255f, 0.5f);
+            _searchField.caretWidth = 2;
+            _searchField.restoreOriginalTextOnEscape = false;
+            _searchField.transition = Selectable.Transition.None;
+            _searchField.onValueChanged.AddListener((UnityAction<string>)(_ => QueueSearchRefresh()));
+            AttachGameSounds(fieldBg.gameObject, hoverSound: false);
+
+            if (modFilterShown)
+            {
+                var modFilter = CreateImage(_toolbar, "ModFilter", ToastSprites.ButtonBox, Color.white);
+                modFilter.type = Image.Type.Sliced;
+                _modFilterRect = modFilter.rectTransform;
+                _modFilterRect.anchorMin = _modFilterRect.anchorMax = new Vector2(1f, 0.5f);
+                _modFilterRect.pivot = new Vector2(1f, 0.5f);
+                _modFilterRect.anchoredPosition = Vector2.zero;
+                _modFilterRect.sizeDelta = new Vector2(260f, 50f);
+
+                _modFilterIcon = CreateImage(_modFilterRect, "Icon", AchievementIcon, Color.white);
+                _modFilterIcon.preserveAspect = true;
+                _modFilterIcon.raycastTarget = false;
+                var modIconRect = _modFilterIcon.rectTransform;
+                modIconRect.anchorMin = modIconRect.anchorMax = new Vector2(0f, 0.5f);
+                modIconRect.pivot = new Vector2(0.5f, 0.5f);
+                modIconRect.anchoredPosition = new Vector2(28f, 0f);
+                modIconRect.sizeDelta = new Vector2(28f, 28f);
+
+                _modFilterLabel = CreateText(_modFilterRect, "Label",
+                    AchievementsStrings.GetText(AchievementsStrings.FilterAllMods),
+                    20f, Color.white, FontStyles.Bold);
+                var modLabelRect = _modFilterLabel.rectTransform;
+                modLabelRect.anchorMin = Vector2.zero;
+                modLabelRect.anchorMax = Vector2.one;
+                modLabelRect.offsetMin = new Vector2(52f, 0f);
+                modLabelRect.offsetMax = new Vector2(-36f, 0f);
+
+                var chevron = CreateText(_modFilterRect, "Chevron", "▼", 14f, ValueColor,
+                    FontStyles.Normal, TextAlignmentOptions.Center);
+                var chevronRect = chevron.rectTransform;
+                chevronRect.anchorMin = chevronRect.anchorMax = new Vector2(1f, 0.5f);
+                chevronRect.pivot = new Vector2(1f, 0.5f);
+                chevronRect.anchoredPosition = new Vector2(-14f, 0f);
+                chevronRect.sizeDelta = new Vector2(20f, 20f);
+
+                var modFilterButton = modFilter.gameObject.AddComponent<Button>();
+                modFilterButton.transition = Selectable.Transition.ColorTint;
+                var modFilterColors = modFilterButton.colors;
+                modFilterColors.normalColor = Color.white;
+                modFilterColors.highlightedColor = HoverColor;
+                modFilterColors.pressedColor = PressedTint;
+                modFilterColors.selectedColor = Color.white;
+                modFilterButton.colors = modFilterColors;
+                modFilterButton.onClick.AddListener((UnityAction)ToggleModPopover);
+                AttachGameSounds(modFilter.gameObject);
+                UpdateModFilterButton();
+
+                var pop = CreateImage(_panel, "ModPopover", ToastSprites.PanelBoxSmall, Color.white);
+                pop.type = Image.Type.Sliced;
+                _modPopoverRect = pop.rectTransform;
+                _modPopoverRect.anchorMin = _modPopoverRect.anchorMax = new Vector2(1f, 1f);
+                _modPopoverRect.pivot = new Vector2(1f, 1f);
+                _modPopoverRect.anchoredPosition = new Vector2(-84f, -190f);
+                _modPopoverRect.sizeDelta = new Vector2(300f, 12f + (_mods.Count + 1) * 50f);
+                _modPopover = pop.gameObject;
+
+                var popContentGo = new GameObject("Content");
+                var popContent = popContentGo.AddComponent<RectTransform>();
+                popContent.SetParent(_modPopoverRect, false);
+                popContent.anchorMin = Vector2.zero;
+                popContent.anchorMax = Vector2.one;
+                popContent.offsetMin = Vector2.zero;
+                popContent.offsetMax = Vector2.zero;
+                var popVlg = popContentGo.AddComponent<VerticalLayoutGroup>();
+                popVlg.padding = new RectOffset { left = 8, right = 8, top = 8, bottom = 8 };
+                popVlg.spacing = 6f;
+                popVlg.childControlWidth = true;
+                popVlg.childControlHeight = true;
+                popVlg.childForceExpandWidth = true;
+                popVlg.childForceExpandHeight = false;
+
+                AddModRow(popContent, null);
+                foreach (var modTab in _mods) AddModRow(popContent, modTab);
+                _modPopover.SetActive(false);
+            }
+
             var leftGo = new GameObject("LeftColumn");
             var left = leftGo.AddComponent<RectTransform>();
             left.SetParent(_panel, false);
@@ -375,7 +549,7 @@ namespace AchievementsAPI
             scrollRect.anchorMin = Vector2.zero;
             scrollRect.anchorMax = Vector2.one;
             scrollRect.offsetMin = new Vector2(450f, 60f);
-            scrollRect.offsetMax = new Vector2(-84f, -126f);
+            scrollRect.offsetMax = new Vector2(-84f, -196f);
             _scroll = scrollGo.AddComponent<ScrollRect>();
             scrollGo.AddComponent<RectMask2D>();
             var scrollRaycast = CreateImage(scrollRect, "Raycast", null, new Color(0f, 0f, 0f, 0f));
@@ -406,7 +580,7 @@ namespace AchievementsAPI
             _scroll.horizontal = false;
             _scroll.movementType = ScrollRect.MovementType.Clamped;
             _scroll.scrollSensitivity = 100f;
-            _listScrollbar = CreateScrollbar(_panel, _scroll, new Vector2(-76f, 64f), new Vector2(-62f, -122f));
+            _listScrollbar = CreateScrollbar(_panel, _scroll, new Vector2(-76f, 64f), new Vector2(-62f, -192f));
 
             _focusRing = CreateImage(transform, "FocusRing", ToastSprites.OutlineBoxSmall, AccentHover);
             _focusRing.type = Image.Type.Sliced;
@@ -510,7 +684,8 @@ namespace AchievementsAPI
             {
                 foreach (var a in tab.GetAchievements())
                 {
-                    if (_currentCategory == null || AchievementsManager.ResolveCategory(tab, a) == _currentCategory)
+                    if ((_currentMod == null || tab.ModName == _currentMod)
+                        && (_currentCategory == null || AchievementsManager.ResolveCategory(tab, a) == _currentCategory))
                         yield return (tab, a);
                 }
             }
@@ -739,6 +914,150 @@ namespace AchievementsAPI
         }
 
         [HideFromIl2Cpp]
+        private void AddModRow(Transform parent, AchievementsTab tab)
+        {
+            var name = tab != null
+                ? tab.ModName
+                : AchievementsStrings.GetText(AchievementsStrings.FilterAllMods);
+            var img = CreateImage(parent, "Row", ToastSprites.ButtonBox, Color.white);
+            img.type = Image.Type.Sliced;
+            var le = img.gameObject.AddComponent<LayoutElement>();
+            le.preferredHeight = 44f;
+            var rect = img.rectTransform;
+
+            var icon = CreateImage(rect, "Icon",
+                tab != null ? ToastSprites.TrimTransparent(tab.ModIcon) : AchievementIcon, Color.white);
+            icon.preserveAspect = true;
+            icon.raycastTarget = false;
+            var iconRect = icon.rectTransform;
+            iconRect.anchorMin = iconRect.anchorMax = new Vector2(0f, 0.5f);
+            iconRect.pivot = new Vector2(0.5f, 0.5f);
+            iconRect.anchoredPosition = new Vector2(24f, 0f);
+            iconRect.sizeDelta = new Vector2(24f, 24f);
+
+            var label = CreateText(rect, "Label", name, 20f, Color.white, FontStyles.Bold);
+            var labelRect = label.rectTransform;
+            labelRect.anchorMin = Vector2.zero;
+            labelRect.anchorMax = Vector2.one;
+            labelRect.offsetMin = new Vector2(46f, 0f);
+            labelRect.offsetMax = new Vector2(-8f, 0f);
+
+            var button = img.gameObject.AddComponent<Button>();
+            button.transition = Selectable.Transition.ColorTint;
+            var colors = button.colors;
+            colors.normalColor = Color.white;
+            colors.highlightedColor = HoverColor;
+            colors.pressedColor = PressedTint;
+            colors.selectedColor = Color.white;
+            colors.disabledColor = SelectedColor;
+            button.colors = colors;
+            var mod = tab?.ModName;
+            button.onClick.AddListener((UnityAction)(() => SelectMod(mod)));
+            AttachGameSounds(img.gameObject);
+            _modRows.Add((mod, button));
+        }
+
+        private void UpdateModSelection()
+        {
+            foreach (var (mod, button) in _modRows)
+            {
+                button.interactable = mod != _currentMod;
+            }
+        }
+
+        private void SelectMod(string mod)
+        {
+            _currentMod = mod;
+            CloseModPopover();
+            UpdateModFilterButton();
+            BackToList();
+            RebuildStatsCard();
+            RebuildList();
+        }
+
+        private void ToggleModPopover()
+        {
+            if (_modPopover == null) return;
+            _modPopover.SetActive(!_modPopover.activeSelf);
+            if (_modPopover.activeSelf)
+            {
+                _modPopover.transform.SetAsLastSibling();
+                UpdateModSelection();
+            }
+        }
+
+        private void CloseModPopover()
+        {
+            if (_modPopover != null) _modPopover.SetActive(false);
+        }
+
+        private void UpdateModFilterButton()
+        {
+            if (_modFilterLabel == null) return;
+            var tab = _currentMod == null ? null : _mods.FirstOrDefault(t => t.ModName == _currentMod);
+            _modFilterIcon.sprite = tab != null ? ToastSprites.TrimTransparent(tab.ModIcon) : AchievementIcon;
+            _modFilterLabel.text = tab != null ? tab.ModName
+                : AchievementsStrings.GetText(AchievementsStrings.FilterAllMods);
+        }
+
+        private string SearchText => _searchField != null ? _searchField.text.Trim() : string.Empty;
+
+        // Only revealed achievements are searchable, so typing a hidden
+        // achievement's name can't leak its existence.
+        [HideFromIl2Cpp]
+        private bool MatchesSearch(BaseAchievement a)
+        {
+            if (_appliedSearch.Length == 0) return true;
+            if (a.Hidden && !a.Unlocked) return false;
+            return a.GetName()?.Contains(_appliedSearch, StringComparison.OrdinalIgnoreCase) == true
+                || a.GetDescription()?.Contains(_appliedSearch, StringComparison.OrdinalIgnoreCase) == true;
+        }
+
+        // The icon doubles as the clear button once there is text.
+        private void UpdateSearchIcon()
+        {
+            var hasText = SearchText.Length > 0;
+            _searchIcon.sprite = hasText ? SearchClear : SearchIcon;
+            var state = _searchIconButton.spriteState;
+            state.highlightedSprite = hasText ? SearchClearHover : SearchIconHover;
+            state.pressedSprite = state.highlightedSprite;
+            state.selectedSprite = _searchIcon.sprite;
+            _searchIconButton.spriteState = state;
+        }
+
+        private void QueueSearchRefresh()
+        {
+            UpdateSearchIcon();
+            if (_searchDebounce != null) Coroutines.Stop(_searchDebounce);
+            _searchDebounce = Coroutines.Start(CoSearchRefresh());
+        }
+
+        [HideFromIl2Cpp]
+        private IEnumerator CoSearchRefresh()
+        {
+            yield return new WaitForSecondsRealtime(0.3f);
+            _searchDebounce = null;
+            if (_searchField == null) yield break;
+            var text = SearchText;
+            if (text == _appliedSearch) yield break;
+            _appliedSearch = text;
+            RebuildList();
+        }
+
+        private void ClearSearch()
+        {
+            if (_searchDebounce != null)
+            {
+                Coroutines.Stop(_searchDebounce);
+                _searchDebounce = null;
+            }
+            _appliedSearch = string.Empty;
+            _searchField.SetTextWithoutNotify(string.Empty);
+            UpdateSearchIcon();
+            RebuildList();
+        }
+
+        [HideFromIl2Cpp]
         private void SelectCategory(AchievementCategory category)
         {
             _currentCategory = category;
@@ -770,7 +1089,7 @@ namespace AchievementsAPI
 
         private void RebuildList()
         {
-            var counts = EnumerateAchievements().Select(x => x.Achievement).ToList();
+            var counts = EnumerateAchievements().Select(x => x.Achievement).Where(MatchesSearch).ToList();
             var filterCounts = new[]
             {
                 counts.Count,
@@ -793,7 +1112,8 @@ namespace AchievementsAPI
                 .GroupBy(x => x.Tab.ModName)
                 .ToList();
             var groups = allGroups
-                .Select(g => (tab: g.First().Tab, items: g.Where(x => PassesFilter(x.Achievement, filter))
+                .Select(g => (tab: g.First().Tab, items: g.Where(x => PassesFilter(x.Achievement, filter)
+                        && MatchesSearch(x.Achievement))
                     .Select(x => x.Achievement).ToList()))
                 .Where(g => g.items.Count > 0)
                 .ToList();
@@ -811,9 +1131,9 @@ namespace AchievementsAPI
             }
 
             _rebuildGen++;
-            Coroutines.Start(CoRebuildList(plan,
-                AchievementsStrings.GetText(_filter == 3 ? AchievementsStrings.EmptyAllUnlocked : AchievementsStrings.EmptyNothingHere),
-                _rebuildGen));
+            var emptyName = _appliedSearch.Length > 0 ? AchievementsStrings.EmptyNoResults
+                : _filter == 3 ? AchievementsStrings.EmptyAllUnlocked : AchievementsStrings.EmptyNothingHere;
+            Coroutines.Start(CoRebuildList(plan, AchievementsStrings.GetText(emptyName), _rebuildGen));
         }
 
         [HideFromIl2Cpp]
@@ -1183,11 +1503,16 @@ namespace AchievementsAPI
             _scroll.gameObject.SetActive(listsVisible);
             _listScrollbar?.SetActive(listsVisible);
             _filterRow.gameObject.SetActive(listsVisible);
+            _toolbar?.gameObject.SetActive(listsVisible);
             _settingsPanel?.SetActive(page == _settingsPanel);
             _detailPanel?.SetActive(page == _detailPanel);
             if (page != null)
             {
-                MatchRect(page.GetComponent<RectTransform>(), _scroll.GetComponent<RectTransform>());
+                CloseModPopover();
+                var r = page.GetComponent<RectTransform>();
+                MatchRect(r, _scroll.GetComponent<RectTransform>());
+                // Also cover the toolbar row above the list
+                r.offsetMax = new Vector2(r.offsetMax.x, -126f);
             }
         }
 
@@ -1303,7 +1628,19 @@ namespace AchievementsAPI
             _lastMousePos = mouse;
             _mousePrimed = true;
 
-            if (!_controllerMode && CurrentSelectable() != null) EventSystem.current.SetSelectedGameObject(null);
+            var typing = _searchField != null && _searchField.isFocused;
+            var fieldSelected = _searchField != null && EventSystem.current != null
+                && EventSystem.current.currentSelectedGameObject == _searchField.gameObject;
+
+            if (_modPopover != null && _modPopover.activeSelf && Input.GetMouseButtonDown(0)
+                && !RectTransformUtility.RectangleContainsScreenPoint(_modPopoverRect, Input.mousePosition, null)
+                && !RectTransformUtility.RectangleContainsScreenPoint(_modFilterRect, Input.mousePosition, null))
+            {
+                CloseModPopover();
+            }
+
+            if (!_controllerMode && !fieldSelected && CurrentSelectable() != null) EventSystem.current.SetSelectedGameObject(null);
+            if (typing) return;
 
             if (MenuInput.AnyDirection && !_controllerMode && Time.unscaledTime >= _navUnlockTime)
             {
@@ -1459,6 +1796,12 @@ namespace AchievementsAPI
                 button.onClick.Invoke();
                 return;
             }
+            var input = sel.TryCast<TMP_InputField>();
+            if (input != null)
+            {
+                input.ActivateInputField();
+                return;
+            }
             var toggle = sel.TryCast<Toggle>();
             if (toggle != null)
             {
@@ -1469,6 +1812,11 @@ namespace AchievementsAPI
 
         private void CancelPage()
         {
+            if (_modPopover != null && _modPopover.activeSelf)
+            {
+                CloseModPopover();
+                return;
+            }
             if ((_detailPanel != null && _detailPanel.activeSelf) ||
                 (_settingsPanel != null && _settingsPanel.activeSelf))
             {
