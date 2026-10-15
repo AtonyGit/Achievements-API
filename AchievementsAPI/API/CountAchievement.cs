@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.SocialPlatforms.Impl;
 
 namespace AchievementsAPI.API;
 
@@ -72,6 +71,7 @@ public class CountAchievement : BaseAchievement
     /// <param name="save">Whether to save to storage immediately. Pass false when batching resets.</param>
     public override void Reset(bool save = true)
     {
+        AchievementToastQueue.Dequeue(this);
         Unlocked = false;
         CurrentValue = 0;
         AchievementStorage.AchievementDataReset(this, 0, false, save);

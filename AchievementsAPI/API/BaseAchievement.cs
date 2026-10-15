@@ -1,4 +1,3 @@
-    using System;
     using System.Reflection;
     using Reactor.Localization.Utilities;
     using UnityEngine;
@@ -164,6 +163,7 @@
         /// <param name="save">Whether to save to storage immediately. Pass false when batching resets.</param>
         public virtual void Reset(bool save = true)
         {
+            AchievementToastQueue.Dequeue(this);
             Unlocked = false;
             AchievementStorage.AchievementDataReset(this, false, save);
         }

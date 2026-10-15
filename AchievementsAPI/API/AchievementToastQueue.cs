@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using System.Linq;
-
 namespace AchievementsAPI.API;
 
 /// <summary>
@@ -74,6 +71,18 @@ public static class AchievementToastQueue
         var bucket = GetBucket(achievement.ToastTiming);
         bucket.RemoveAll(x => x.Achievement.Id == achievement.Id);
         bucket.Add(new QueuedToast(achievement, unlocked));
+    }
+
+    /// <summary>
+    /// Removes any pending toast for the given achievement from every bucket.
+    /// </summary>
+    /// <param name="achievement">The achievement whose queued toasts should be dropped.</param>
+    public static void Dequeue(BaseAchievement achievement)
+    {
+        foreach (var bucket in _queues.Values)
+        {
+            bucket.RemoveAll(x => x.Achievement.Id == achievement.Id);
+        }
     }
 
     /// <summary>

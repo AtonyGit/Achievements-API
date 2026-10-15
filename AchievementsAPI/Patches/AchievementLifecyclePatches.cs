@@ -1,4 +1,3 @@
-using System.Linq;
 using AchievementsAPI.API;
 using HarmonyLib;
 
@@ -43,8 +42,7 @@ public static class AchievementLifecycle
                      .SelectMany(tab => tab.GetAchievements())
                      .OfType<CountAchievement>())
         {
-            // Preserve achievements that were fully earned; only reset in-progress progress.
-            if (!achievement.Unlocked && achievement.CurrentValue != achievement.RequiredValue && predicate(achievement))
+            if (achievement.CurrentValue != achievement.RequiredValue && predicate(achievement))
             {
                 AchievementStorage.AchievementDataReset(achievement);
             }
@@ -57,11 +55,6 @@ public static class AchievementLifecycle
         foreach (var achievement in AchievementsManager.Tabs.SelectMany(tab => tab.GetAchievements()))
         {
             if (achievement.ResetTrigger != trigger) continue;
-
-            // Automatic resets should not strip an already-earned unlock; they only clear a
-            // failed in-game attempt so the next game starts fresh.
-            if (achievement.Unlocked) continue;
-
             achievement.Reset(false);
             any = true;
         }
