@@ -1,3 +1,4 @@
+    using System;
     using System.Reflection;
     using Reactor.Localization.Utilities;
     using UnityEngine;
