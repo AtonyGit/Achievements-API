@@ -16,8 +16,15 @@ public partial class AchievementsAPIPlugin : BasePlugin
 {
     public Harmony Harmony { get; } = new(Id);
 
+    /// <summary>
+    /// The loaded plugin instance.
+    /// </summary>
+    public static AchievementsAPIPlugin Instance { get; private set; } = null!;
+
     public override void Load()
     {
+        Instance = this;
+        AchievementsConfig.Bind(Config);
         AchievementsManager.Initialize();
         Harmony.PatchAll();
     }

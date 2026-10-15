@@ -1,119 +1,140 @@
 ﻿using UnityEngine;
 using System.Collections;
-using Il2CppInterop.Runtime.InteropTypes.Fields;
-using Reactor.Utilities;
-using Reactor.Utilities.Extensions;
-using Rewired.Utils;
-using UnityEngine.UI;
+using System.Linq;
+using TMPro;
 
 namespace AchievementsAPI.API;
+
+/// <summary>
+/// Entry point for showing achievement toasts. Callers build an immutable
+/// <see cref="ToastRequest"/> snapshot which is rendered by <see cref="XboxToast"/>.
+/// </summary>
 public class AchievementToast
 {
-    private static Transform currentToast;
+    /// <summary>
+    /// An immutable snapshot of a toast's contents, captured at enqueue time so
+    /// deferred toasts display the values they were earned with.
+    /// </summary>
+    public sealed record ToastRequest(string Title, string Subtitle, Sprite? Icon, int Rarity, bool IsUnlock, Sprite? BgSprite, string AchievementId);
 
     public static void ShowAndDeleteToast(BaseAchievement achievement)
     {
-        Coroutines.Start(CoShowAndDeleteToast(achievement));
+        Show(new ToastRequest(AchievementsStrings.GetText(AchievementsStrings.ToastUnlocked),
+            achievement.GetName(), achievement.Icon,
+            achievement.Rarity, true, achievement.ToastBgSprite, achievement.Id));
     }
 
     public static void ShowAndDeleteToast(CountAchievement achievement, bool unlocked = false)
     {
-        Coroutines.Start(CoShowAndDeleteToast(achievement, unlocked));
-    }
-
-    private static Transform GetOrCreateToast()
-    {
-        GameObject canvas = GameObject.Find("ToastCanvas");
-        if (canvas == null)
+        string title;
+        string subtitle;
+        if (achievement.Hidden && achievement.HideProgress && !unlocked)
         {
-            var toastCanvas = UnityEngine.Object.Instantiate(Assets.achievementToastCanvasPrefab);
-            return toastCanvas.transform.FindChild("Toast");
+            title = AchievementsStrings.GetText(AchievementsStrings.ToastProgressed);
+            subtitle = AchievementsStrings.GetText(AchievementsStrings.HiddenAchievement);
         }
         else
         {
-            var toastGO = UnityEngine.Object.Instantiate(Assets.achievementToastPrefab);
-            var toast = toastGO.transform;
-            toast.SetParent(canvas.transform);
-            foreach (Transform t in canvas.transform)
-            {
-                t.position += new Vector3(0, -5f, 10f);
-            }
-            return toast;
+            title = AchievementsStrings.GetText(unlocked ? AchievementsStrings.ToastUnlocked : AchievementsStrings.ToastProgressed);
+            subtitle = $"{achievement.GetName()} ({achievement.CurrentValue}/{achievement.RequiredValue})";
         }
-    }
 
-    private static void PopulateToast(Transform toast, Sprite icon, System.Reflection.Assembly assembly, string title, string subtitle)
-    {
-        toast.FindChild("AchievementIcon").gameObject.GetComponent<Image>().sprite = icon;
-        toast.FindChild("AchievementName").gameObject.GetComponent<TMPro.TextMeshProUGUI>().text = title;
-        toast.FindChild("AchievementObtainedText").gameObject.GetComponent<TMPro.TextMeshProUGUI>().text = subtitle;
-    }
-
-    private static IEnumerator CoAnimateAndDestroyToast()
-    {
-        Vector3 onScreenPos = currentToast.localPosition;
-        Vector3 offScreenRight = onScreenPos + new Vector3(1500, 0, 0);
-        
-        TransitionFade.Instance.StartCoroutine(
-            Effects.Slide2D(currentToast, offScreenRight, onScreenPos, 0.7f));
-
-        float time = 0;
-        while (time <= 3)
-        {
-            time += Time.deltaTime;
-            yield return null;
-        }
-        
-        yield return TransitionFade.Instance.StartCoroutine(
-            Effects.Slide2D(currentToast, onScreenPos, offScreenRight, 0.3f));
-
-        time = 0;
-        while (time <= 0.5)
-        {
-            time += Time.deltaTime;
-            yield return null;
-        }
-        
-        currentToast.gameObject.DeepDestroy();
-        yield break;
+        Show(new ToastRequest(title, subtitle, achievement.Icon,
+            achievement.Rarity, unlocked, achievement.ToastBgSprite, achievement.Id));
     }
 
     public static IEnumerator CoShowAndDeleteToast(BaseAchievement achievement)
     {
-        while (!currentToast.IsNullOrDestroyed())
-        {
-            yield return null;
-        }
-
-        currentToast = GetOrCreateToast();
-        PopulateToast(currentToast, achievement.Icon, achievement.Assembly,
-            title: "Achievement Obtained!",
-            subtitle: achievement.Name);
-
-        yield return Coroutines.Start(CoAnimateAndDestroyToast());
+        ShowAndDeleteToast(achievement);
+        yield break;
     }
 
     public static IEnumerator CoShowAndDeleteToast(CountAchievement achievement, bool unlocked = false)
     {
-        while (!currentToast.IsNullOrDestroyed())
+        ShowAndDeleteToast(achievement, unlocked);
+        yield break;
+    }
+
+    /// <summary>
+    /// Enqueues a toast request for display.
+    /// </summary>
+    public static void Show(ToastRequest request)
+    {
+        var icon = SpriteTools.PreserveSprite(request.Icon);
+        var background = SpriteTools.PreserveSprite(request.BgSprite);
+        XboxToast.Enqueue(request with { Icon = icon, BgSprite = background });
+    }
+
+    /// <summary>
+    /// Shows a preview toast, used by the settings panel. Uses the ExampleTab's
+    /// first achievement when available, otherwise a hardcoded preview.
+    /// </summary>
+    public static void ShowPreview()
+    {
+        var achievement = AchievementsManager.Tabs.OfType<ExampleTab>().FirstOrDefault()
+            ?.GetAchievements().FirstOrDefault();
+        if (achievement != null)
         {
-            yield return null;
+            ShowAndDeleteToast(achievement);
+            return;
         }
 
-        currentToast = GetOrCreateToast();
-        if (achievement.Hidden && achievement.HideProgress && !unlocked)
-        {
-            PopulateToast(currentToast, achievement.Icon, achievement.Assembly,
-                title: "Achievement Progressed!",
-                subtitle: $"Hidden Achievement");
-        }
-        else
-        {
-            PopulateToast(currentToast, achievement.Icon, achievement.Assembly,
-                title: unlocked ? "Achievement Obtained!" : "Achievement Progressed!",
-                subtitle: $"{achievement.Name} ({achievement.CurrentValue}/{achievement.RequiredValue})");
-        }
+        Show(new ToastRequest(AchievementsStrings.GetText(AchievementsStrings.ToastUnlocked),
+            AchievementsStrings.GetText(AchievementsStrings.PreviewAchievement),
+            SpriteTools.LoadSpriteFromPath("AchievementsAPI.Resources.ExampleIcon.png", typeof(AchievementToast).Assembly, 100),
+            0, true, null, "preview"));
+    }
 
-        yield return Coroutines.Start(CoAnimateAndDestroyToast());
+    private static AudioSource? _chimeSource;
+
+    /// <summary>
+    /// Plays the unlock chime, if enabled in the config, through a dedicated
+    /// <see cref="AudioSource"/> so the configured volume is honored.
+    /// </summary>
+    public static void PlayUnlockSound()
+    {
+        PlayUnlockSound(0);
+    }
+
+    /// <summary>
+    /// Plays the unlock chime for the given rarity: the rare chime when the
+    /// rarity is above 0 (falling back to the lock chime if it failed to
+    /// load), the standard lock chime otherwise.
+    /// </summary>
+    public static void PlayUnlockSound(int rarity)
+    {
+        if (!AchievementsConfig.ToastSoundEnabled.Value) return;
+        var clip = rarity > 0 ? Assets.RareChime ?? Assets.LockChime : Assets.LockChime;
+        if (clip == null) return;
+        // Unity null check: a destroyed source is recreated
+        if (_chimeSource == null) _chimeSource = CreateChimeSource();
+        _chimeSource.PlayOneShot(clip, AchievementsConfig.ToastVolume.Value);
+    }
+
+    private static AudioSource CreateChimeSource()
+    {
+        var go = new GameObject("AchievementSound") { hideFlags = HideFlags.HideInHierarchy };
+        UnityEngine.Object.DontDestroyOnLoad(go);
+        var source = go.AddComponent<AudioSource>();
+        source.playOnAwake = false;
+        source.volume = 1f;
+        source.spatialBlend = 0f;
+        return source;
+    }
+
+    private static TMP_FontAsset? _font;
+
+    /// <summary>
+    /// Resolves the TMP font used by toasts: the font from the bundle toast prefab,
+    /// falling back to <see cref="TMP_Settings.defaultFontAsset"/>.
+    /// </summary>
+    public static TMP_FontAsset? ResolveFont()
+    {
+        if (_font != null) return _font;
+        var tmp = Assets.achievementToastPrefab != null
+            ? Assets.achievementToastPrefab.transform.Find("AchievementName")?.GetComponent<TextMeshProUGUI>()
+            : null;
+        _font = tmp != null && tmp.font != null ? tmp.font : TMP_Settings.defaultFontAsset;
+        return _font;
     }
 }

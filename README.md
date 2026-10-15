@@ -1,136 +1,191 @@
-﻿An Among Us API that allows mods to add their own achievements!
+﻿<div align="center">
 
-# Features:
-- Easy implementation
-- Progressable achievements
-- An achievement menu
-- Lots of customization (coming soon)
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/672fa262-1b7c-416a-9ba4-e26f4c82a10b" />
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/fc0b6b90-e3d1-4753-92b3-a348b8add78f" />
+# Achievements API
 
-For support, or just chatting, join the [discord](https://discord.gg/RJyNm9UaT7)!
+An Among Us modding API that lets any mod register custom achievements, with a full in-game menu and Xbox-style toast notifications.
 
->[!NOTE]
->**This mod is not affiliated with Among Us or Innersloth LLC, and the content contained therein is not endorsed or otherwise sponsored by Innersloth LLC. Portions of the materials contained herein are property of Innersloth LLC. © Innersloth LLC.**
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+[![.NET 6](https://img.shields.io/badge/.NET-6.0-512BD4)](https://dotnet.microsoft.com)
+[![Discord](https://img.shields.io/badge/Chat-on%20Discord-5865F2?logo=discord&logoColor=white)](https://discord.gg/RJyNm9UaT7)
 
-> Will probably hopefully be used in:
-> - Stargazer
-> - NewMod
+</div>
 
-> Thanks [pix](https://github.com/wanderingpix) for the help!
+## Features
 
-# Get Started
-To start using Achievements API, you need to:
-- Add a reference to Mira API either through a DLL or project reference.
-- Add a BepInDependency or SoftDependency on your plugin class like this:
-> `[BepInDependency(AchievementsAPIPlugin.Id)]`\
-> `[BepInDependency(AchievementsAPIPlugin.Id, BepInDependency.DependencyFlags.SoftDependency)]`
+- Easy implementation: declare achievements as properties on a tab and they are picked up automatically
+- Progressable achievements with persistent counters
+- Hidden achievements, rarities and Skeld Points
+- An in-game menu with categories, details pages and toast settings
+- Xbox-style toast notifications with sound, animations and swipe-away support
+- Full mouse, keyboard and controller support
+- Encrypted save data that survives updates
 
-## Creating An Achievements Tab
-To have a tab for your achievements to be stored in, you need to create a class implementing `AchievementsTab`.\
-`AchievementsTab` has the following members that need to be implemented for your Achievements to function correctly:
-| Member                       | Required | Default                                | Description                                                                                                    |
-|------------------------------|-----|---------------------------------------------|----------------------------------------------------------------------------------------------------------------|
-| `string Name { get; }`       | Yes | —                                           | The name of the Achievements Tab, displayed in UI.                                                             |
-| `bool IsSelectable { get; }` | No  | `true`                                      | Whether the tab should be selectable in the Achievements Menu. Handy for custom UI's or internal achievements. |
-| `Color GetTabColor()`        | No  | `new Color32(255, 255, 150, 255)`                            | A method which gets the color of the Achievements Menu background when switching to this tab. |
-| `string IconPath { get; }`   | No  | `"AchievementsAPI.Resources.ExampleIcon.png"`                                  | The path to the tab's icon, for if you don't have it as a Sprite.           |
-| `Sprite GetIcon()`           | No  | `SpriteTools.LoadSpriteFromPath(IconPath, Assembly.GetCallingAssembly(), 100)` | A method which gets the icon of the tab, used for its icon in the Achievements Menu. |
+## Screenshots
 
-### Example:
-```cs
-using AchievementsAPI.API;
-using UnityEngine;
+<div align="center">
+  <img width="80%" alt="The achievements menu, with the Skeld Points card, categories and achievement rows" src="Images/Menu.png" />
+  <br />
+  <sub>The main achievements menu, with categories, progress bars and the Skeld Points card.</sub>
+  <br /><br />
+  <table>
+    <tr>
+      <td align="center">
+        <img alt="An achievement progress toast shown in game" src="Images/ExampleAchievement.png" /><br />
+        <sub>A toast popping up mid-game as progress is made.</sub>
+      </td>
+      <td align="center">
+        <img alt="The toast settings page with a preview toast" src="Images/Settings.png" /><br />
+        <sub>Toast settings, editable in game with a live preview.</sub>
+      </td>
+    </tr>
+  </table>
+</div>
 
-namespace TownOfExtra.Achievements;
+## Getting started
 
-public class ExampleAchievementsTab : AchievementsTab
+Create a class that extends `AchievementsTab` and declare your achievements as properties. Tabs are picked up automatically when your plugin loads. Names and descriptions are Reactor `StringNames` (see [Localization](#localization)):
+
+```csharp
+using Reactor.Localization.Utilities;
+
+public class MyTab : AchievementsTab
 {
-    public override string Name => "Example";
-    public override bool IsSelectable => true;
-    
-    public override Color GetTabColor() => return new Color32(255, 255, 150, 255);
-    public override Sprite GetIcon() => "AchievementsAPI.Resources.ExampleIcon.png";
+    private static readonly StringNames tabName = CustomStringName.CreateAndRegister("My Mod");
+    private static readonly StringNames firstWin = CustomStringName.CreateAndRegister("First Win");
+    private static readonly StringNames firstWinDesc = CustomStringName.CreateAndRegister("Win a game.");
+    private static readonly StringNames busyBee = CustomStringName.CreateAndRegister("Busy Bee");
+    private static readonly StringNames busyBeeDesc = CustomStringName.CreateAndRegister("Complete 10 tasks.");
+
+    public override StringNames Name => tabName;
+    public override string IconPath => "MyMod.Resources.Icon.png";
+
+    public BaseAchievement FirstWin { get; set; } =
+        new(firstWin, firstWinDesc, "MyMod.Resources.FirstWin.png", rarity: 1);
+
+    public CountAchievement TenTasks { get; set; } =
+        new(busyBee, busyBeeDesc, "MyMod.Resources.Tasks.png", 0, 10);
 }
 ```
 
-## Creating Achievements
-### Single Unlock Achievements:
-For each single unlock achievement (requires one thing to unlock, no progress) you need to create a `BaseAchievement`.
-`BaseAchievement` has the following members that need to be implemented for your Achievement to function correctly:
-| Member | Required | Default | Description |
-|---|---|---|---|
-| `string Name` | Yes | — | The achievement's name. |
-| `string Description` | Yes | — | The achievement's description. |
-| `string IconPath` | Yes* | — | The achievement's icon's path. *Use this constructor overload or provide a `Sprite Icon` directly. |
-| `Sprite Icon` | Yes* | — | The achievement's icon. *Use this constructor overload or provide an `IconPath` directly. |
-| `int Rarity` | No | `0` | The achievement's rarity: `0` = common (default), `1` = rare (blue), `2` = epic (purple), `3` = legendary (yellow). |
-| `bool Hidden` | No | `false` | Whether the achievement is hidden or not (hidden achievements get the default icon and have their name and description set to "Hidden Achievement" until unlocked). |
-| `bool HideRarity` | No | `true` | Whether to hide the achievement's rarity (if the achievement is hidden). |
-| `Assembly? Assembly` | No | `Assembly.GetCallingAssembly()` | The assembly associated with the achievement, used to generate its `Id`. |
-| `bool Unlocked { get; }` | No | `false` | Whether the achievement has been unlocked. |
-| `string Id { get; }` | No | `Assembly.GetName().Name + "_" + Name` | The achievement's unique identifier. |
-| `void Unlock(bool showOnUI = true, bool doStorageUpdate = true)` | No | — | Unlocks the achievement. `showOnUI` shows an unlock animation on the HUD. `doStorageUpdate` indicates whether to update storage again, used to make `CountAchievements` properly update. |
+Unlock an achievement with `achievement.Unlock()`. For a `CountAchievement`, use `Increment(amount)` or `SetValue(value)`; it unlocks on its own once `RequiredValue` is reached.
 
-**Example:**
-```cs
-public BaseAchievement Welcome { get; set; } = new BaseAchievement(
-    "Welcome!", "Launch the game with Achievements API installed.", "AchievementsAPI.Resources.ExampleIcon.png"
-);
+The icon can be an embedded resource path or a `Sprite`. Constructor options cover rarity (0 common, 1 rare, 2 epic, 3 legendary), `hidden`, `hideRarity`, and for count achievements `hideProgress` and how progress persists (`AchPersistence`).
+
+## Localization
+
+Tab names, achievement names and descriptions, and category names are stored as Reactor `StringNames`, not raw strings. The menu and toasts resolve them through the game's translation system (patched by Reactor's `LocalizationManager`) every time they render, so translations kick in automatically — no need to modify achievements at runtime.
+
+Pass any `StringNames` you like:
+
+- a built-in game one, e.g. `StringNames.Crewmate`;
+- one made with `CustomStringName.CreateAndRegister("...")`, which registers the given text as the hard-coded English fallback;
+- or one backed by a `Reactor.Localization.LocalizationProvider` (your own, or one from an API like MiraAPI) for real translations.
+
+Plain `string` constructors are still available and register the text as a hard-coded English string the same way. `AchievementsStrings` holds the API's own labels (toast titles, filters, categories, ...) as `StringNames` you can translate too.
+
+Resolve text in code with `AchievementsStrings.GetText(stringName)` or the `GetName()`/`GetDescription()` helpers on achievements. The `Id` used for save files never depends on the language: for string-based achievements it contains the raw text, for `StringNames`-based ones the enum value — so create your `StringNames` deterministically (e.g. all at plugin load) to keep saves stable.
+
+### Soft-registered achievements
+
+Register achievements at runtime without declaring properties on a tab:
+
+```csharp
+var tab = new SoftAchievementsTab(CustomStringName.CreateAndRegister("My Tab"));
+AchievementsManager.RegisterTab(tab);
+tab.RegisterAchievement(myAchievement);
 ```
 
-### Count Unlock Achievements:
-For each count unlock achievement (requires progression to unlock) you need to create a `CountAchievement`.
-`CountAchievement` has the following members that need to be implemented for your Achievement to function correctly:
-| Member | Required | Default | Description |
-|---|---|---|---|
-| `int CurrentValue` | Yes | — | The current progress for this achievement. |
-| `int RequiredValue` | Yes | — | The required progress to unlock this achievement. |
-| `bool ProgressPersists` | No | `true` | Defines if the progress persists between games. |
-| `int Rarity` | No | `0` | The achievement's rarity: `0` = common (default), `1` = rare (blue), `2` = epic (purple), `3` = legendary (yellow). |
-| `bool Hidden` | No | `false` | Whether the achievement is hidden or not (hidden achievements get the default icon and have their name and description set to "Hidden Achievement" until unlocked). |
-| `bool HideRarity` | No | `true` | Whether to hide the achievement's rarity (if the achievement is hidden). |
-| `bool HideProgress` | No | `false` | Whether to hide the achievement's progress (if the achievement is hidden). |
-| `void Increment(int count, bool showOnUI = true)` | No | — | Increments the progress of this achievement by `count`. `showOnUI` shows an unlock animation on the HUD. |
-| `void SetValue(int value, bool showOnUI = true)` | No | — | Sets the progress of this achievement to `value`. `showOnUI` shows an unlock animation on the HUD. |
+Use `AchievementsManager.GetTab(stringName)` to look up a tab and `tab.GetAchievements()` to enumerate everything on it.
 
-**Example:**
-```cs
-public CountAchievement Taskmaster { get; set; } = new CountAchievement(
-    "Taskmaster", "Do 5 tasks", "AchievementsAPI.Resources.ExampleIcon.png", 0, 5
-);
-```
+### Categories
 
-## Awarding Achievements
-To award an achievement, you need to find your achievements tab, via `AchievementsTabSingleton<ToexAchievementsTab>.Instance`.\
-Once you have this instance, you can use it to access your achievements:
+Every tab belongs to a category (`CategoryId`, defaulting to General). Crewmate, Impostor and Neutral are built in, and mods can add their own with `AchievementsManager.GetOrCreateCategory(id, name, icon, order)`. Individual achievements can override their tab's category through `Category`.
 
-### Unlocking `BaseAchievement`s
-To unlock a `BaseAchievement`, you can use `achievement.Unlock();`, for example:
-`AchievementsTabSingleton<ToexAchievementsTab>.Instance.Welcome.Unlock();`
+### Hidden achievements
 
-### Progressing `CountAchievement`s
-To unlock a `CountAchievement`, you can use `achievement.Increment(Amount);` or `chievement.SetValue(Amount);`, for example:
-`AchievementsTabSingleton<ToexAchievementsTab>.Instance.Taskmaster.Increment(1);` would add 1 to the achievement progress\
-and\
-`AchievementsTabSingleton<ToexAchievementsTab>.Instance.Taskmaster.SetValue(10);` would immediately unlock the achievement
+Hidden achievements show as "Hidden Achievement" in the menu and in progress toasts until they are unlocked. Set `HideRarity` to also hide the rarity tint and `HideProgress` to hide the progress bar. Hidden achievements are worth double Skeld Points.
 
-**Examples:**
-```cs
-// Unlocking BaseAchievements
-[HarmonyPatch(typeof(MainMenuManager), nameof(MainMenuManager.Awake))]
-[HarmonyPatch(Priority.Last)]
-[HarmonyPostfix]
-public static void OnMainMenuAwakePostfix(MainMenuManager __instance)
-{
-    AchievementsTabSingleton<ExampleTab>.Instance.Welcome.Unlock();
-}
+### Skeld Points
 
-// Progressing CountAchievements
-[HarmonyPostfix]
-[HarmonyPatch(nameof(PlayerControl.CompleteTask))]
-public static void PlayerCompleteTaskPostfix(PlayerControl __instance, uint idx)
-{
-    AchievementsTabSingleton<ExampleTab>.Instance.Taskmaster.Increment(1);
-}
-```
+Each achievement is worth Skeld Points based on rarity (10 common / 25 rare / 50 epic / 100 legendary); override `BasePoints` or `PointsMultiplier` to customize. The menu shows earned and total score next to a Gamerscore-style emblem, plus per-rarity completion, and each row shows its value in a pill.
+
+### Reset triggers
+
+Set `ResetTrigger` on any achievement to automatically reset it:
+
+- `AchResetTrigger.Never` (default), `OnGameEnd`, `OnMeetingStart`, `OnMeetingEnd`, `OnRoundStart`
+
+Resetting clears `Unlocked` (and `CurrentValue` for `CountAchievement`) and writes through to storage. You can also call `achievement.Reset()` manually.
+
+### Deferred toasts
+
+Set `ToastTiming` to control when an achievement's toast appears:
+
+- `AchToastTiming.Immediate` (default), `OnRoundStart`, `OnMeetingStart`, `OnMeetingEnd`, `OnGameEnd`
+
+Deferred toasts are queued and flushed at the matching game event, shown one at a time.
+
+## The menu
+
+The achievements button on the main menu opens a full-screen menu that lists every registered achievement grouped by mod. It has:
+
+- Filters for All, Completed, In Progress and Locked
+- A category column with paging for mods that register many categories
+- A details page for each achievement with its unlock time
+- A settings page for toasts
+- A stats card with Skeld Points and per-rarity completion
+
+While the menu or a toast has the pointer, clicks do not reach the game UI behind it.
+
+### Controller and keyboard
+
+The menu can be driven entirely without a mouse. A focus ring shows the current selection and the list scrolls to keep it visible.
+
+| Action | Controller | Keyboard |
+| --- | --- | --- |
+| Move | Left stick / D-pad | Arrow keys |
+| Select | A | Enter / Space |
+| Back / Close | B | Escape |
+| Previous / next category | LB / RB | Q / E |
+| Previous / next filter | LT / RT | Shift+Tab / Tab |
+
+Moving the mouse switches back to pointer mode.
+
+## Toasts
+
+Toasts slide in from the configured screen edge and play a chime (a different one for rare and above). They can be swiped away sideways. Middle-clicking a toast opens the achievements menu; on a controller hold Y while the toast is visible. Trackpad users can turn on `TrackpadMode` to open the menu with a normal click instead.
+
+### Configuration
+
+Toast settings live in the "Toasts" section of the plugin config and can also be changed from the Settings page in the menu:
+
+| Setting | Default | Description |
+| --- | --- | --- |
+| `ToastsEnabled` | `true` | Show toast popups |
+| `ToastDuration` | `4.4` | Seconds a toast stays fully visible |
+| `RareToastDuration` | `6.0` | Same, for rarity above common |
+| `ToastSoundEnabled` | `true` | Play the unlock chime |
+| `ToastVolume` | `0.5` | Chime volume |
+| `Position` | `BottomCenter` | Screen corner or edge the toast uses |
+| `TrackpadMode` | `false` | Open the menu from a toast with a normal click |
+
+## Storage
+
+Progress is saved to `AchievementsAPIData/achievements.json` in the game's persistent data folder, encrypted and signed so it cannot be edited by hand. Unlocks are written immediately; progress updates are batched so frequent increments do not cause stutter.
+
+## Building
+
+The solution targets .NET 6 and builds with `dotnet build AchievementsAPI.sln`. CI runs `build.cake` and uploads `AchievementsAPI.dll` as an artifact.
+
+## Credits
+
+- **satire ([rewalo](https://github.com/rewalo))**: UI design, UI code, toast design, toast code and animations, optimizations and much more. The mod would not look or feel the way it does without him.
+- **[atony](https://github.com/AtonyGit)**: UI design and achievements system improvements.
+- **[pix](https://github.com/wanderingpix)**: for the help along the way.
+
+## Support
+
+For support, or just chatting, join the [Discord](https://discord.gg/RJyNm9UaT7)!
+
+> [!NOTE]
+> This mod is not affiliated with Among Us or Innersloth LLC, and the content contained therein is not endorsed or otherwise sponsored by Innersloth LLC. Portions of the materials contained herein are property of Innersloth LLC. © Innersloth LLC.
