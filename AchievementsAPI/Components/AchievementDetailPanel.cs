@@ -1,5 +1,6 @@
 using System.Linq;
 using AchievementsAPI.API;
+using Reactor.Utilities;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
@@ -191,14 +192,25 @@ public static class AchievementDetailPanel
                 16f, ValueColor, FontStyles.Bold);
             StretchTop(caption.rectTransform, 18f, -14f, 22f, -18f);
 
+            // Same label rules as the list rows: count achievements show
+            // "pct%  cur/req", one-shots show a teal 100% once unlocked.
             var count = achievement as CountAchievement;
             var isCount = count != null && count.RequiredValue > 0;
             var valueText = isCount
                 ? $"{Percent(count.CurrentValue, count.RequiredValue)}%  {count.CurrentValue}/{count.RequiredValue}"
-                : achievement.Unlocked ? "100%" : "0%";
-            var value = CreateText(cardRect, "Value", valueText,
-                20f, Color.white, FontStyles.Normal, TextAlignmentOptions.MidlineRight);
-            StretchTop(value.rectTransform, 18f, -14f, 22f, -18f);
+                : achievement.Unlocked ? "100%" : null;
+            if (valueText != null)
+            {
+                // Same size and 2px gap above the bar as the list rows
+                var value = CreateText(cardRect, "Value", valueText, 16f,
+                    isCount ? (Color) ValueColor : AccentHover, FontStyles.Normal, TextAlignmentOptions.MidlineRight);
+                value.overflowMode = TextOverflowModes.Overflow;
+                var valueRect = value.rectTransform;
+                valueRect.anchorMin = valueRect.anchorMax = new Vector2(1f, 1f);
+                valueRect.pivot = new Vector2(1f, 0f);
+                valueRect.anchoredPosition = new Vector2(-18f, -54f);
+                valueRect.sizeDelta = new Vector2(300f, 20f);
+            }
 
             var bar = CreateProgressBar(cardRect, ProgressColor(showRarity ? achievement.Rarity : 0), out var fill);
             bar.anchorMin = new Vector2(0f, 1f);
@@ -206,8 +218,10 @@ public static class AchievementDetailPanel
             bar.pivot = new Vector2(0f, 1f);
             bar.offsetMin = new Vector2(18f, -56f - 14f);
             bar.offsetMax = new Vector2(-18f, -56f);
-            SetProgress(fill, isCount ? (float) count.CurrentValue / count.RequiredValue
-                : achievement.Unlocked ? 1f : 0f);
+            var target = isCount ? Mathf.Clamp01((float) count.CurrentValue / count.RequiredValue)
+                : achievement.Unlocked ? 1f : 0f;
+            SetProgress(fill, 0f);
+            Coroutines.Start(CoFill(fill, target));
         }
 
         var back = CreateButton(rect, AchievementsStrings.GetText(AchievementsStrings.Back), Vector2.zero, "Back");

@@ -91,8 +91,10 @@ public static class XboxToast
         _ = Assets.RareChime;
         MenuUi.Prewarm();
 
+        // Fully transparent: it only exists to push the glyphs into the atlas,
+        // and a default-sized text rect would otherwise flash on screen
         var warm = CreateText(_canvas!.transform, "Prewarm",
-            AchievementsStrings.GetText(AchievementsStrings.ToastUnlocked) + " 0123456789/%() x", 22f, Color.white);
+            AchievementsStrings.GetText(AchievementsStrings.ToastUnlocked) + " 0123456789/%() x", 22f, Color.clear);
         warm.ForceMeshUpdate();
         yield return null;
         warm.gameObject.Destroy();

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using AchievementsAPI.API;
 using Reactor.Utilities.Extensions;
 using TMPro;
@@ -437,6 +438,20 @@ public static class MenuUi
     }
 
     internal static void SetProgress(RectTransform fill, float t) => fill.anchorMax = new Vector2(Mathf.Clamp01(t), 1f);
+
+    internal static IEnumerator CoFill(RectTransform fill, float target, float delay = 0f, float duration = 0.45f)
+    {
+        for (var t = -delay; t < duration; t += Time.unscaledDeltaTime)
+        {
+            if (fill == null) yield break;
+            if (t >= 0f) SetProgress(fill, EaseOutCubic(Mathf.Clamp01(t / duration)) * target);
+            yield return null;
+        }
+        if (fill == null) yield break;
+        SetProgress(fill, target);
+    }
+
+    internal static float EaseOutCubic(float t) => 1f - Mathf.Pow(1f - t, 3f);
 
     internal static string FormatUnlockTime(DateTime utc) => utc.ToLocalTime().ToString("g");
 

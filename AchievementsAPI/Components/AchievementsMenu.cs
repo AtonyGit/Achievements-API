@@ -817,7 +817,7 @@ namespace AchievementsAPI
             bar.anchorMax = new Vector2(1f, 1f);
             bar.offsetMin = new Vector2(20f, -144f);
             bar.offsetMax = new Vector2(-20f, -134f);
-            Coroutines.Start(CoFill(fill, all.Count > 0 ? (float) done / all.Count : 0f, 0f, 0.5f));
+            Coroutines.Start(MenuUi.CoFill(fill, all.Count > 0 ? (float) done / all.Count : 0f, 0f, 0.5f));
 
             // Row 3: per-rarity completion as a 2x2 grid of labeled chips
             // (legendary, epic, rare, common; rarities with none are skipped)
@@ -1952,21 +1952,6 @@ namespace AchievementsAPI
             if (row.FillRect == null || row.FillGen != gen) yield break;
             SetProgress(row.FillRect, target);
         }
-
-        [HideFromIl2Cpp]
-        private IEnumerator CoFill(RectTransform fill, float target, float delay = 0f, float duration = 0.45f)
-        {
-            for (var t = -delay; t < duration; t += Time.unscaledDeltaTime)
-            {
-                if (fill == null) yield break;
-                if (t >= 0f) SetProgress(fill, EaseOutCubic(Mathf.Clamp01(t / duration)) * target);
-                yield return null;
-            }
-            if (fill == null) yield break;
-            SetProgress(fill, target);
-        }
-
-        private static float EaseOutCubic(float t) => 1f - Mathf.Pow(1f - t, 3f);
 
         private static float EaseOutBack(float t)
         {
