@@ -1,41 +1,41 @@
-﻿<div align="center">
+<div align="center">
 
 # Achievements API
 
-An Among Us modding API that lets any mod register custom achievements, with a full in-game menu and Xbox-style toast notifications.
+An Among Us API for registering mod achievements, tracking progress, and displaying in-game achievement menus and toast notifications.
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![.NET 6](https://img.shields.io/badge/.NET-6.0-512BD4)](https://dotnet.microsoft.com)
-[![Discord](https://img.shields.io/badge/Chat-on%20Discord-5865F2?logo=discord&logoColor=white)](https://discord.gg/RJyNm9UaT7)
+[![Discord](https://img.shields.io/badge/Discord-Join-5865F2?logo=discord&logoColor=white)](https://discord.gg/RJyNm9UaT7)
 
 </div>
 
 ## Features
 
-- Easy implementation: declare achievements as properties on a tab and they are picked up automatically
-- Progressable achievements with persistent counters
-- Hidden achievements, rarities and Skeld Points
-- An in-game menu with categories, details pages and toast settings
-- Xbox-style toast notifications with sound, animations and swipe-away support
-- Full mouse, keyboard and controller support
-- Encrypted save data that survives updates
+- Property-based or runtime achievement registration
+- Progress counters with persistent state
+- Hidden achievements, rarity tiers, and Skeld Points
+- In-game menu with categories, filters, details, and toast settings
+- Animated toast notifications with sound and swipe-to-dismiss
+- Mouse, keyboard, and controller support
+- Encrypted, signed save data
 
 ## Screenshots
 
 <div align="center">
-  <img width="80%" alt="The achievements menu, with the Skeld Points card, categories and achievement rows" src="Images/Menu.png" />
+  <img width="80%" alt="Achievements menu with categories, progress bars, and Skeld Points" src="Images/Menu.png" />
   <br />
-  <sub>The main achievements menu, with categories, progress bars and the Skeld Points card.</sub>
+  <sub>Achievement menu</sub>
   <br /><br />
   <table>
     <tr>
       <td align="center">
-        <img alt="An achievement progress toast shown in game" src="Images/ExampleAchievement.png" /><br />
-        <sub>A toast popping up mid-game as progress is made.</sub>
+        <img alt="Achievement progress toast" src="Images/ExampleAchievement.png" /><br />
+        <sub>Progress notification</sub>
       </td>
       <td align="center">
-        <img alt="The toast settings page with a preview toast" src="Images/Settings.png" /><br />
-        <sub>Toast settings, editable in game with a live preview.</sub>
+        <img alt="Toast settings page with preview" src="Images/Settings.png" /><br />
+        <sub>Toast settings and preview</sub>
       </td>
     </tr>
   </table>
@@ -57,9 +57,9 @@ public class MyPlugin : BasePlugin
 
 public class MyTab : AchievementsTab
 {
-    private static readonly StringNames tabName = CustomStringName.CreateAndRegister("My Mod");
+    private static readonly StringNames TabName = CustomStringName.CreateAndRegister("My Mod");
 
-    public override StringNames Name => tabName;
+    public override StringNames Name => TabName;
     public override string IconPath => "MyMod.Resources.Icon.png";
 
     public BaseAchievement FirstWin { get; set; } =
@@ -85,19 +85,19 @@ Unlock with `achievement.Unlock()`; count achievements unlock on their own via `
 - [Storage](docs/storage.md): save file format and encryption
 - [Building and internals](docs/building.md): project layout, CI, the developer plugin
 
-## Building
+## Build
 
 The solution targets .NET 6: `dotnet build AchievementsAPI.sln`. CI runs `build.cake` and uploads `AchievementsAPI.dll` as an artifact.
 
 ## Credits
 
-- **satire ([rewalo](https://github.com/rewalo))**: UI design, UI code, toast design, toast code and animations, optimizations and much more. The mod would not look or feel the way it does without him.
-- **[atony](https://github.com/AtonyGit)**: UI design and achievements system improvements.
-- **[pix](https://github.com/wanderingpix)**: for the help along the way.
+- **satire ([rewalo](https://github.com/rewalo))**: UI and toast design/implementation, animations, and optimizations
+- **[atony](https://github.com/AtonyGit)**: UI design and achievement-system improvements
+- **[pix](https://github.com/wanderingpix)**: Additional help
 
 ## Support
 
-For support, or just chatting, join the [Discord](https://discord.gg/RJyNm9UaT7)!
+Join the [Discord server](https://discord.gg/RJyNm9UaT7) for support and discussion.
 
 > [!NOTE]
-> This mod is not affiliated with Among Us or Innersloth LLC, and the content contained therein is not endorsed or otherwise sponsored by Innersloth LLC. Portions of the materials contained herein are property of Innersloth LLC. © Innersloth LLC.
+> This mod is not affiliated with or endorsed by Innersloth LLC. Portions of the materials are property of Innersloth LLC. © Innersloth LLC.
