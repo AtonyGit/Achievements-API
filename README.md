@@ -157,6 +157,21 @@ Use `AchievementsManager.GetTab(stringName)` to look up a tab and `tab.GetAchiev
 
 Every tab belongs to a category (`CategoryId`, defaulting to General). Crewmate, Impostor and Neutral are built in, and mods can add their own with `AchievementsManager.GetOrCreateCategory(id, name, icon, order)`. Individual achievements can override their tab's category through `Category`.
 
+### Sub-icon badges
+
+Any achievement can show a small secondary sprite (e.g. a role icon) layered on its row in the achievements menu — no subclassing needed:
+
+```csharp
+tab.RegisterAchievement(new RuntimeAchievement("Hitman", "Prophecy your target's death.", sprite)
+{
+    SubIcon = roleIconSprite,
+    SubIconOffset = new Vector3(-40f, -70f),
+    SubIconScale = new Vector3(0.6f, 0.6f, 1f)
+});
+```
+
+`SubIcon`, `SubIconOffset` and `SubIconScale` are plain settable fields on `BaseAchievement`; subclass-based mods can still override `MenuSubIcon`/`MenuSubIconOffset`/`MenuSubIconScale` for dynamic behavior (e.g. lazily loading bundle assets).
+
 ### Hidden achievements
 
 Hidden achievements show as "Hidden Achievement" in the menu and in progress toasts until they are unlocked. Set `HideRarity` to also hide the rarity tint and `HideProgress` to hide the progress bar. Hidden achievements are worth double Skeld Points.
