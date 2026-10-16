@@ -23,42 +23,42 @@ public class CountAchievement : BaseAchievement
     /// Whether to hide the achievement's progress (if the achievement is hidden)
     /// </summary>
     public bool HideProgress;
-    public CountAchievement(StringNames name, StringNames description, string iconPath, int currentValue, int requiredValue, AchPersistence progressPersists = AchPersistence.ThroughoutSessions, int rarity = 0, bool hidden = false, bool hideRarity = false, bool hideProgress = false) : base(name, description, iconPath, rarity, hidden, hideRarity, System.Reflection.Assembly.GetCallingAssembly())
+    public CountAchievement(StringNames name, StringNames description, string iconPath, int currentValue, int requiredValue, AchPersistence progressPersists = AchPersistence.ThroughoutSessions, int rarity = 0, bool hidden = false, bool hideRarity = false, bool hideProgress = false, System.Reflection.Assembly? assembly = null) : base(name, description, iconPath, rarity, hidden, hideRarity, assembly ?? System.Reflection.Assembly.GetCallingAssembly())
     {
         CurrentValue = currentValue;
         RequiredValue = requiredValue;
         ProgressPersists = progressPersists;
         HideProgress = hideProgress;
     }
-    public CountAchievement(StringNames name, StringNames description, Sprite icon, int currentValue, int requiredValue, AchPersistence progressPersists = AchPersistence.ThroughoutSessions, int rarity = 0, bool hidden = false, bool hideRarity = false, bool hideProgress = false) : base(name, description, icon, rarity, hidden, hideRarity, System.Reflection.Assembly.GetCallingAssembly())
+    public CountAchievement(StringNames name, StringNames description, Sprite icon, int currentValue, int requiredValue, AchPersistence progressPersists = AchPersistence.ThroughoutSessions, int rarity = 0, bool hidden = false, bool hideRarity = false, bool hideProgress = false, System.Reflection.Assembly? assembly = null) : base(name, description, icon, rarity, hidden, hideRarity, assembly ?? System.Reflection.Assembly.GetCallingAssembly())
     {
         CurrentValue = currentValue;
         RequiredValue = requiredValue;
         ProgressPersists = progressPersists;
         HideProgress = hideProgress;
     }
-    public CountAchievement(StringNames name, StringNames description, int currentValue, int requiredValue, AchPersistence progressPersists = AchPersistence.ThroughoutSessions, int rarity = 0, bool hidden = false, bool hideRarity = false, bool hideProgress = false) : base(name, description, rarity, hidden, hideRarity, System.Reflection.Assembly.GetCallingAssembly())
+    public CountAchievement(StringNames name, StringNames description, int currentValue, int requiredValue, AchPersistence progressPersists = AchPersistence.ThroughoutSessions, int rarity = 0, bool hidden = false, bool hideRarity = false, bool hideProgress = false, System.Reflection.Assembly? assembly = null) : base(name, description, rarity, hidden, hideRarity, assembly ?? System.Reflection.Assembly.GetCallingAssembly())
     {
         CurrentValue = currentValue;
         RequiredValue = requiredValue;
         ProgressPersists = progressPersists;
         HideProgress = hideProgress;
     }
-    public CountAchievement(string name, string description, string iconPath, int currentValue, int requiredValue, AchPersistence progressPersists = AchPersistence.ThroughoutSessions, int rarity = 0, bool hidden = false, bool hideRarity = false, bool hideProgress = false) : base(name, description, iconPath, rarity, hidden, hideRarity, System.Reflection.Assembly.GetCallingAssembly())
+    public CountAchievement(string name, string description, string iconPath, int currentValue, int requiredValue, AchPersistence progressPersists = AchPersistence.ThroughoutSessions, int rarity = 0, bool hidden = false, bool hideRarity = false, bool hideProgress = false, System.Reflection.Assembly? assembly = null) : base(name, description, iconPath, rarity, hidden, hideRarity, assembly ?? System.Reflection.Assembly.GetCallingAssembly())
     {
         CurrentValue = currentValue;
         RequiredValue = requiredValue;
         ProgressPersists = progressPersists;
         HideProgress = hideProgress;
     }
-    public CountAchievement(string name, string description, Sprite icon, int currentValue, int requiredValue, AchPersistence progressPersists = AchPersistence.ThroughoutSessions, int rarity = 0, bool hidden = false, bool hideRarity = false, bool hideProgress = false) : base(name, description, icon, rarity, hidden, hideRarity, System.Reflection.Assembly.GetCallingAssembly())
+    public CountAchievement(string name, string description, Sprite icon, int currentValue, int requiredValue, AchPersistence progressPersists = AchPersistence.ThroughoutSessions, int rarity = 0, bool hidden = false, bool hideRarity = false, bool hideProgress = false, System.Reflection.Assembly? assembly = null) : base(name, description, icon, rarity, hidden, hideRarity, assembly ?? System.Reflection.Assembly.GetCallingAssembly())
     {
         CurrentValue = currentValue;
         RequiredValue = requiredValue;
         ProgressPersists = progressPersists;
         HideProgress = hideProgress;
     }
-    public CountAchievement(string name, string description, int currentValue, int requiredValue, AchPersistence progressPersists = AchPersistence.ThroughoutSessions, int rarity = 0, bool hidden = false, bool hideRarity = false, bool hideProgress = false) : base(name, description, rarity, hidden, hideRarity, System.Reflection.Assembly.GetCallingAssembly())
+    public CountAchievement(string name, string description, int currentValue, int requiredValue, AchPersistence progressPersists = AchPersistence.ThroughoutSessions, int rarity = 0, bool hidden = false, bool hideRarity = false, bool hideProgress = false, System.Reflection.Assembly? assembly = null) : base(name, description, rarity, hidden, hideRarity, assembly ?? System.Reflection.Assembly.GetCallingAssembly())
     {
         CurrentValue = currentValue;
         RequiredValue = requiredValue;
